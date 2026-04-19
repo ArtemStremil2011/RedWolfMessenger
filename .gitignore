@@ -1,0 +1,48 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+Debug/
+Release/
+*.exe
+*.dll
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+**/logs/
+
+# User secrets
+secrets.json
+appsettings.Development.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploaded files
+wwwroot/avatars/*
+!wwwroot/avatars/default-avatar.png
+
+# Temp files
+tmp/
+temp/
