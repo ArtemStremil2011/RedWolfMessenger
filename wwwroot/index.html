@@ -463,8 +463,6 @@
             width: 90%;
             max-width: 500px;
             border: 1px solid rgba(220, 38, 38, 0.3);
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
             .modal-content h3 {
@@ -573,7 +571,7 @@
             <div id="registerForm" class="auth-form" style="display: none;">
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" id="regPhone" placeholder="+79991234567">
+                    <input type="tel" id="regPhone" placeholder="+1234567890">
                 </div>
                 <div class="form-group">
                     <label>Name</label>
@@ -766,50 +764,21 @@
             }
 
             try {
-                // ШАГ 1: Запрос кода
-                const requestResponse = await fetch(`${API_BASE}/User/request-verification`, {
+                const response = await fetch(`${API_BASE}/User/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phoneNumber: phone, name, password })
                 });
 
-                if (!requestResponse.ok) {
-                    const error = await requestResponse.text();
-                    throw new Error(error || 'Request failed');
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Registration failed');
                 }
 
-                const requestData = await requestResponse.json();
-
-                // Ввод кода
-                const userCode = prompt(`Verification code sent to ${phone}\nEnter the code:`, requestData.code);
-
-                if (!userCode) {
-                    errorDiv.textContent = 'Verification cancelled';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-
-                // ШАГ 2: Подтверждение
-                const verifyResponse = await fetch(`${API_BASE}/User/verify-and-register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone, code: userCode })
-                });
-
-                if (!verifyResponse.ok) {
-                    const error = await verifyResponse.text();
-                    throw new Error(error || 'Verification failed');
-                }
-
-                const verifyData = await verifyResponse.json();
-
-                token = verifyData.token;
-                currentUser = { id: verifyData.userId };
-                localStorage.setItem('token', token);
-                localStorage.setItem('userId', verifyData.userId);
-
-                await initApp();
-
+                const data = await response.json();
+                alert('Registration successful! Please login.');
+                switchTab('login');
+                document.getElementById('loginLogin').value = name;
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.style.display = 'block';
@@ -850,10 +819,8 @@
 
         function updateAvatarImages() {
             const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
-            const sidebarAvatar = document.getElementById('sidebarAvatar');
-            const profileAvatar = document.getElementById('profileAvatar');
-            if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
-            if (profileAvatar) profileAvatar.src = avatarUrl;
+            document.getElementById('sidebarAvatar').src = avatarUrl;
+            document.getElementById('profileAvatar').src = avatarUrl;
         }
 
         async function loadChats() {
@@ -918,7 +885,7 @@
 
         async function loadMessages(chatId) {
             try {
-                const response = await fetch(`${API_BASE}/Chat/${chatId}/messages?page=1&pageSize=50`, {
+                const response = await fetch(`${API_BASE}/Chat/${chatId}/messages?page=1&pageSize=100`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -944,6 +911,7 @@
                     ? `${API_BASE}/User/avatar/${msg.userId}`
                     : `${API_BASE}/User/avatar/default`;
                 const isOwn = msg.userId === currentUser.id;
+                const edited = msg.messageCreateDate !== msg.messageLastUpdateDate;
 
                 return `
                         <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
@@ -951,12 +919,12 @@
                                 <img src="${avatarUrl}" onerror="this.src='${API_BASE}/User/avatar/default'">
                                 <span class="message-sender">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
                             </div>
-                            <div class="message-content">${escapeHtml(msg.messageText)}</div>
+                            <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
                             <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                            ${isOwn ? `
+                            ${isOwn && !msg.isDeleted ? `
                                 <div class="message-actions">
-                                    <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️</button>
-                                    <button onclick="deleteMessage('${msg.messageId}')">🗑️</button>
+                                    <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
+                                    <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
                                 </div>
                             ` : ''}
                         </div>
@@ -1000,6 +968,7 @@
                 }
             } catch (error) {
                 console.error('Failed to send message:', error);
+                alert('Failed to send message');
             }
         }
 
@@ -1035,6 +1004,7 @@
                 }
             } catch (error) {
                 console.error('Failed to edit message:', error);
+                alert('Failed to edit message');
             }
         }
 
@@ -1055,7 +1025,13 @@
                 }
             } catch (error) {
                 console.error('Failed to delete message:', error);
+                alert('Failed to delete message');
             }
+        }
+
+        function closeEditMessageModal() {
+            document.getElementById('editMessageModal').classList.remove('active');
+            editingMessageId = null;
         }
 
         async function showProfileModal() {
@@ -1074,6 +1050,7 @@
                 }
             } catch (error) {
                 console.error('Failed to load profile:', error);
+                alert('Failed to load profile');
             }
         }
 
@@ -1116,6 +1093,7 @@
                 }
             } catch (error) {
                 console.error('Failed to update profile:', error);
+                alert('Failed to update profile');
             }
         }
 
@@ -1148,6 +1126,7 @@
                 }
             } catch (error) {
                 console.error('Failed to upload avatar:', error);
+                alert('Failed to upload avatar');
             }
         }
 
@@ -1170,6 +1149,7 @@
                 }
             } catch (error) {
                 console.error('Failed to delete avatar:', error);
+                alert('Failed to delete avatar');
             }
         }
 
@@ -1211,6 +1191,7 @@
                 }
             } catch (error) {
                 console.error('Search failed:', error);
+                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
             }
         }
 
@@ -1241,6 +1222,7 @@
                 }
             } catch (error) {
                 console.error('Failed to create chat:', error);
+                alert('Failed to create chat');
             }
         }
 
@@ -1252,11 +1234,6 @@
 
         function closeNewChatModal() {
             document.getElementById('newChatModal').classList.remove('active');
-        }
-
-        function closeEditMessageModal() {
-            document.getElementById('editMessageModal').classList.remove('active');
-            editingMessageId = null;
         }
 
         async function initSignalR() {
@@ -1273,30 +1250,6 @@
                 }
             });
 
-            connection.on("UserJoined", (userId, userName) => {
-                const indicator = document.getElementById('typingIndicator');
-                indicator.textContent = `${userName} joined the chat`;
-                indicator.style.display = 'block';
-                setTimeout(() => indicator.style.display = 'none', 3000);
-            });
-
-            connection.on("UserTyping", (userId, userName) => {
-                const indicator = document.getElementById('typingIndicator');
-                if (userId !== currentUser?.id) {
-                    indicator.textContent = `${userName} is typing...`;
-                    indicator.style.display = 'block';
-                    clearTimeout(typingTimeout);
-                    typingTimeout = setTimeout(() => indicator.style.display = 'none', 2000);
-                }
-            });
-
-            connection.on("UserStoppedTyping", (userId) => {
-                const indicator = document.getElementById('typingIndicator');
-                if (userId !== currentUser?.id) {
-                    indicator.style.display = 'none';
-                }
-            });
-
             try {
                 await connection.start();
                 console.log("SignalR connected");
@@ -1306,16 +1259,6 @@
                 }
             } catch (error) {
                 console.error("SignalR connection failed:", error);
-            }
-        }
-
-        function onTyping() {
-            if (connection && currentChat) {
-                connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name);
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => {
-                    connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id);
-                }, 1000);
             }
         }
 
@@ -1343,7 +1286,6 @@
             return div.innerHTML;
         }
 
-        document.getElementById('messageInput')?.addEventListener('input', onTyping);
         document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
