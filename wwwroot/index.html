@@ -325,15 +325,37 @@
             background: #0f0f0f;
         }
 
-            .chat-header h2 {
-                font-size: 18px;
-                color: #ef4444;
-            }
+        .chat-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-            .chat-header p {
-                font-size: 12px;
-                color: #6b7280;
-                margin-top: 4px;
+        .chat-header h2 {
+            font-size: 18px;
+            color: #ef4444;
+        }
+
+        .chat-header p {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .edit-chat-btn {
+            background: #2a2a2a;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #e0e0e0;
+            transition: all 0.2s;
+        }
+
+            .edit-chat-btn:hover {
+                background: #dc2626;
+                color: white;
             }
 
         .messages-container {
@@ -543,11 +565,6 @@
                 border-left: 3px solid #dc2626;
             }
 
-            .user-search-result.selected {
-                background: #dc2626;
-                color: white;
-            }
-
             .user-search-result img {
                 width: 40px;
                 height: 40px;
@@ -594,21 +611,45 @@
                 cursor: pointer;
             }
 
-        .info-row {
+        .member-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .member-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 12px;
             border-bottom: 1px solid #2a2a2a;
         }
 
-        .info-label {
-            color: #6b7280;
-            font-weight: 500;
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .info-value {
-            color: #e0e0e0;
+            .member-info img {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+
+        .remove-member-btn {
+            background: #7f1d1d;
+            border: none;
+            border-radius: 8px;
+            padding: 4px 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
         }
+
+            .remove-member-btn:hover {
+                background: #991b1b;
+            }
 
         .code-input {
             letter-spacing: 4px;
@@ -643,7 +684,6 @@
                 <button class="auth-tab" onclick="switchTab('register')">Register</button>
             </div>
 
-            <!-- LOGIN FORM -->
             <div id="loginForm" class="auth-form">
                 <div class="form-group">
                     <label>Login (Phone or Name)</label>
@@ -657,7 +697,6 @@
                 <div id="loginError" class="error-message" style="display: none;"></div>
             </div>
 
-            <!-- REGISTER FORM - STEP 1 -->
             <div id="registerForm" class="auth-form" style="display: none;">
                 <div class="form-group">
                     <label>Phone Number</label>
@@ -675,7 +714,6 @@
                 <div id="registerError" class="error-message" style="display: none;"></div>
             </div>
 
-            <!-- REGISTER FORM - STEP 2 (VERIFICATION) -->
             <div id="verifyForm" class="auth-form" style="display: none;">
                 <div class="form-group">
                     <label>Verification Code</label>
@@ -758,6 +796,32 @@
         </div>
     </div>
 
+    <div class="modal" id="editChatModal">
+        <div class="modal-content">
+            <h3 id="editChatTitle">Edit Chat</h3>
+            <div class="form-group">
+                <label>Chat Name</label>
+                <input type="text" id="editChatName" placeholder="Chat name">
+            </div>
+            <div id="groupMembersSection" style="display: none;">
+                <div class="form-group">
+                    <label>Add Member</label>
+                    <input type="text" id="addMemberSearch" placeholder="Search users..." oninput="searchAddMember()">
+                    <div id="addMemberResults" style="max-height: 150px; overflow-y: auto; margin-top: 8px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Members</label>
+                    <div id="membersList" class="member-list"></div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="saveChatEdit()">Save</button>
+                <button class="btn btn-danger" onclick="leaveOrDeleteChat()" id="leaveDeleteBtn">Leave Chat</button>
+                <button class="btn btn-secondary" onclick="closeEditChatModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="profileModal">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -783,16 +847,6 @@
                 <input type="password" id="profileNewPassword" placeholder="New password">
             </div>
 
-            <div class="info-row">
-                <span class="info-label">Member since:</span>
-                <span class="info-value" id="profileRegisterDate">-</span>
-            </div>
-
-            <div class="info-row">
-                <span class="info-label">User ID:</span>
-                <span class="info-value" id="profileUserId" style="font-size: 11px;">-</span>
-            </div>
-
             <div class="modal-buttons">
                 <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
                 <button class="btn btn-secondary" onclick="closeProfileModal()">Cancel</button>
@@ -813,12 +867,13 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
         let currentUser = null;
         let currentChat = null;
+        let currentChatInfo = null;
         let token = null;
         let connection = null;
-        let typingTimeout = null;
         let editingMessageId = null;
         let selectedGroupMembers = [];
         let tempPhoneNumber = null;
@@ -838,33 +893,20 @@
                 document.getElementById('registerForm').style.display = 'flex';
                 document.getElementById('verifyForm').style.display = 'none';
             }
-            clearErrors();
-        }
-
-        function clearErrors() {
-            document.getElementById('loginError').style.display = 'none';
-            document.getElementById('registerError').style.display = 'none';
-            document.getElementById('verifyError').style.display = 'none';
-            document.getElementById('verifySuccess').style.display = 'none';
         }
 
         async function requestVerificationCode() {
             const phone = document.getElementById('regPhone').value.trim();
             const name = document.getElementById('regName').value.trim();
             const password = document.getElementById('regPassword').value;
-            const errorDiv = document.getElementById('registerError');
-
-            clearErrors();
 
             if (!phone || !name || !password) {
-                errorDiv.textContent = 'Please fill all fields';
-                errorDiv.style.display = 'block';
+                alert('Please fill all fields');
                 return;
             }
 
             if (password.length < 6) {
-                errorDiv.textContent = 'Password must be at least 6 characters';
-                errorDiv.style.display = 'block';
+                alert('Password must be at least 6 characters');
                 return;
             }
 
@@ -877,42 +919,27 @@
 
                 if (!response.ok) {
                     const error = await response.text();
-                    throw new Error(error || 'Failed to send code');
+                    throw new Error(error);
                 }
 
                 const data = await response.json();
                 tempPhoneNumber = data.phoneNumber;
 
-                // Show verification form
                 document.getElementById('registerForm').style.display = 'none';
                 document.getElementById('verifyForm').style.display = 'flex';
-                document.getElementById('verifyCode').value = '';
+                document.getElementById('verifyCode').value = data.code || '';
 
-                // Auto-fill code from response (for testing, remove in production)
-                if (data.code) {
-                    document.getElementById('verifyCode').value = data.code;
-                }
-
-                const successDiv = document.getElementById('verifySuccess');
-                successDiv.textContent = `Code sent to ${phone}`;
-                successDiv.style.display = 'block';
-
+                alert(`Code sent to ${phone}`);
             } catch (error) {
-                errorDiv.textContent = error.message;
-                errorDiv.style.display = 'block';
+                alert('Failed to send code: ' + error.message);
             }
         }
 
         async function verifyAndRegister() {
             const code = document.getElementById('verifyCode').value.trim();
-            const errorDiv = document.getElementById('verifyError');
-            const successDiv = document.getElementById('verifySuccess');
-
-            clearErrors();
 
             if (!code || code.length !== 6) {
-                errorDiv.textContent = 'Please enter 6-digit code';
-                errorDiv.style.display = 'block';
+                alert('Please enter 6-digit code');
                 return;
             }
 
@@ -925,46 +952,33 @@
 
                 if (!response.ok) {
                     const error = await response.text();
-                    throw new Error(error || 'Verification failed');
+                    throw new Error(error);
                 }
 
                 const data = await response.json();
 
-                successDiv.textContent = 'Registration successful! Logging in...';
-                successDiv.style.display = 'block';
-
-                // Auto login
                 token = data.token;
                 currentUser = { id: data.userId };
                 localStorage.setItem('token', token);
                 localStorage.setItem('userId', data.userId);
 
-                setTimeout(() => {
-                    initApp();
-                }, 1000);
-
+                await initApp();
             } catch (error) {
-                errorDiv.textContent = error.message;
-                errorDiv.style.display = 'block';
+                alert('Verification failed: ' + error.message);
             }
         }
 
         function backToRegister() {
             document.getElementById('verifyForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'flex';
-            clearErrors();
         }
 
         async function handleLogin() {
             const login = document.getElementById('loginLogin').value;
             const password = document.getElementById('loginPassword').value;
-            const errorDiv = document.getElementById('loginError');
-
-            clearErrors();
 
             if (!login || !password) {
-                errorDiv.textContent = 'Please fill all fields';
-                errorDiv.style.display = 'block';
+                alert('Please fill all fields');
                 return;
             }
 
@@ -977,7 +991,7 @@
 
                 if (!response.ok) {
                     const error = await response.text();
-                    throw new Error(error || 'Login failed');
+                    throw new Error(error);
                 }
 
                 const data = await response.json();
@@ -988,8 +1002,7 @@
 
                 await initApp();
             } catch (error) {
-                errorDiv.textContent = error.message;
-                errorDiv.style.display = 'block';
+                alert('Login failed: ' + error.message);
             }
         }
 
@@ -1053,12 +1066,12 @@
             }
 
             container.innerHTML = chats.map(chat => {
-                const isGroup = chat.maxUsers > 2 || chat.users.length > 2;
+                const isGroup = chat.maxUsers > 2 || (chat.users && chat.users.length > 2);
                 const otherUser = chat.otherUser;
                 const avatarUrl = otherUser?.id
                     ? `${API_BASE}/User/avatar/${otherUser.id}`
                     : `${API_BASE}/User/avatar/default`;
-                const preview = isGroup ? `${chat.users.length} members` : (chat.otherUser?.name || chat.chatName);
+                const preview = isGroup ? `${chat.users?.length || 0} members` : (chat.otherUser?.name || chat.chatName);
 
                 return `
                         <div class="chat-item" onclick="selectChat('${chat.id}', '${escapeHtml(chat.chatName)}')">
@@ -1078,12 +1091,34 @@
             }).join('');
         }
 
+        async function getChatInfo(chatId) {
+            try {
+                const response = await fetch(`${API_BASE}/Chat/${chatId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error('Failed to get chat info:', error);
+            }
+            return null;
+        }
+
         async function selectChat(chatId, chatName) {
             currentChat = { id: chatId, name: chatName };
+            currentChatInfo = await getChatInfo(chatId);
+
+            const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users && currentChatInfo.users.length > 2));
 
             document.getElementById('chatHeader').innerHTML = `
-                    <h2>${escapeHtml(chatName)}</h2>
-                    <p>Chat ID: ${chatId.substring(0, 8)}...</p>
+                    <div class="chat-header-top">
+                        <div>
+                            <h2>${escapeHtml(chatName)}</h2>
+                            <p>${isGroup ? `${currentChatInfo?.users?.length || 0} members` : 'Private chat'}</p>
+                        </div>
+                        <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
+                    </div>
                 `;
 
             document.getElementById('messageInput').disabled = false;
@@ -1119,7 +1154,6 @@
                 return;
             }
 
-            // СОРТИРУЕМ ПО ВРЕМЕНИ (старые сверху, новые снизу)
             const sortedMessages = [...messages].sort((a, b) =>
                 new Date(a.messageCreateDate) - new Date(b.messageCreateDate)
             );
@@ -1134,29 +1168,29 @@
 
                 if (isSystem) {
                     return `
-                <div class="message system">
-                    <div class="message-content">📢 ${escapeHtml(msg.messageText)}</div>
-                    <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                </div>
-            `;
+                            <div class="message system">
+                                <div class="message-content">📢 ${escapeHtml(msg.messageText)}</div>
+                                <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
+                            </div>
+                        `;
                 }
 
                 return `
-            <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
-                <div class="message-header">
-                    <img src="${avatarUrl}" onerror="this.src='${API_BASE}/User/avatar/default'">
-                    <span class="message-sender">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
-                </div>
-                <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
-                <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                ${isOwn && !msg.isDeleted ? `
-                    <div class="message-actions">
-                        <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
-                        <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+                        <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
+                            <div class="message-header">
+                                <img src="${avatarUrl}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <span class="message-sender">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
+                            </div>
+                            <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
+                            <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
+                            ${isOwn && !msg.isDeleted ? `
+                                <div class="message-actions">
+                                    <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
+                                    <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
             }).join('');
 
             container.innerHTML = messagesHtml;
@@ -1255,6 +1289,290 @@
                 console.error('Failed to delete message:', error);
                 alert('Failed to delete message');
             }
+        }
+
+        async function showEditChatModal() {
+            if (!currentChatInfo) return;
+
+            const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
+
+            document.getElementById('editChatTitle').textContent = isGroup ? 'Edit Group' : 'Edit Chat';
+            document.getElementById('editChatName').value = currentChatInfo.chatName;
+
+            if (isGroup) {
+                document.getElementById('groupMembersSection').style.display = 'block';
+                document.getElementById('leaveDeleteBtn').textContent = 'Leave Group';
+                await renderMembersList();
+            } else {
+                document.getElementById('groupMembersSection').style.display = 'none';
+                document.getElementById('leaveDeleteBtn').textContent = 'Delete Chat';
+            }
+
+            document.getElementById('editChatModal').classList.add('active');
+        }
+
+        async function renderMembersList() {
+            const members = currentChatInfo.users || [];
+            const container = document.getElementById('membersList');
+
+            container.innerHTML = members.map(member => `
+                    <div class="member-item">
+                        <div class="member-info">
+                            <img src="${API_BASE}/User/avatar/${member.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                            <span>${escapeHtml(member.name)}${member.id === currentChatInfo.createdById ? ' 👑' : ''}</span>
+                        </div>
+                        ${member.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `
+                            <button class="remove-member-btn" onclick="removeMember('${member.id}', '${escapeHtml(member.name)}')">Remove</button>
+                        ` : ''}
+                    </div>
+                `).join('');
+        }
+
+        async function searchAddMember() {
+            const query = document.getElementById('addMemberSearch').value.trim();
+            const resultsDiv = document.getElementById('addMemberResults');
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/User/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    const existingMemberIds = currentChatInfo.users.map(u => u.id);
+                    const filtered = users.filter(u =>
+                        u.name.toLowerCase().includes(query.toLowerCase()) &&
+                        u.id !== currentUser.id &&
+                        !existingMemberIds.includes(u.id)
+                    );
+
+                    if (filtered.length === 0) {
+                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = filtered.map(user => `
+                            <div class="user-search-result" onclick="addMemberToGroup('${user.id}', '${escapeHtml(user.name)}')">
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <div><strong>${escapeHtml(user.name)}</strong></div>
+                            </div>
+                        `).join('');
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
+            }
+        }
+
+        async function addMemberToGroup(userId, userName) {
+            try {
+                const response = await fetch(`${API_BASE}/Chat/add-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        chatId: currentChat.id,
+                        userId: userId
+                    })
+                });
+
+                if (response.ok) {
+                    currentChatInfo = await getChatInfo(currentChat.id);
+                    await renderMembersList();
+                    document.getElementById('addMemberSearch').value = '';
+                    document.getElementById('addMemberResults').innerHTML = '';
+                    document.getElementById('chatHeader').innerHTML = `
+                            <div class="chat-header-top">
+                                <div>
+                                    <h2>${escapeHtml(currentChatInfo.chatName)}</h2>
+                                    <p>${currentChatInfo.users.length} members</p>
+                                </div>
+                                <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
+                            </div>
+                        `;
+                } else {
+                    const error = await response.text();
+                    alert('Failed to add member: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to add member:', error);
+                alert('Failed to add member');
+            }
+        }
+
+        async function removeMember(userId, userName) {
+            if (!confirm(`Remove ${userName} from group?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/Chat/remove-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        chatId: currentChat.id,
+                        userId: userId
+                    })
+                });
+
+                if (response.ok) {
+                    currentChatInfo = await getChatInfo(currentChat.id);
+                    if (currentChatInfo) {
+                        await renderMembersList();
+                        document.getElementById('chatHeader').innerHTML = `
+                                <div class="chat-header-top">
+                                    <div>
+                                        <h2>${escapeHtml(currentChatInfo.chatName)}</h2>
+                                        <p>${currentChatInfo.users.length} members</p>
+                                    </div>
+                                    <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
+                                </div>
+                            `;
+                    } else {
+                        closeEditChatModal();
+                        currentChat = null;
+                        currentChatInfo = null;
+                        document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
+                        document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
+                        document.getElementById('messageInput').disabled = true;
+                        document.getElementById('sendBtn').disabled = true;
+                        await loadChats();
+                    }
+                } else {
+                    const error = await response.text();
+                    alert('Failed to remove member: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to remove member:', error);
+                alert('Failed to remove member');
+            }
+        }
+
+        async function saveChatEdit() {
+            const newName = document.getElementById('editChatName').value.trim();
+
+            if (newName && newName !== currentChatInfo.chatName) {
+                try {
+                    const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ chatName: newName })
+                    });
+
+                    if (response.ok) {
+                        currentChat.name = newName;
+                        currentChatInfo.chatName = newName;
+                        document.getElementById('chatHeader').innerHTML = `
+                                <div class="chat-header-top">
+                                    <div>
+                                        <h2>${escapeHtml(newName)}</h2>
+                                        <p>${currentChatInfo.users?.length || 0} members</p>
+                                    </div>
+                                    <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
+                                </div>
+                            `;
+                        await loadChats();
+                    } else {
+                        const error = await response.text();
+                        alert('Failed to rename: ' + error);
+                    }
+                } catch (error) {
+                    console.error('Failed to rename:', error);
+                    alert('Failed to rename');
+                }
+            }
+
+            closeEditChatModal();
+        }
+
+        async function leaveGroup() {
+            if (!confirm('Are you sure you want to leave this group?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/Chat/remove-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        chatId: currentChat.id,
+                        userId: currentUser.id
+                    })
+                });
+
+                if (response.ok) {
+                    closeEditChatModal();
+                    currentChat = null;
+                    currentChatInfo = null;
+                    document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
+                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
+                    document.getElementById('messageInput').disabled = true;
+                    document.getElementById('sendBtn').disabled = true;
+                    await loadChats();
+                    alert('You left the group');
+                } else {
+                    const error = await response.text();
+                    alert('Failed to leave group: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to leave group:', error);
+                alert('Failed to leave group');
+            }
+        }
+
+        async function deleteChat() {
+            if (!confirm('Delete this chat?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    closeEditChatModal();
+                    currentChat = null;
+                    currentChatInfo = null;
+                    document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
+                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
+                    document.getElementById('messageInput').disabled = true;
+                    document.getElementById('sendBtn').disabled = true;
+                    await loadChats();
+                } else {
+                    const error = await response.text();
+                    alert('Failed to delete chat: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to delete chat:', error);
+                alert('Failed to delete chat');
+            }
+        }
+
+        function leaveOrDeleteChat() {
+            const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
+            if (isGroup) {
+                leaveGroup();
+            } else {
+                deleteChat();
+            }
+        }
+
+        function closeEditChatModal() {
+            document.getElementById('editChatModal').classList.remove('active');
+            document.getElementById('addMemberSearch').value = '';
+            document.getElementById('addMemberResults').innerHTML = '';
         }
 
         async function searchUsers() {
@@ -1482,8 +1800,6 @@
                 if (response.ok) {
                     const user = await response.json();
                     document.getElementById('profileName').value = user.name;
-                    document.getElementById('profileRegisterDate').textContent = new Date(user.registerDate).toLocaleDateString();
-                    document.getElementById('profileUserId').textContent = user.id;
                     document.getElementById('profileAvatar').src = `${API_BASE}/User/avatar/${user.id}?t=${Date.now()}`;
                     document.getElementById('profileNewPassword').value = '';
                     document.getElementById('profileModal').classList.add('active');
@@ -1625,6 +1941,7 @@
             token = null;
             currentUser = null;
             currentChat = null;
+            currentChatInfo = null;
 
             if (connection) {
                 connection.stop();
@@ -1656,6 +1973,5 @@
             }
         }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 </body>
 </html>
