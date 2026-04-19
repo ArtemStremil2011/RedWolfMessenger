@@ -163,6 +163,16 @@
             text-align: center;
         }
 
+        .success-message {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            color: #22c55e;
+            font-size: 14px;
+            text-align: center;
+        }
+
         .app-container {
             display: none;
             height: 100vh;
@@ -238,6 +248,23 @@
                 box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
             }
 
+        .btn-create-group {
+            margin: 0 12px 12px 12px;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #dc2626;
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .btn-create-group:hover {
+                background: #dc2626;
+                color: white;
+            }
+
         .chats-list {
             flex: 1;
             overflow-y: auto;
@@ -275,6 +302,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .chat-badge {
+            font-size: 10px;
+            background: #dc2626;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
         }
 
         .chat-area {
@@ -321,6 +356,14 @@
                 align-self: flex-end;
             }
 
+            .message.system {
+                align-self: center;
+                max-width: 90%;
+                font-style: italic;
+                color: #6b7280;
+                font-size: 12px;
+            }
+
         .message-header {
             display: flex;
             align-items: center;
@@ -346,12 +389,17 @@
             border-radius: 18px;
             background: #1a1a1a;
             word-wrap: break-word;
-            position: relative;
         }
 
         .message.own .message-content {
             background: linear-gradient(135deg, #dc2626, #b91c1c);
             color: white;
+        }
+
+        .message.system .message-content {
+            background: #1a1a1a;
+            color: #6b7280;
+            font-style: italic;
         }
 
         .message-time {
@@ -463,6 +511,8 @@
             width: 90%;
             max-width: 500px;
             border: 1px solid rgba(220, 38, 38, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
             .modal-content h3 {
@@ -493,11 +543,41 @@
                 border-left: 3px solid #dc2626;
             }
 
+            .user-search-result.selected {
+                background: #dc2626;
+                color: white;
+            }
+
             .user-search-result img {
                 width: 40px;
                 height: 40px;
                 border-radius: 50%;
                 object-fit: cover;
+            }
+
+        .selected-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .member-tag {
+            background: #dc2626;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .member-tag button {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                font-size: 14px;
             }
 
         .profile-avatar {
@@ -530,6 +610,12 @@
             color: #e0e0e0;
         }
 
+        .code-input {
+            letter-spacing: 4px;
+            font-size: 24px;
+            text-align: center;
+        }
+
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -556,6 +642,8 @@
                 <button class="auth-tab active" onclick="switchTab('login')">Login</button>
                 <button class="auth-tab" onclick="switchTab('register')">Register</button>
             </div>
+
+            <!-- LOGIN FORM -->
             <div id="loginForm" class="auth-form">
                 <div class="form-group">
                     <label>Login (Phone or Name)</label>
@@ -568,10 +656,12 @@
                 <button class="btn btn-primary" onclick="handleLogin()">Login →</button>
                 <div id="loginError" class="error-message" style="display: none;"></div>
             </div>
+
+            <!-- REGISTER FORM - STEP 1 -->
             <div id="registerForm" class="auth-form" style="display: none;">
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" id="regPhone" placeholder="+1234567890">
+                    <input type="tel" id="regPhone" placeholder="+79991234567">
                 </div>
                 <div class="form-group">
                     <label>Name</label>
@@ -581,8 +671,20 @@
                     <label>Password</label>
                     <input type="password" id="regPassword" placeholder="Min 6 characters">
                 </div>
-                <button class="btn btn-primary" onclick="handleRegister()">Register →</button>
+                <button class="btn btn-primary" onclick="requestVerificationCode()">Send Code →</button>
                 <div id="registerError" class="error-message" style="display: none;"></div>
+            </div>
+
+            <!-- REGISTER FORM - STEP 2 (VERIFICATION) -->
+            <div id="verifyForm" class="auth-form" style="display: none;">
+                <div class="form-group">
+                    <label>Verification Code</label>
+                    <input type="text" id="verifyCode" class="code-input" placeholder="Enter 6-digit code" maxlength="6">
+                </div>
+                <button class="btn btn-primary" onclick="verifyAndRegister()">Verify & Register →</button>
+                <button class="btn btn-secondary" onclick="backToRegister()">← Back</button>
+                <div id="verifyError" class="error-message" style="display: none;"></div>
+                <div id="verifySuccess" class="success-message" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -596,6 +698,7 @@
             </div>
 
             <button class="btn-new-chat" onclick="showNewChatModal()">+ New Chat</button>
+            <button class="btn-create-group" onclick="showCreateGroupModal()">👥 Create Group</button>
 
             <div class="chats-list" id="chatsList">
                 <div class="empty-state">Loading chats...</div>
@@ -619,7 +722,7 @@
 
     <div class="modal" id="newChatModal">
         <div class="modal-content">
-            <h3>Start New Conversation</h3>
+            <h3>New Private Chat</h3>
             <div class="form-group">
                 <label>Search by username</label>
                 <input type="text" id="searchUserInput" placeholder="Enter username..." oninput="searchUsers()">
@@ -627,6 +730,30 @@
             <div id="searchResults" style="max-height: 300px; overflow-y: auto; margin-top: 16px;"></div>
             <div class="modal-buttons">
                 <button class="btn btn-secondary" onclick="closeNewChatModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="createGroupModal">
+        <div class="modal-content">
+            <h3>Create Group</h3>
+            <div class="form-group">
+                <label>Group Name</label>
+                <input type="text" id="groupName" placeholder="Enter group name">
+            </div>
+            <div class="form-group">
+                <label>Max Users (2-500)</label>
+                <input type="number" id="groupMaxUsers" value="100" min="2" max="500">
+            </div>
+            <div class="form-group">
+                <label>Search members</label>
+                <input type="text" id="groupSearchInput" placeholder="Search users..." oninput="searchGroupUsers()">
+            </div>
+            <div id="groupSearchResults" style="max-height: 200px; overflow-y: auto;"></div>
+            <div class="selected-members" id="selectedMembers"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="createGroup()">Create Group</button>
+                <button class="btn btn-secondary" onclick="closeCreateGroupModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -693,6 +820,8 @@
         let connection = null;
         let typingTimeout = null;
         let editingMessageId = null;
+        let selectedGroupMembers = [];
+        let tempPhoneNumber = null;
 
         const API_BASE = '/api';
 
@@ -702,17 +831,136 @@
                 document.querySelector('.auth-tab:first-child').classList.add('active');
                 document.getElementById('loginForm').style.display = 'flex';
                 document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('verifyForm').style.display = 'none';
             } else {
                 document.querySelector('.auth-tab:last-child').classList.add('active');
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('registerForm').style.display = 'flex';
+                document.getElementById('verifyForm').style.display = 'none';
             }
+            clearErrors();
+        }
+
+        function clearErrors() {
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('registerError').style.display = 'none';
+            document.getElementById('verifyError').style.display = 'none';
+            document.getElementById('verifySuccess').style.display = 'none';
+        }
+
+        async function requestVerificationCode() {
+            const phone = document.getElementById('regPhone').value.trim();
+            const name = document.getElementById('regName').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            clearErrors();
+
+            if (!phone || !name || !password) {
+                errorDiv.textContent = 'Please fill all fields';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/User/request-verification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: phone, name, password })
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Failed to send code');
+                }
+
+                const data = await response.json();
+                tempPhoneNumber = data.phoneNumber;
+
+                // Show verification form
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('verifyForm').style.display = 'flex';
+                document.getElementById('verifyCode').value = '';
+
+                // Auto-fill code from response (for testing, remove in production)
+                if (data.code) {
+                    document.getElementById('verifyCode').value = data.code;
+                }
+
+                const successDiv = document.getElementById('verifySuccess');
+                successDiv.textContent = `Code sent to ${phone}`;
+                successDiv.style.display = 'block';
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function verifyAndRegister() {
+            const code = document.getElementById('verifyCode').value.trim();
+            const errorDiv = document.getElementById('verifyError');
+            const successDiv = document.getElementById('verifySuccess');
+
+            clearErrors();
+
+            if (!code || code.length !== 6) {
+                errorDiv.textContent = 'Please enter 6-digit code';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/User/verify-and-register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: tempPhoneNumber, code: code })
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Verification failed');
+                }
+
+                const data = await response.json();
+
+                successDiv.textContent = 'Registration successful! Logging in...';
+                successDiv.style.display = 'block';
+
+                // Auto login
+                token = data.token;
+                currentUser = { id: data.userId };
+                localStorage.setItem('token', token);
+                localStorage.setItem('userId', data.userId);
+
+                setTimeout(() => {
+                    initApp();
+                }, 1000);
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function backToRegister() {
+            document.getElementById('verifyForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'flex';
+            clearErrors();
         }
 
         async function handleLogin() {
             const login = document.getElementById('loginLogin').value;
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
+
+            clearErrors();
 
             if (!login || !password) {
                 errorDiv.textContent = 'Please fill all fields';
@@ -739,46 +987,6 @@
                 localStorage.setItem('userId', data.userId);
 
                 await initApp();
-            } catch (error) {
-                errorDiv.textContent = error.message;
-                errorDiv.style.display = 'block';
-            }
-        }
-
-        async function handleRegister() {
-            const phone = document.getElementById('regPhone').value;
-            const name = document.getElementById('regName').value;
-            const password = document.getElementById('regPassword').value;
-            const errorDiv = document.getElementById('registerError');
-
-            if (!phone || !name || !password) {
-                errorDiv.textContent = 'Please fill all fields';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            if (password.length < 6) {
-                errorDiv.textContent = 'Password must be at least 6 characters';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/User/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone, name, password })
-                });
-
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error || 'Registration failed');
-                }
-
-                const data = await response.json();
-                alert('Registration successful! Please login.');
-                switchTab('login');
-                document.getElementById('loginLogin').value = name;
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.style.display = 'block';
@@ -845,10 +1053,12 @@
             }
 
             container.innerHTML = chats.map(chat => {
+                const isGroup = chat.maxUsers > 2 || chat.users.length > 2;
                 const otherUser = chat.otherUser;
                 const avatarUrl = otherUser?.id
                     ? `${API_BASE}/User/avatar/${otherUser.id}`
                     : `${API_BASE}/User/avatar/default`;
+                const preview = isGroup ? `${chat.users.length} members` : (chat.otherUser?.name || chat.chatName);
 
                 return `
                         <div class="chat-item" onclick="selectChat('${chat.id}', '${escapeHtml(chat.chatName)}')">
@@ -856,8 +1066,11 @@
                                 <img src="${avatarUrl}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #2a2a2a;"
                                      onerror="this.src='${API_BASE}/User/avatar/default'">
                                 <div>
-                                    <div class="chat-name">${escapeHtml(chat.chatName)}</div>
-                                    <div class="chat-preview">${chat.otherUser?.name || 'Chat'}</div>
+                                    <div class="chat-name">
+                                        ${escapeHtml(chat.chatName)}
+                                        ${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}
+                                    </div>
+                                    <div class="chat-preview">${escapeHtml(preview)}</div>
                                 </div>
                             </div>
                         </div>
@@ -906,29 +1119,44 @@
                 return;
             }
 
-            const messagesHtml = messages.map(msg => {
-                const avatarUrl = msg.messageCreator?.id
+            // СОРТИРУЕМ ПО ВРЕМЕНИ (старые сверху, новые снизу)
+            const sortedMessages = [...messages].sort((a, b) =>
+                new Date(a.messageCreateDate) - new Date(b.messageCreateDate)
+            );
+
+            const messagesHtml = sortedMessages.map(msg => {
+                const isSystem = msg.isSystemMessage;
+                const avatarUrl = msg.messageCreator?.id && !isSystem
                     ? `${API_BASE}/User/avatar/${msg.userId}`
                     : `${API_BASE}/User/avatar/default`;
                 const isOwn = msg.userId === currentUser.id;
                 const edited = msg.messageCreateDate !== msg.messageLastUpdateDate;
 
+                if (isSystem) {
+                    return `
+                <div class="message system">
+                    <div class="message-content">📢 ${escapeHtml(msg.messageText)}</div>
+                    <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
+                </div>
+            `;
+                }
+
                 return `
-                        <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
-                            <div class="message-header">
-                                <img src="${avatarUrl}" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                <span class="message-sender">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
-                            </div>
-                            <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
-                            <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                            ${isOwn && !msg.isDeleted ? `
-                                <div class="message-actions">
-                                    <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
-                                    <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
+            <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
+                <div class="message-header">
+                    <img src="${avatarUrl}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                    <span class="message-sender">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
+                </div>
+                <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
+                <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
+                ${isOwn && !msg.isDeleted ? `
+                    <div class="message-actions">
+                        <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
+                        <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
             }).join('');
 
             container.innerHTML = messagesHtml;
@@ -1027,6 +1255,218 @@
                 console.error('Failed to delete message:', error);
                 alert('Failed to delete message');
             }
+        }
+
+        async function searchUsers() {
+            const query = document.getElementById('searchUserInput').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<div class="empty-state">Enter at least 2 characters</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/User/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    const filtered = users.filter(u =>
+                        u.name.toLowerCase().includes(query.toLowerCase()) &&
+                        u.id !== currentUser.id
+                    );
+
+                    if (filtered.length === 0) {
+                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = filtered.map(user => `
+                            <div class="user-search-result" onclick="createPrivateChat('${user.id}', '${escapeHtml(user.name)}')">
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <div>
+                                    <strong>${escapeHtml(user.name)}</strong>
+                                    <div style="font-size: 12px; color: #6b7280;">Click to start chat</div>
+                                </div>
+                            </div>
+                        `).join('');
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
+            }
+        }
+
+        async function createPrivateChat(userId, userName) {
+            try {
+                const response = await fetch(`${API_BASE}/Chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        memberIds: [currentUser.id, userId],
+                        maxUsers: 2
+                    })
+                });
+
+                if (response.ok) {
+                    const newChat = await response.json();
+                    alert(`Chat with ${userName} created!`);
+                    closeNewChatModal();
+                    await loadChats();
+                    await selectChat(newChat.id, newChat.chatName);
+                } else {
+                    const error = await response.text();
+                    alert('Failed to create chat: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to create chat:', error);
+                alert('Failed to create chat');
+            }
+        }
+
+        function showCreateGroupModal() {
+            selectedGroupMembers = [];
+            updateSelectedMembersDisplay();
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupMaxUsers').value = '100';
+            document.getElementById('groupSearchInput').value = '';
+            document.getElementById('groupSearchResults').innerHTML = '';
+            document.getElementById('createGroupModal').classList.add('active');
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.remove('active');
+        }
+
+        async function searchGroupUsers() {
+            const query = document.getElementById('groupSearchInput').value.trim();
+            const resultsDiv = document.getElementById('groupSearchResults');
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/User/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    const filtered = users.filter(u =>
+                        u.name.toLowerCase().includes(query.toLowerCase()) &&
+                        u.id !== currentUser.id &&
+                        !selectedGroupMembers.some(m => m.id === u.id)
+                    );
+
+                    if (filtered.length === 0) {
+                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = filtered.map(user => `
+                            <div class="user-search-result" onclick="addGroupMember('${user.id}', '${escapeHtml(user.name)}')">
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <div>
+                                    <strong>${escapeHtml(user.name)}</strong>
+                                </div>
+                            </div>
+                        `).join('');
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
+            }
+        }
+
+        function addGroupMember(userId, userName) {
+            if (selectedGroupMembers.some(m => m.id === userId)) return;
+            selectedGroupMembers.push({ id: userId, name: userName });
+            updateSelectedMembersDisplay();
+            document.getElementById('groupSearchInput').value = '';
+            document.getElementById('groupSearchResults').innerHTML = '';
+        }
+
+        function removeGroupMember(userId) {
+            selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== userId);
+            updateSelectedMembersDisplay();
+        }
+
+        function updateSelectedMembersDisplay() {
+            const container = document.getElementById('selectedMembers');
+            if (selectedGroupMembers.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 12px;">No members selected yet</div>';
+                return;
+            }
+
+            container.innerHTML = selectedGroupMembers.map(member => `
+                    <div class="member-tag">
+                        ${escapeHtml(member.name)}
+                        <button onclick="removeGroupMember('${member.id}')">×</button>
+                    </div>
+                `).join('');
+        }
+
+        async function createGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+            const maxUsers = parseInt(document.getElementById('groupMaxUsers').value);
+
+            if (!groupName) {
+                alert('Please enter group name');
+                return;
+            }
+
+            if (selectedGroupMembers.length === 0) {
+                alert('Please select at least one member');
+                return;
+            }
+
+            const memberIds = [currentUser.id, ...selectedGroupMembers.map(m => m.id)];
+
+            try {
+                const response = await fetch(`${API_BASE}/Chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        memberIds: memberIds,
+                        maxUsers: maxUsers,
+                        chatName: groupName
+                    })
+                });
+
+                if (response.ok) {
+                    const newChat = await response.json();
+                    alert(`Group "${groupName}" created!`);
+                    closeCreateGroupModal();
+                    await loadChats();
+                    await selectChat(newChat.id, newChat.chatName);
+                } else {
+                    const error = await response.text();
+                    alert('Failed to create group: ' + error);
+                }
+            } catch (error) {
+                console.error('Failed to create group:', error);
+                alert('Failed to create group');
+            }
+        }
+
+        function showNewChatModal() {
+            document.getElementById('newChatModal').classList.add('active');
+            document.getElementById('searchUserInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        function closeNewChatModal() {
+            document.getElementById('newChatModal').classList.remove('active');
         }
 
         function closeEditMessageModal() {
@@ -1151,89 +1591,6 @@
                 console.error('Failed to delete avatar:', error);
                 alert('Failed to delete avatar');
             }
-        }
-
-        async function searchUsers() {
-            const query = document.getElementById('searchUserInput').value.trim();
-            const resultsDiv = document.getElementById('searchResults');
-
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '<div class="empty-state">Enter at least 2 characters</div>';
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/User/all`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const users = await response.json();
-                    const filtered = users.filter(u =>
-                        u.name.toLowerCase().includes(query.toLowerCase()) &&
-                        u.id !== currentUser.id
-                    );
-
-                    if (filtered.length === 0) {
-                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
-                        return;
-                    }
-
-                    resultsDiv.innerHTML = filtered.map(user => `
-                            <div class="user-search-result" onclick="createChatWithUser('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                <div>
-                                    <strong>${escapeHtml(user.name)}</strong>
-                                    <div style="font-size: 12px; color: #6b7280;">Click to start chat</div>
-                                </div>
-                            </div>
-                        `).join('');
-                }
-            } catch (error) {
-                console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
-            }
-        }
-
-        async function createChatWithUser(userId, userName) {
-            try {
-                const response = await fetch(`${API_BASE}/Chat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        user1Id: currentUser.id,
-                        user2Id: userId,
-                        chatName: null
-                    })
-                });
-
-                if (response.ok) {
-                    const newChat = await response.json();
-                    alert(`Chat with ${userName} created!`);
-                    closeNewChatModal();
-                    await loadChats();
-                    await selectChat(newChat.id, newChat.chatName);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to create chat: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to create chat:', error);
-                alert('Failed to create chat');
-            }
-        }
-
-        function showNewChatModal() {
-            document.getElementById('newChatModal').classList.add('active');
-            document.getElementById('searchUserInput').value = '';
-            document.getElementById('searchResults').innerHTML = '';
-        }
-
-        function closeNewChatModal() {
-            document.getElementById('newChatModal').classList.remove('active');
         }
 
         async function initSignalR() {

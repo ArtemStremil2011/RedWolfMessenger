@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Messenger.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20260418143626_InitialCreate")]
+    [Migration("20260419201223_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -45,6 +45,11 @@ namespace Messenger.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsSystemMessage")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
@@ -159,10 +164,7 @@ namespace Messenger.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("Chats", t =>
-                        {
-                            t.HasCheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2");
-                        });
+                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("ChatUsers", b =>

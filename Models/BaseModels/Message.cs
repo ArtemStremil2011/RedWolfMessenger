@@ -33,6 +33,8 @@ namespace Messenger.Models.BaseModels
         [ForeignKey(nameof(ChatId))]
         public virtual Chat? Chat { get; set; }
 
+        public bool IsSystemMessage { get; set; } = false;
+
         public Message()
         {
             MessageId = Guid.NewGuid();

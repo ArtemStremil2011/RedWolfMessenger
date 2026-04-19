@@ -46,6 +46,11 @@ namespace Messenger.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsSystemMessage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime>("MessageCreateDate")
                         .HasColumnType("TEXT");
 
@@ -156,10 +161,7 @@ namespace Messenger.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("Chats", t =>
-                        {
-                            t.HasCheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2");
-                        });
+                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("ChatUsers", b =>

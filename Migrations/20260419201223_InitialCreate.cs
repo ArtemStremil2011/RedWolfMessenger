@@ -46,7 +46,6 @@ namespace Messenger.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Chats", x => x.Id);
-                    table.CheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2");
                     table.ForeignKey(
                         name: "FK_Chats_Users_CreatedById",
                         column: x => x.CreatedById,
@@ -89,7 +88,8 @@ namespace Messenger.Migrations
                     MessageLastUpdateDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UserId = table.Column<Guid>(type: "TEXT", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
-                    ChatId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    ChatId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    IsSystemMessage = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {

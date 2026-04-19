@@ -8,7 +8,6 @@ namespace Messenger.Data
 {
     public class AppDBContext : DbContext
     {
-        // Конструктор для приёма настроек из Program.cs
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; }
@@ -36,6 +35,7 @@ namespace Messenger.Data
                 entity.Property(m => m.MessageText).IsRequired().HasMaxLength(5000);
                 entity.Property(m => m.MessageCreateDate).IsRequired();
                 entity.Property(m => m.IsDeleted).HasDefaultValue(false);
+                entity.Property(m => m.IsSystemMessage).HasDefaultValue(false);
 
                 entity.HasOne(m => m.MessageCreator)
                     .WithMany(u => u.Messages)
@@ -47,7 +47,7 @@ namespace Messenger.Data
                 entity.HasIndex(m => m.ChatId);
             });
 
-            // Конфигурация модели Chat
+            // Конфигурация модели Chat (теперь поддерживает группы)
             modelBuilder.Entity<Chat>(entity =>
             {
                 entity.HasKey(c => c.Id);
@@ -62,7 +62,7 @@ namespace Messenger.Data
                     .HasForeignKey(c => c.CreatedById)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                // Конфигурация связи «многие-ко-многим» с явным указанием внешних ключей
+                // Связь многие-ко-многим (пользователи чата)
                 entity.HasMany(c => c.Users)
                     .WithMany(u => u.Chats)
                     .UsingEntity<Dictionary<string, object>>(
@@ -77,8 +77,8 @@ namespace Messenger.Data
                     .HasForeignKey(m => m.ChatId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Ограничение на количество пользователей в чате
-                entity.ToTable(t => t.HasCheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2"));
+                // Убираем CHECK CONSTRAINT, который ограничивал MaxUsers = 2
+                // entity.ToTable(t => t.HasCheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2"));
             });
 
             base.OnModelCreating(modelBuilder);
