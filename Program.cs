@@ -5,6 +5,7 @@ using System.Text;
 using Messenger.Data;
 using Messenger.Hubs;
 using Messenger.Services;
+using Messenger.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,19 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddSignalR();
 
+// Добавляем HttpContextAccessor (нужен для доступа к HttpContext в сервисах)
+builder.Services.AddHttpContextAccessor();
+// Регистрация сервисов
+builder.Services.AddScoped<IUserReadService, UserReadService>();
+builder.Services.AddScoped<IUserWriteService, UserWriteService>();
+builder.Services.AddScoped<IChatReadService, ChatReadService>();
+builder.Services.AddScoped<IChatWriteService, ChatWriteService>();
+builder.Services.AddScoped<IMessageReadService, MessageReadService>();
+builder.Services.AddScoped<IMessageWriteService, MessageWriteService>();
+builder.Services.AddScoped<IFileReadService, FileReadService>();
+builder.Services.AddScoped<IFileWriteService, FileWriteService>();
+
+// Настройка JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret key is not configured.");
 var key = Encoding.UTF8.GetBytes(secretKey);

@@ -13,6 +13,7 @@ namespace Messenger.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Chat> Chats { get; set; }
+        public DbSet<FileMessage> FileMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,7 +48,7 @@ namespace Messenger.Data
                 entity.HasIndex(m => m.ChatId);
             });
 
-            // Конфигурация модели Chat (теперь поддерживает группы)
+            // Конфигурация модели Chat
             modelBuilder.Entity<Chat>(entity =>
             {
                 entity.HasKey(c => c.Id);
@@ -56,13 +57,11 @@ namespace Messenger.Data
                 entity.Property(c => c.IsPrivate).HasDefaultValue(true);
                 entity.Property(c => c.CreatedAt).IsRequired();
 
-                // Связь создателя чата
                 entity.HasOne(c => c.CreatedBy)
                     .WithMany()
                     .HasForeignKey(c => c.CreatedById)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                // Связь многие-ко-многим (пользователи чата)
                 entity.HasMany(c => c.Users)
                     .WithMany(u => u.Chats)
                     .UsingEntity<Dictionary<string, object>>(
@@ -71,14 +70,20 @@ namespace Messenger.Data
                         j => j.HasOne<Chat>().WithMany().HasForeignKey("ChatId")
                     );
 
-                // Связь сообщений с чатом
                 entity.HasMany(c => c.MessagesHistory)
                     .WithOne(m => m.Chat)
                     .HasForeignKey(m => m.ChatId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
 
-                // Убираем CHECK CONSTRAINT, который ограничивал MaxUsers = 2
-                // entity.ToTable(t => t.HasCheckConstraint("CK_Chat_MaxUsers", "[MaxUsers] = 2"));
+            // Конфигурация для FileMessage (без свойства User!)
+            modelBuilder.Entity<FileMessage>(entity =>
+            {
+                entity.Property(f => f.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(f => f.FilePath).IsRequired().HasMaxLength(500);
+                entity.Property(f => f.ContentType).IsRequired().HasMaxLength(100);
+
+                // НЕТ связи с User! Используется унаследованный MessageCreator
             });
 
             base.OnModelCreating(modelBuilder);

@@ -1,10 +1,7 @@
-﻿using Messenger.Data;
-using Messenger.DTOs;
-using Messenger.Models.BaseModels;
+﻿using Messenger.DTOs;
+using Messenger.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace Messenger.Controllers.BaseControllers
 {
@@ -13,71 +10,50 @@ namespace Messenger.Controllers.BaseControllers
     [Authorize]
     public class MessageController : ControllerBase
     {
-        private readonly AppDBContext _context;
+        private readonly IMessageReadService _messageReadService;
+        private readonly IMessageWriteService _messageWriteService;
+        private readonly IChatReadService _chatReadService;
+        private readonly ILogger<MessageController> _logger;
 
-        public MessageController(AppDBContext context)
+        public MessageController(
+            IMessageReadService messageReadService,
+            IMessageWriteService messageWriteService,
+            IChatReadService chatReadService,
+            ILogger<MessageController> logger)
         {
-            _context = context;
+            _messageReadService = messageReadService;
+            _messageWriteService = messageWriteService;
+            _chatReadService = chatReadService;
+            _logger = logger;
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new UnauthorizedAccessException("User ID not found in token");
+
+            return Guid.Parse(userIdClaim);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var currentUser = await _context.Users.FindAsync(currentUserId);
-
-            if (currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.SuperAdmin)
-                return Forbid("Only administrators can view all messages");
-
-            var messages = await _context.Messages
-                .Include(m => m.MessageCreator)
-                .Where(m => !m.IsDeleted)
-                .OrderByDescending(m => m.MessageCreateDate)
-                .Select(m => new MessageResponseDTO(
-                    m.MessageId,
-                    m.MessageText,
-                    m.MessageCreateDate,
-                    m.MessageLastUpdateDate,
-                    m.UserId,
-                    m.ChatId,
-                    m.MessageCreator != null ? new UserResponseDTO(
-                        m.MessageCreator.Id,
-                        m.MessageCreator.Name,
-                        m.MessageCreator.AvatarPath,
-                        m.MessageCreator.RegisterDate
-                    ) : null,
-                    m.IsDeleted
-                ))
-                .ToListAsync();
-
+            var currentUserId = GetCurrentUserId();
+            var messages = await _messageReadService.GetAllMessagesAsync(currentUserId);
             return Ok(messages);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var message = await _context.Messages
-                .Include(m => m.MessageCreator)
-                .Where(m => m.MessageId == id)
-                .Select(m => new MessageResponseDTO(
-                    m.MessageId,
-                    m.MessageText,
-                    m.MessageCreateDate,
-                    m.MessageLastUpdateDate,
-                    m.UserId,
-                    m.ChatId,
-                    m.MessageCreator != null ? new UserResponseDTO(
-                        m.MessageCreator.Id,
-                        m.MessageCreator.Name,
-                        m.MessageCreator.AvatarPath,
-                        m.MessageCreator.RegisterDate
-                    ) : null,
-                    m.IsDeleted
-                ))
-                .FirstOrDefaultAsync();
+            var currentUserId = GetCurrentUserId();
+            var message = await _messageReadService.GetMessageByIdAsync(id, currentUserId);
 
             if (message == null)
-                return NotFound($"Message with Id {id} not found");
+                return NotFound(new { message = $"Сообщение с Id {id} не найдено" });
 
             return Ok(message);
         }
@@ -88,49 +64,24 @@ namespace Messenger.Controllers.BaseControllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var currentUserId = GetCurrentUserId();
 
             if (currentUserId != messageCreateDto.UserId)
-                return Forbid("You cannot create messages on behalf of another user");
+                return Forbid("Вы не можете создавать сообщения от имени другого пользователя");
 
-            var user = await _context.Users.FindAsync(messageCreateDto.UserId);
-            if (user == null)
-                return BadRequest($"User with Id {messageCreateDto.UserId} not found");
+            var userInChat = await _chatReadService.UserInChatAsync(messageCreateDto.ChatId, currentUserId);
+            if (!userInChat)
+                return Forbid("Вы не в этом чате");
 
-            var chat = await _context.Chats.FindAsync(messageCreateDto.ChatId);
-            if (chat == null)
-                return BadRequest($"Chat with Id {messageCreateDto.ChatId} not found");
+            var message = await _messageWriteService.CreateMessageAsync(
+                messageCreateDto.UserId,
+                messageCreateDto.ChatId,
+                messageCreateDto.MessageText);
 
-            var message = new Message
-            {
-                MessageText = messageCreateDto.MessageText,
-                UserId = messageCreateDto.UserId,
-                ChatId = messageCreateDto.ChatId,
-                MessageCreateDate = DateTime.UtcNow,
-                MessageLastUpdateDate = DateTime.UtcNow,
-                IsDeleted = false
-            };
+            if (message == null)
+                return BadRequest(new { message = "Не удалось отправить сообщение" });
 
-            await _context.Messages.AddAsync(message);
-            await _context.SaveChangesAsync();
-
-            var response = new MessageResponseDTO(
-                message.MessageId,
-                message.MessageText,
-                message.MessageCreateDate,
-                message.MessageLastUpdateDate,
-                message.UserId,
-                message.ChatId,
-                new UserResponseDTO(
-                    user.Id,
-                    user.Name,
-                    user.AvatarPath,
-                    user.RegisterDate
-                ),
-                message.IsDeleted
-            );
-
-            return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, response);
+            return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
 
         [HttpPut("{id}")]
@@ -142,133 +93,49 @@ namespace Messenger.Controllers.BaseControllers
             if (id != messageUpdateDto.MessageId)
                 return BadRequest("ID mismatch");
 
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var currentUser = await _context.Users.FindAsync(currentUserId);
+            var currentUserId = GetCurrentUserId();
+            var updatedMessage = await _messageWriteService.UpdateMessageAsync(id, messageUpdateDto.MessageText, currentUserId);
 
-            var message = await _context.Messages
-                .Include(m => m.MessageCreator)
-                .FirstOrDefaultAsync(m => m.MessageId == id);
+            if (updatedMessage == null)
+                return NotFound(new { message = $"Сообщение с Id {id} не найдено или нет прав" });
 
-            if (message == null)
-                return NotFound($"Message with Id {id} not found");
-
-            if (message.IsDeleted)
-                return BadRequest("Cannot update a deleted message");
-
-            if (message.UserId != currentUserId && currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.SuperAdmin)
-                return Forbid("You can only update your own messages");
-
-            message.MessageText = messageUpdateDto.MessageText;
-            message.MessageLastUpdateDate = DateTime.UtcNow;
-
-            _context.Entry(message).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await MessageExists(id))
-                    return NotFound();
-                throw;
-            }
-
-            var response = new MessageResponseDTO(
-                message.MessageId,
-                message.MessageText,
-                message.MessageCreateDate,
-                message.MessageLastUpdateDate,
-                message.UserId,
-                message.ChatId,
-                message.MessageCreator != null ? new UserResponseDTO(
-                    message.MessageCreator.Id,
-                    message.MessageCreator.Name,
-                    message.MessageCreator.AvatarPath,
-                    message.MessageCreator.RegisterDate
-                ) : null,
-                message.IsDeleted
-            );
-
-            return Ok(response);
+            return Ok(updatedMessage);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var currentUser = await _context.Users.FindAsync(currentUserId);
+            var currentUserId = GetCurrentUserId();
+            var result = await _messageWriteService.DeleteMessageAsync(id, currentUserId);
 
-            var message = await _context.Messages
-                .FirstOrDefaultAsync(m => m.MessageId == id);
+            if (!result)
+                return NotFound(new { message = $"Сообщение с Id {id} не найдено или нет прав" });
 
-            if (message == null)
-                return NotFound($"Message with Id {id} not found");
-
-            if (message.IsDeleted)
-                return BadRequest("Message is already deleted");
-
-            if (message.UserId != currentUserId && currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.SuperAdmin)
-                return Forbid("You can only delete your own messages");
-
-            message.IsDeleted = true;
-            message.MessageLastUpdateDate = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Message successfully deleted", id = message.MessageId });
+            return Ok(new { message = "Сообщение успешно удалено", id });
         }
 
         [HttpDelete("permanent/{id}")]
         public async Task<IActionResult> PermanentDelete(Guid id)
         {
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var currentUser = await _context.Users.FindAsync(currentUserId);
+            var currentUserId = GetCurrentUserId();
+            var result = await _messageWriteService.PermanentDeleteMessageAsync(id, currentUserId);
 
-            if (currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.SuperAdmin)
-                return Forbid("Only administrators can permanently delete messages");
+            if (!result)
+                return NotFound(new { message = $"Сообщение с Id {id} не найдено или нет прав" });
 
-            var message = await _context.Messages
-                .FirstOrDefaultAsync(m => m.MessageId == id);
-
-            if (message == null)
-                return NotFound($"Message with Id {id} not found");
-
-            _context.Messages.Remove(message);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Message permanently deleted", id = id });
+            return Ok(new { message = "Сообщение полностью удалено", id });
         }
 
         [HttpPatch("restore/{id}")]
         public async Task<IActionResult> Restore(Guid id)
         {
-            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var currentUser = await _context.Users.FindAsync(currentUserId);
+            var currentUserId = GetCurrentUserId();
+            var result = await _messageWriteService.RestoreMessageAsync(id, currentUserId);
 
-            var message = await _context.Messages
-                .FirstOrDefaultAsync(m => m.MessageId == id);
+            if (!result)
+                return NotFound(new { message = $"Сообщение с Id {id} не найдено или нет прав" });
 
-            if (message == null)
-                return NotFound($"Message with Id {id} not found");
-
-            if (!message.IsDeleted)
-                return BadRequest("Message is not deleted");
-
-            if (message.UserId != currentUserId && currentUser.Role != UserRole.Admin && currentUser.Role != UserRole.SuperAdmin)
-                return Forbid("You can only restore your own messages");
-
-            message.IsDeleted = false;
-            message.MessageLastUpdateDate = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Message successfully restored", id = message.MessageId });
-        }
-
-        private async Task<bool> MessageExists(Guid id)
-        {
-            return await _context.Messages.AnyAsync(m => m.MessageId == id);
+            return Ok(new { message = "Сообщение успешно восстановлено", id });
         }
     }
 }
