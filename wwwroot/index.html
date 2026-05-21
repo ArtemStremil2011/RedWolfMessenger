@@ -215,13 +215,14 @@
             object-fit: cover;
         }
 
-        .sidebar-header img[onclick="showProfileModal()"] {
+        .sidebar-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
             border: 2px solid #dc2626;
+            background: #2a2a2a;
         }
 
         .sidebar-header h3 {
@@ -457,6 +458,7 @@
                 object-fit: cover;
                 cursor: pointer;
                 transition: opacity 0.2s;
+                background: #2a2a2a;
             }
 
                 .message-header img:hover {
@@ -573,6 +575,7 @@
             display: flex;
             gap: 12px;
             align-items: center;
+            position: relative;
         }
 
             .message-input-area input[type="text"] {
@@ -602,6 +605,21 @@
         }
 
             .attach-btn:hover {
+                background: #dc2626;
+            }
+
+        .emoji-btn {
+            background: #2a2a2a;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+            .emoji-btn:hover {
                 background: #dc2626;
             }
 
@@ -694,6 +712,7 @@
                 height: 40px;
                 border-radius: 50%;
                 object-fit: cover;
+                background: #2a2a2a;
             }
 
         .selected-members {
@@ -733,13 +752,14 @@
             margin-bottom: 16px;
         }
 
-        .profile-avatar img {
+        .profile-avatar-img {
             width: 120px;
             height: 120px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #dc2626;
             cursor: pointer;
+            background: #2a2a2a;
         }
 
         .member-list {
@@ -766,6 +786,7 @@
                 height: 36px;
                 border-radius: 50%;
                 object-fit: cover;
+                background: #2a2a2a;
             }
 
         .remove-member-btn {
@@ -788,7 +809,6 @@
             text-align: center;
         }
 
-        /* User Profile Modal */
         .user-profile-header {
             display: flex;
             align-items: center;
@@ -802,6 +822,7 @@
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #dc2626;
+            background: #2a2a2a;
         }
 
         .user-profile-info h4 {
@@ -813,6 +834,30 @@
             font-size: 12px;
             color: #6b7280;
             margin-top: 4px;
+        }
+
+        emoji-picker {
+            --background: #1a1a1a;
+            --border-radius: 16px;
+            --category-emoji-size: 24px;
+            --category-padding: 12px;
+            --category-button-color: #ef4444;
+            --input-border-radius: 12px;
+            --input-border-color: #2a2a2a;
+            --input-color: #e0e0e0;
+            --num-columns: 8;
+            --emoji-size: 28px;
+            position: absolute;
+            bottom: 70px;
+            left: 0;
+            z-index: 1000;
+            width: 350px;
+            max-height: 400px;
+            display: none;
+        }
+
+        .emoji-picker-container {
+            position: relative;
         }
 
         ::-webkit-scrollbar {
@@ -889,7 +934,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <img class="sidebar-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                <img id="sidebarAvatar" src="/api/User/avatar/default" alt="Avatar" onclick="showProfileModal()">
+                <img id="sidebarAvatar" class="sidebar-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar" onclick="showProfileModal()">
                 <h3 id="currentUserName" onclick="showProfileModal()">Loading...</h3>
                 <button class="logout-btn" onclick="logout()">🚪</button>
             </div>
@@ -913,13 +958,15 @@
             <div class="message-input-area">
                 <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
                 <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-                <input type="text" id="messageInput" placeholder="Type a message or send a file..." disabled>
+                <div class="emoji-picker-container">
+                    <button class="emoji-btn" id="emojiBtn">😊</button>
+                </div>
+                <input type="text" id="messageInput" placeholder="Type a message..." disabled>
                 <button class="send-btn" onclick="sendMessage()" id="sendBtn" disabled>➤</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal для просмотра профиля другого пользователя -->
     <div class="modal" id="userProfileModal">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -1003,26 +1050,22 @@
                 <h3 style="color: #ef4444;">My Profile</h3>
                 <button onclick="closeProfileModal()" style="background: none; border: none; color: #6b7280; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
-
             <div class="profile-avatar">
                 <img class="profile-logo" src="/logo.png" alt="Red Wolf" onerror="this.style.display='none'">
-                <img id="profileAvatar" src="/api/User/avatar/default" alt="Avatar" onclick="document.getElementById('avatarFileInput').click()">
+                <img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar" onclick="document.getElementById('avatarFileInput').click()">
                 <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="uploadAvatarFromProfile(this)">
                 <div style="margin-top: 12px;">
                     <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="deleteAvatar()">Remove Avatar</button>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Name</label>
                 <input type="text" id="profileName" placeholder="Your name">
             </div>
-
             <div class="form-group">
                 <label>New Password (leave empty to keep current)</label>
                 <input type="password" id="profileNewPassword" placeholder="New password">
             </div>
-
             <div class="modal-buttons">
                 <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
                 <button class="btn btn-secondary" onclick="closeProfileModal()">Cancel</button>
@@ -1044,6 +1087,44 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script type="module">
+        import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
+
+        window.initEmojiPicker = () => {
+            const container = document.querySelector('.emoji-picker-container');
+            if (!container) return;
+
+            const picker = document.createElement('emoji-picker');
+            picker.id = 'emojiPicker';
+
+            picker.addEventListener('emoji-click', (event) => {
+                const input = document.getElementById('messageInput');
+                if (input) {
+                    input.value += event.detail.unicode;
+                    picker.style.display = 'none';
+                    input.focus();
+                }
+            });
+
+            container.appendChild(picker);
+
+            const emojiBtn = document.getElementById('emojiBtn');
+            if (emojiBtn) {
+                emojiBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (picker) {
+                        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+                    }
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (container && !container.contains(e.target) && picker && picker.style.display === 'block') {
+                    picker.style.display = 'none';
+                }
+            });
+        };
+    </script>
     <script>
         let currentUser = null;
         let currentChat = null;
@@ -1077,36 +1158,29 @@
             const phone = document.getElementById('regPhone').value.trim();
             const name = document.getElementById('regName').value.trim();
             const password = document.getElementById('regPassword').value;
-
             if (!phone || !name || !password) {
                 alert('Please fill all fields');
                 return;
             }
-
             if (password.length < 6) {
                 alert('Password must be at least 6 characters');
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/request-verification`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phoneNumber: phone, name, password })
                 });
-
                 if (!response.ok) {
                     const error = await response.text();
                     throw new Error(error);
                 }
-
                 const data = await response.json();
                 tempPhoneNumber = data.phoneNumber;
-
                 document.getElementById('registerForm').style.display = 'none';
                 document.getElementById('verifyForm').style.display = 'flex';
                 document.getElementById('verifyCode').value = data.code || '';
-
                 alert(`Code sent to ${phone}`);
             } catch (error) {
                 alert('Failed to send code: ' + error.message);
@@ -1115,31 +1189,25 @@
 
         async function verifyAndRegister() {
             const code = document.getElementById('verifyCode').value.trim();
-
             if (!code || code.length !== 6) {
                 alert('Please enter 6-digit code');
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/verify-and-register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phoneNumber: tempPhoneNumber, code: code })
                 });
-
                 if (!response.ok) {
                     const error = await response.text();
                     throw new Error(error);
                 }
-
                 const data = await response.json();
-
                 token = data.token;
                 currentUser = { id: data.userId };
                 localStorage.setItem('token', token);
                 localStorage.setItem('userId', data.userId);
-
                 await initApp();
             } catch (error) {
                 alert('Verification failed: ' + error.message);
@@ -1154,30 +1222,25 @@
         async function handleLogin() {
             const login = document.getElementById('loginLogin').value;
             const password = document.getElementById('loginPassword').value;
-
             if (!login || !password) {
                 alert('Please fill all fields');
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ login, password })
                 });
-
                 if (!response.ok) {
                     const error = await response.text();
                     throw new Error(error);
                 }
-
                 const data = await response.json();
                 token = data.token;
                 currentUser = { id: data.userId };
                 localStorage.setItem('token', token);
                 localStorage.setItem('userId', data.userId);
-
                 await initApp();
             } catch (error) {
                 alert('Login failed: ' + error.message);
@@ -1191,13 +1254,14 @@
                 if (token && userId) currentUser = { id: userId };
                 else return;
             }
-
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').classList.add('active');
-
             await loadUserProfile();
             await loadChats();
             await initSignalR();
+            if (typeof window.initEmojiPicker === 'function') {
+                window.initEmojiPicker();
+            }
         }
 
         async function loadUserProfile() {
@@ -1209,19 +1273,15 @@
                     const user = await response.json();
                     currentUser = { ...currentUser, ...user };
                     document.getElementById('currentUserName').textContent = user.name;
-                    updateAvatarImages();
+                    if (user.avatarPath && user.avatarPath !== '/avatars/default-avatar.png') {
+                        const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
+                        document.getElementById('sidebarAvatar').src = avatarUrl;
+                        document.getElementById('profileAvatar').src = avatarUrl;
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load profile:', error);
             }
-        }
-
-        function updateAvatarImages() {
-            const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
-            const sidebarAvatar = document.getElementById('sidebarAvatar');
-            const profileAvatar = document.getElementById('profileAvatar');
-            if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
-            if (profileAvatar) profileAvatar.src = avatarUrl;
         }
 
         async function loadChats() {
@@ -1244,22 +1304,17 @@
                 container.innerHTML = '<div class="empty-state">No chats yet. Click +New Chat to start!</div>';
                 return;
             }
-
             container.innerHTML = chats.map(chat => {
                 const isGroup = chat.maxUsers > 2 || (chat.users && chat.users.length > 2);
                 const otherUser = chat.otherUser;
-                const avatarUrl = otherUser?.id
-                    ? `${API_BASE}/User/avatar/${otherUser.id}`
-                    : `${API_BASE}/User/avatar/default`;
+                const avatarUrl = otherUser?.id ? `${API_BASE}/User/avatar/${otherUser.id}` : null;
                 const preview = isGroup ? `${chat.users?.length || 0} members` : (chat.otherUser?.name || chat.chatName);
                 const isOnline = otherUser?.id ? onlineUsers.get(otherUser.id) === true : false;
-
                 return `
                         <div class="chat-item" data-user-id="${otherUser?.id || ''}" onclick="selectChat('${chat.id}', '${escapeHtml(chat.chatName)}')">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div class="chat-avatar-container">
-                                    <img src="${avatarUrl}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #2a2a2a;"
-                                         onerror="this.src='${API_BASE}/User/avatar/default'">
+                                    <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #2a2a2a;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
                                     ${!isGroup ? `<div class="online-dot ${isOnline ? 'online' : 'offline'}"></div>` : ''}
                                 </div>
                                 <div>
@@ -1280,9 +1335,7 @@
                 const response = await fetch(`${API_BASE}/Chat/${chatId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (response.ok) {
-                    return await response.json();
-                }
+                if (response.ok) return await response.json();
             } catch (error) {
                 console.error('Failed to get chat info:', error);
             }
@@ -1292,20 +1345,13 @@
         async function selectChat(chatId, chatName) {
             currentChat = { id: chatId, name: chatName };
             currentChatInfo = await getChatInfo(chatId);
-
             const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users && currentChatInfo.users.length > 2));
             const otherUserId = !isGroup && currentChatInfo?.otherUser?.id;
-
             let statusText = '';
             if (!isGroup && otherUserId) {
                 const isOnline = onlineUsers.get(otherUserId) === true;
-                if (isOnline) {
-                    statusText = '🟢 Online';
-                } else {
-                    statusText = '⚫ Offline';
-                }
+                statusText = isOnline ? '🟢 Online' : '⚫ Offline';
             }
-
             document.getElementById('chatHeader').innerHTML = `
                     <div class="chat-header-top">
                         <div class="chat-header-info">
@@ -1318,12 +1364,9 @@
                         <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
                     </div>
                 `;
-
             document.getElementById('messageInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
-
             await loadMessages(chatId);
-
             if (connection) {
                 await connection.invoke('JoinChat', chatId, currentUser.id, currentUser.name);
             }
@@ -1334,7 +1377,6 @@
                 const response = await fetch(`${API_BASE}/Chat/${chatId}/messages?page=1&pageSize=100`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const data = await response.json();
                     renderMessages(data.messages);
@@ -1364,20 +1406,18 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        async function showUserProfile(userId, userName) {
+        async function showUserProfile(userId) {
             try {
                 const response = await fetch(`${API_BASE}/Chat/user-profile/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const user = await response.json();
                     const avatarUrl = `${API_BASE}/User/avatar/${userId}?t=${Date.now()}`;
                     const registerDate = new Date(user.registerDate).toLocaleDateString('ru-RU');
-
                     document.getElementById('userProfileContent').innerHTML = `
                             <div class="user-profile-header">
-                                <img class="user-profile-avatar" src="${avatarUrl}" alt="Avatar" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <img class="user-profile-avatar" src="${avatarUrl}" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
                                 <div class="user-profile-info">
                                     <h4>${escapeHtml(user.name)}</h4>
                                     <p>📅 Joined ${registerDate}</p>
@@ -1399,27 +1439,47 @@
             document.getElementById('userProfileModal').classList.remove('active');
         }
 
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.createElement('div');
+                toast.textContent = 'Copied!';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.background = '#22c55e';
+                toast.style.color = 'white';
+                toast.style.padding = '8px 16px';
+                toast.style.borderRadius = '8px';
+                toast.style.zIndex = '9999';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
         function renderMessages(messages) {
             const container = document.getElementById('messagesContainer');
-
             if (!messages || messages.length === 0) {
                 container.innerHTML = '<div class="empty-state">No messages yet. Send the first message!</div>';
                 return;
             }
 
-            const messagesHtml = messages.map(msg => {
+            const sortedMessages = [...messages].sort((a, b) =>
+                new Date(a.messageCreateDate) - new Date(b.messageCreateDate)
+            );
+
+            const messagesHtml = sortedMessages.map(msg => {
                 if (msg.fileName) {
                     const isOwn = msg.userId === currentUser.id;
-                    const avatarUrl = msg.user?.id
-                        ? `${API_BASE}/User/avatar/${msg.userId}`
-                        : `${API_BASE}/User/avatar/default`;
+                    const avatarUrl = msg.user?.id ? `${API_BASE}/User/avatar/${msg.userId}` : null;
                     const icon = getFileIcon(msg.fileName);
-
                     return `
                             <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
                                 <div class="message-header">
-                                    <img src="${avatarUrl}" style="cursor: pointer;" onclick="showUserProfile('${msg.userId}', '${escapeHtml(msg.user?.name || 'Unknown')}')" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                    <span class="message-sender" onclick="showUserProfile('${msg.userId}', '${escapeHtml(msg.user?.name || 'Unknown')}')">${escapeHtml(msg.user?.name || 'Unknown')}</span>
+                                    <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; background: #2a2a2a;" onclick="showUserProfile('${msg.userId}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
+                                    <span class="message-sender" onclick="showUserProfile('${msg.userId}')">${escapeHtml(msg.user?.name || 'Unknown')}</span>
                                 </div>
                                 <div class="message-file" onclick="downloadFile('${msg.messageId}', '${escapeHtml(msg.fileName)}')">
                                     <div class="file-icon">${icon}</div>
@@ -1430,49 +1490,40 @@
                                 </div>
                                 ${msg.caption ? `<div class="message-caption">${escapeHtml(msg.caption)}</div>` : ''}
                                 <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                                ${isOwn ? `
-                                    <div class="message-actions">
-                                        <button onclick="deleteFileMessage('${msg.messageId}')">🗑️ Delete</button>
-                                    </div>
-                                ` : ''}
+                                ${isOwn ? `<div class="message-actions"><button onclick="deleteFileMessage('${msg.messageId}')">🗑️ Delete</button></div>` : ''}
                             </div>
                         `;
                 }
-
                 const isSystem = msg.isSystemMessage;
-                const avatarUrl = msg.messageCreator?.id && !isSystem
-                    ? `${API_BASE}/User/avatar/${msg.userId}`
-                    : `${API_BASE}/User/avatar/default`;
+                const avatarUrl = msg.messageCreator?.id && !isSystem ? `${API_BASE}/User/avatar/${msg.userId}` : null;
                 const isOwn = msg.userId === currentUser.id;
                 const edited = msg.messageCreateDate !== msg.messageLastUpdateDate;
-
                 if (isSystem) {
-                    return `
-                            <div class="message system">
-                                <div class="message-content">📢 ${escapeHtml(msg.messageText)}</div>
-                                <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                            </div>
-                        `;
+                    return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div></div>`;
                 }
-
                 return `
                         <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
                             <div class="message-header">
-                                <img src="${avatarUrl}" style="cursor: pointer;" onclick="showUserProfile('${msg.userId}', '${escapeHtml(msg.messageCreator?.name || 'Unknown')}')" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                <span class="message-sender" onclick="showUserProfile('${msg.userId}', '${escapeHtml(msg.messageCreator?.name || 'Unknown')}')">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
+                                <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; background: #2a2a2a;" onclick="showUserProfile('${msg.userId}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
+                                <span class="message-sender" onclick="showUserProfile('${msg.userId}')">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
                             </div>
                             <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
                             <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
                             ${isOwn && !msg.isDeleted ? `
                                 <div class="message-actions">
+                                    <button onclick="copyToClipboard('${escapeHtml(msg.messageText).replace(/'/g, "\\'")}')">📋 Copy</button>
                                     <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
                                     <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
+                                </div>
+                            ` : ''}
+                            ${!isOwn && !msg.isDeleted ? `
+                                <div class="message-actions">
+                                    <button onclick="copyToClipboard('${escapeHtml(msg.messageText).replace(/'/g, "\\'")}')">📋 Copy</button>
                                 </div>
                             ` : ''}
                         </div>
                     `;
             }).join('');
-
             container.innerHTML = messagesHtml;
             container.scrollTop = container.scrollHeight;
         }
@@ -1480,27 +1531,16 @@
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-
             if (!text || !currentChat || !currentUser) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Message`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        messageText: text,
-                        userId: currentUser.id,
-                        chatId: currentChat.id
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ messageText: text, userId: currentUser.id, chatId: currentChat.id })
                 });
-
                 if (response.ok) {
                     input.value = '';
                     await loadMessages(currentChat.id);
-
                     if (connection) {
                         await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, text);
                     }
@@ -1518,26 +1558,20 @@
             const input = document.getElementById('fileInput');
             const file = input.files[0];
             if (!file || !currentChat) return;
-
             if (file.size > 50 * 1024 * 1024) {
                 alert('File too large! Max 50MB');
                 input.value = '';
                 return;
             }
-
             const formData = new FormData();
             formData.append('file', file);
             formData.append('chatId', currentChat.id);
-
             try {
                 const response = await fetch(`${API_BASE}/File/upload`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-
                 if (response.ok) {
                     input.value = '';
                     await loadMessages(currentChat.id);
@@ -1559,7 +1593,6 @@
                 const response = await fetch(`${API_BASE}/File/download/${messageId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
@@ -1581,13 +1614,11 @@
 
         async function deleteFileMessage(messageId) {
             if (!confirm('Delete this file?')) return;
-
             try {
                 const response = await fetch(`${API_BASE}/File/${messageId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     await loadMessages(currentChat.id);
                 } else {
@@ -1609,20 +1640,12 @@
         async function saveEditedMessage() {
             const newText = document.getElementById('editMessageText').value.trim();
             if (!newText || !editingMessageId) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        messageId: editingMessageId,
-                        messageText: newText
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ messageId: editingMessageId, messageText: newText })
                 });
-
                 if (response.ok) {
                     closeEditMessageModal();
                     await loadMessages(currentChat.id);
@@ -1638,13 +1661,11 @@
 
         async function deleteMessage(messageId) {
             if (!confirm('Delete this message?')) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Message/${messageId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     await loadMessages(currentChat.id);
                 } else {
@@ -1659,12 +1680,9 @@
 
         async function showEditChatModal() {
             if (!currentChatInfo) return;
-
             const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
-
             document.getElementById('editChatTitle').textContent = isGroup ? 'Edit Group' : 'Edit Chat';
             document.getElementById('editChatName').value = currentChatInfo.chatName;
-
             if (isGroup) {
                 document.getElementById('groupMembersSection').style.display = 'block';
                 document.getElementById('leaveDeleteBtn').textContent = 'Leave Group';
@@ -1673,23 +1691,19 @@
                 document.getElementById('groupMembersSection').style.display = 'none';
                 document.getElementById('leaveDeleteBtn').textContent = 'Delete Chat';
             }
-
             document.getElementById('editChatModal').classList.add('active');
         }
 
         async function renderMembersList() {
             const members = currentChatInfo.users || [];
             const container = document.getElementById('membersList');
-
             container.innerHTML = members.map(member => `
                     <div class="member-item">
                         <div class="member-info">
-                            <img src="${API_BASE}/User/avatar/${member.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                            <img src="${API_BASE}/User/avatar/${member.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
                             <span>${escapeHtml(member.name)}${member.id === currentChatInfo.createdById ? ' 👑' : ''}</span>
                         </div>
-                        ${member.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `
-                            <button class="remove-member-btn" onclick="removeMember('${member.id}', '${escapeHtml(member.name)}')">Remove</button>
-                        ` : ''}
+                        ${member.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `<button class="remove-member-btn" onclick="removeMember('${member.id}', '${escapeHtml(member.name)}')">Remove</button>` : ''}
                     </div>
                 `).join('');
         }
@@ -1697,17 +1711,14 @@
         async function searchAddMember() {
             const query = document.getElementById('addMemberSearch').value.trim();
             const resultsDiv = document.getElementById('addMemberResults');
-
             if (query.length < 2) {
                 resultsDiv.innerHTML = '';
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/all`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const users = await response.json();
                     const existingMemberIds = currentChatInfo.users.map(u => u.id);
@@ -1716,15 +1727,13 @@
                         u.id !== currentUser.id &&
                         !existingMemberIds.includes(u.id)
                     );
-
                     if (filtered.length === 0) {
                         resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
                         return;
                     }
-
                     resultsDiv.innerHTML = filtered.map(user => `
                             <div class="user-search-result" onclick="addMemberToGroup('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
                                 <div><strong>${escapeHtml(user.name)}</strong></div>
                             </div>
                         `).join('');
@@ -1739,16 +1748,9 @@
             try {
                 const response = await fetch(`${API_BASE}/Chat/add-user`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        chatId: currentChat.id,
-                        userId: userId
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ chatId: currentChat.id, userId: userId })
                 });
-
                 if (response.ok) {
                     currentChatInfo = await getChatInfo(currentChat.id);
                     await renderMembersList();
@@ -1778,20 +1780,12 @@
 
         async function removeMember(userId, userName) {
             if (!confirm(`Remove ${userName} from group?`)) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Chat/remove-user`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        chatId: currentChat.id,
-                        userId: userId
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ chatId: currentChat.id, userId: userId })
                 });
-
                 if (response.ok) {
                     currentChatInfo = await getChatInfo(currentChat.id);
                     if (currentChatInfo) {
@@ -1830,18 +1824,13 @@
 
         async function saveChatEdit() {
             const newName = document.getElementById('editChatName').value.trim();
-
             if (newName && newName !== currentChatInfo.chatName) {
                 try {
                     const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ chatName: newName })
                     });
-
                     if (response.ok) {
                         currentChat.name = newName;
                         currentChatInfo.chatName = newName;
@@ -1867,26 +1856,17 @@
                     alert('Failed to rename');
                 }
             }
-
             closeEditChatModal();
         }
 
         async function leaveGroup() {
             if (!confirm('Are you sure you want to leave this group?')) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Chat/remove-user`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        chatId: currentChat.id,
-                        userId: currentUser.id
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ chatId: currentChat.id, userId: currentUser.id })
                 });
-
                 if (response.ok) {
                     closeEditChatModal();
                     currentChat = null;
@@ -1909,13 +1889,11 @@
 
         async function deleteChat() {
             if (!confirm('Delete this chat?')) return;
-
             try {
                 const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     closeEditChatModal();
                     currentChat = null;
@@ -1937,11 +1915,8 @@
 
         function leaveOrDeleteChat() {
             const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
-            if (isGroup) {
-                leaveGroup();
-            } else {
-                deleteChat();
-            }
+            if (isGroup) leaveGroup();
+            else deleteChat();
         }
 
         function closeEditChatModal() {
@@ -1953,36 +1928,25 @@
         async function searchUsers() {
             const query = document.getElementById('searchUserInput').value.trim();
             const resultsDiv = document.getElementById('searchResults');
-
             if (query.length < 2) {
                 resultsDiv.innerHTML = '<div class="empty-state">Enter at least 2 characters</div>';
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/all`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const users = await response.json();
-                    const filtered = users.filter(u =>
-                        u.name.toLowerCase().includes(query.toLowerCase()) &&
-                        u.id !== currentUser.id
-                    );
-
+                    const filtered = users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()) && u.id !== currentUser.id);
                     if (filtered.length === 0) {
                         resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
                         return;
                     }
-
                     resultsDiv.innerHTML = filtered.map(user => `
                             <div class="user-search-result" onclick="createPrivateChat('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                <div>
-                                    <strong>${escapeHtml(user.name)}</strong>
-                                    <div style="font-size: 12px; color: #6b7280;">Click to start chat</div>
-                                </div>
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
+                                <div><strong>${escapeHtml(user.name)}</strong><div style="font-size: 12px; color: #6b7280;">Click to start chat</div></div>
                             </div>
                         `).join('');
                 }
@@ -1996,16 +1960,9 @@
             try {
                 const response = await fetch(`${API_BASE}/Chat`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        memberIds: [currentUser.id, userId],
-                        maxUsers: 2
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ memberIds: [currentUser.id, userId], maxUsers: 2 })
                 });
-
                 if (response.ok) {
                     const newChat = await response.json();
                     alert(`Chat with ${userName} created!`);
@@ -2039,17 +1996,14 @@
         async function searchGroupUsers() {
             const query = document.getElementById('groupSearchInput').value.trim();
             const resultsDiv = document.getElementById('groupSearchResults');
-
             if (query.length < 2) {
                 resultsDiv.innerHTML = '';
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/all`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
                     const users = await response.json();
                     const filtered = users.filter(u =>
@@ -2057,18 +2011,14 @@
                         u.id !== currentUser.id &&
                         !selectedGroupMembers.some(m => m.id === u.id)
                     );
-
                     if (filtered.length === 0) {
                         resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
                         return;
                     }
-
                     resultsDiv.innerHTML = filtered.map(user => `
                             <div class="user-search-result" onclick="addGroupMember('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='${API_BASE}/User/avatar/default'">
-                                <div>
-                                    <strong>${escapeHtml(user.name)}</strong>
-                                </div>
+                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
+                                <div><strong>${escapeHtml(user.name)}</strong></div>
                             </div>
                         `).join('');
                 }
@@ -2097,45 +2047,27 @@
                 container.innerHTML = '<div class="empty-state" style="padding: 12px;">No members selected yet</div>';
                 return;
             }
-
-            container.innerHTML = selectedGroupMembers.map(member => `
-                    <div class="member-tag">
-                        ${escapeHtml(member.name)}
-                        <button onclick="removeGroupMember('${member.id}')">×</button>
-                    </div>
-                `).join('');
+            container.innerHTML = selectedGroupMembers.map(member => `<div class="member-tag">${escapeHtml(member.name)}<button onclick="removeGroupMember('${member.id}')">×</button></div>`).join('');
         }
 
         async function createGroup() {
             const groupName = document.getElementById('groupName').value.trim();
             const maxUsers = parseInt(document.getElementById('groupMaxUsers').value);
-
             if (!groupName) {
                 alert('Please enter group name');
                 return;
             }
-
             if (selectedGroupMembers.length === 0) {
                 alert('Please select at least one member');
                 return;
             }
-
             const memberIds = [currentUser.id, ...selectedGroupMembers.map(m => m.id)];
-
             try {
                 const response = await fetch(`${API_BASE}/Chat`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        memberIds: memberIds,
-                        maxUsers: maxUsers,
-                        chatName: groupName
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ memberIds: memberIds, maxUsers: maxUsers, chatName: groupName })
                 });
-
                 if (response.ok) {
                     const newChat = await response.json();
                     alert(`Group "${groupName}" created!`);
@@ -2175,7 +2107,9 @@
                 if (response.ok) {
                     const user = await response.json();
                     document.getElementById('profileName').value = user.name;
-                    document.getElementById('profileAvatar').src = `${API_BASE}/User/avatar/${user.id}?t=${Date.now()}`;
+                    if (user.avatarPath && user.avatarPath !== '/avatars/default-avatar.png') {
+                        document.getElementById('profileAvatar').src = `${API_BASE}/User/avatar/${user.id}?t=${Date.now()}`;
+                    }
                     document.getElementById('profileNewPassword').value = '';
                     document.getElementById('profileModal').classList.add('active');
                 }
@@ -2192,26 +2126,19 @@
         async function updateProfile() {
             const newName = document.getElementById('profileName').value.trim();
             const newPassword = document.getElementById('profileNewPassword').value;
-
             const updateData = {};
             if (newName) updateData.name = newName;
             if (newPassword) updateData.newPassword = newPassword;
-
             if (Object.keys(updateData).length === 0) {
                 closeProfileModal();
                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE}/User/update-profile`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(updateData)
                 });
-
                 if (response.ok) {
                     const user = await response.json();
                     currentUser.name = user.name;
@@ -2231,24 +2158,23 @@
         async function uploadAvatarFromProfile(input) {
             const file = input.files[0];
             if (!file) return;
-
             if (file.size > 5 * 1024 * 1024) {
                 alert('File too large! Max 5MB');
                 return;
             }
-
             const formData = new FormData();
             formData.append('file', file);
-
             try {
                 const response = await fetch(`${API_BASE}/User/upload-avatar`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-
                 if (response.ok) {
-                    updateAvatarImages();
+                    const data = await response.json();
+                    const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
+                    document.getElementById('sidebarAvatar').src = avatarUrl;
+                    document.getElementById('profileAvatar').src = avatarUrl;
                     await loadChats();
                     alert('Avatar updated!');
                 } else {
@@ -2263,15 +2189,14 @@
 
         async function deleteAvatar() {
             if (!confirm('Remove your avatar? It will be replaced with default.')) return;
-
             try {
                 const response = await fetch(`${API_BASE}/User/avatar`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
-                    updateAvatarImages();
+                    document.getElementById('sidebarAvatar').src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E';
+                    document.getElementById('profileAvatar').src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E';
                     await loadChats();
                     alert('Avatar removed!');
                 } else {
@@ -2286,53 +2211,19 @@
 
         async function initSignalR() {
             connection = new signalR.HubConnectionBuilder()
-                .withUrl("/messengerHub", {
-                    accessTokenFactory: () => token
-                })
+                .withUrl("/messengerHub", { accessTokenFactory: () => token })
                 .withAutomaticReconnect()
                 .build();
-
             connection.on("ReceiveMessage", () => {
-                if (currentChat) {
-                    loadMessages(currentChat.id);
-                }
+                if (currentChat) loadMessages(currentChat.id);
             });
-
             connection.on("UserOnline", (userId, isOnline) => {
                 onlineUsers.set(userId, isOnline);
-                updateChatListStatus(userId, isOnline);
-                updateCurrentChatStatus(userId, isOnline);
-            });
-
-            connection.on("UserTyping", (userId, userName) => {
-                if (currentChat && userId !== currentUser.id) {
-                    const typingDiv = document.getElementById('typingIndicator');
-                    typingDiv.textContent = `${userName} is typing...`;
-                    typingDiv.style.display = 'block';
-                    clearTimeout(typingTimeout);
-                    typingTimeout = setTimeout(() => {
-                        typingDiv.style.display = 'none';
-                    }, 2000);
-                }
-            });
-
-            connection.on("UserStoppedTyping", (userId) => {
-                if (userId !== currentUser.id) {
-                    document.getElementById('typingIndicator').style.display = 'none';
-                }
-            });
-
-            function updateChatListStatus(userId, isOnline) {
                 const chatItem = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
                 if (chatItem) {
                     const dot = chatItem.querySelector('.online-dot');
-                    if (dot) {
-                        dot.className = `online-dot ${isOnline ? 'online' : 'offline'}`;
-                    }
+                    if (dot) dot.className = `online-dot ${isOnline ? 'online' : 'offline'}`;
                 }
-            }
-
-            function updateCurrentChatStatus(userId, isOnline) {
                 if (currentChatInfo && currentChatInfo.otherUser?.id === userId) {
                     const statusDiv = document.querySelector('.chat-header-status');
                     if (statusDiv) {
@@ -2345,15 +2236,23 @@
                         }
                     }
                 }
-            }
-
+            });
+            connection.on("UserTyping", (userId, userName) => {
+                if (currentChat && userId !== currentUser.id) {
+                    const typingDiv = document.getElementById('typingIndicator');
+                    typingDiv.textContent = `${userName} is typing...`;
+                    typingDiv.style.display = 'block';
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => typingDiv.style.display = 'none', 2000);
+                }
+            });
+            connection.on("UserStoppedTyping", (userId) => {
+                if (userId !== currentUser.id) document.getElementById('typingIndicator').style.display = 'none';
+            });
             try {
                 await connection.start();
                 console.log("SignalR connected");
-
-                if (currentChat) {
-                    await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name);
-                }
+                if (currentChat) await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name);
             } catch (error) {
                 console.error("SignalR connection failed:", error);
             }
@@ -2367,11 +2266,7 @@
             currentChat = null;
             currentChatInfo = null;
             onlineUsers.clear();
-
-            if (connection) {
-                connection.stop();
-            }
-
+            if (connection) connection.stop();
             document.getElementById('authContainer').style.display = 'flex';
             document.getElementById('appContainer').classList.remove('active');
             document.getElementById('loginLogin').value = '';
@@ -2389,9 +2284,7 @@
             if (connection && currentChat && document.getElementById('messageInput').value.length > 0) {
                 connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name);
                 clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => {
-                    connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id);
-                }, 1000);
+                typingTimeout = setTimeout(() => connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id), 1000);
             }
         }
 
