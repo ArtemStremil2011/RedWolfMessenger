@@ -1,10 +1,7 @@
-﻿using Messenger.DTOs;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Messenger.DTOs
 {
-    // DTOs/MessageResponseDTO.cs - верни обратно без IsSystemMessage
-    // DTOs/MessageResponseDTO.cs
     public record MessageResponseDTO(
         Guid MessageId,
         string? MessageText,
@@ -14,7 +11,10 @@ namespace Messenger.DTOs
         Guid ChatId,
         UserResponseDTO? MessageCreator,
         bool IsDeleted,
-        bool IsSystemMessage  // ← убедись, что это поле есть
+        bool IsSystemMessage,
+        string? FileName = null,
+        long? FileSize = null,
+        string? ContentType = null
     );
 
     public record MessageCreateDTO(

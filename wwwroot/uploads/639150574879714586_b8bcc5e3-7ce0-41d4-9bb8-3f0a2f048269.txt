@@ -1,0 +1,3 @@
+мост: lt --port 5000 --subdomain mytelegrambot
+вебхук: curl -X POST "https://api.telegram.org/bot8269579124:AAHneGoIOlAlyC1_RXMk_W7yTBSFEDN3ouk/setWebhook?url=https://mytelegrambot.loca.lt/api/update"
+юз бота: @ASSchedulerbot

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Red Wolf Messenger</title>
     <style>
         * {
@@ -12,29 +12,29 @@
         }
 
         body {
-            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0a0a;
             min-height: 100vh;
             color: #e0e0e0;
         }
 
+        /* Auth */
         .auth-container {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
         }
 
         .auth-card {
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
+            background: #141414;
+            border-radius: 28px;
             padding: 40px;
             width: 100%;
             max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(220, 38, 38, 0.2);
+            border: 1px solid #2a2a2a;
         }
 
         .logo {
@@ -42,16 +42,8 @@
             margin-bottom: 32px;
         }
 
-            .logo img {
-                width: 100px;
-                height: 100px;
-                object-fit: contain;
-                filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.5));
-            }
-
             .logo h1 {
-                font-size: 28px;
-                margin-top: 16px;
+                font-size: 32px;
                 background: linear-gradient(135deg, #ef4444, #dc2626);
                 -webkit-background-clip: text;
                 background-clip: text;
@@ -67,7 +59,7 @@
         .auth-tabs {
             display: flex;
             gap: 12px;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             border-bottom: 1px solid #2a2a2a;
             padding-bottom: 12px;
         }
@@ -81,8 +73,7 @@
             font-weight: 600;
             cursor: pointer;
             color: #6b7280;
-            transition: all 0.2s;
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
             .auth-tab.active {
@@ -109,39 +100,35 @@
             }
 
             .form-group input, .form-group textarea {
-                background: #1a1a1a;
+                background: #1f1f1f;
                 border: 1px solid #2a2a2a;
-                border-radius: 12px;
+                border-radius: 14px;
                 padding: 12px 16px;
                 color: #e0e0e0;
                 font-size: 14px;
-                transition: all 0.2s;
             }
 
                 .form-group input:focus, .form-group textarea:focus {
                     outline: none;
                     border-color: #dc2626;
-                    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
                 }
 
         .btn {
             padding: 12px 24px;
-            border-radius: 12px;
+            border-radius: 14px;
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
-            transition: all 0.2s;
             border: none;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            background: #dc2626;
             color: white;
         }
 
             .btn-primary:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 10px 20px -5px rgba(220, 38, 38, 0.4);
+                background: #b91c1c;
             }
 
         .btn-secondary {
@@ -172,16 +159,7 @@
             text-align: center;
         }
 
-        .success-message {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            border-radius: 12px;
-            padding: 12px;
-            color: #22c55e;
-            font-size: 14px;
-            text-align: center;
-        }
-
+        /* App */
         .app-container {
             display: none;
             height: 100vh;
@@ -192,12 +170,28 @@
                 display: flex;
             }
 
+        .menu-btn {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1001;
+            background: #dc2626;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
         .sidebar {
             width: 320px;
             background: #0f0f0f;
             border-right: 1px solid #2a2a2a;
             display: flex;
             flex-direction: column;
+            transition: left 0.3s ease;
         }
 
         .sidebar-header {
@@ -208,21 +202,13 @@
             gap: 12px;
         }
 
-        .sidebar-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: cover;
-        }
-
         .sidebar-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
             border: 2px solid #dc2626;
-            background: #2a2a2a;
         }
 
         .sidebar-header h3 {
@@ -231,56 +217,33 @@
             cursor: pointer;
         }
 
-            .sidebar-header h3:hover {
-                color: #ef4444;
-            }
-
         .logout-btn {
             background: none;
             border: none;
             color: #6b7280;
             cursor: pointer;
-            font-size: 20px;
-            transition: color 0.2s;
+            font-size: 22px;
         }
 
-            .logout-btn:hover {
-                color: #ef4444;
-            }
-
-        .btn-new-chat {
+        .btn-new-chat, .btn-create-group {
             margin: 12px;
             padding: 12px;
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            border: none;
-            border-radius: 12px;
-            color: white;
+            border-radius: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-            .btn-new-chat:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
-            }
+        .btn-new-chat {
+            background: #dc2626;
+            border: none;
+            color: white;
+        }
 
         .btn-create-group {
-            margin: 0 12px 12px 12px;
-            padding: 12px;
-            background: #2a2a2a;
+            background: #1f1f1f;
             border: 1px solid #dc2626;
-            border-radius: 12px;
             color: #e0e0e0;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
         }
-
-            .btn-create-group:hover {
-                background: #dc2626;
-                color: white;
-            }
 
         .chats-list {
             flex: 1;
@@ -290,21 +253,15 @@
 
         .chat-item {
             padding: 12px;
-            border-radius: 12px;
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.2s;
             margin-bottom: 8px;
             background: #141414;
-            border: 1px solid #202020;
+            border: 1px solid #252525;
         }
 
             .chat-item:hover {
                 background: #1a1a1a;
-                border-color: #dc2626;
-            }
-
-            .chat-item.active {
-                background: linear-gradient(135deg, #1a0a0a, #141414);
                 border-color: #dc2626;
             }
 
@@ -332,18 +289,9 @@
 
         .chat-name {
             font-weight: 600;
-            margin-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 6px;
-        }
-
-        .chat-preview {
-            font-size: 12px;
-            color: #6b7280;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .chat-badge {
@@ -353,6 +301,12 @@
             border-radius: 10px;
         }
 
+        .chat-preview {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* Chat Area */
         .chat-area {
             flex: 1;
             display: flex;
@@ -361,7 +315,7 @@
         }
 
         .chat-header {
-            padding: 20px;
+            padding: 16px 20px;
             border-bottom: 1px solid #2a2a2a;
             background: #0f0f0f;
         }
@@ -372,50 +326,22 @@
             align-items: center;
         }
 
-        .chat-header-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-header-logo {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
         .chat-header h2 {
             font-size: 18px;
             color: #ef4444;
         }
 
-        .chat-header-status {
-            font-size: 11px;
-            color: #6b7280;
-            margin-top: 2px;
-        }
-
-            .chat-header-status.online {
-                color: #22c55e;
-            }
-
         .edit-chat-btn {
             background: #2a2a2a;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 6px 12px;
             cursor: pointer;
             font-size: 12px;
             color: #e0e0e0;
-            transition: all 0.2s;
         }
 
-            .edit-chat-btn:hover {
-                background: #dc2626;
-                color: white;
-            }
-
+        /* Messages */
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -428,8 +354,8 @@
         .message {
             display: flex;
             flex-direction: column;
-            max-width: 70%;
-            position: relative;
+            max-width: 75%;
+            margin-bottom: 8px;
         }
 
             .message.own {
@@ -439,9 +365,6 @@
             .message.system {
                 align-self: center;
                 max-width: 90%;
-                font-style: italic;
-                color: #6b7280;
-                font-size: 12px;
             }
 
         .message-header {
@@ -455,44 +378,25 @@
                 width: 28px;
                 height: 28px;
                 border-radius: 50%;
-                object-fit: cover;
                 cursor: pointer;
-                transition: opacity 0.2s;
-                background: #2a2a2a;
             }
-
-                .message-header img:hover {
-                    opacity: 0.8;
-                }
 
         .message-sender {
             font-size: 12px;
-            font-weight: 500;
             color: #9ca3af;
             cursor: pointer;
         }
 
-            .message-sender:hover {
-                color: #ef4444;
-                text-decoration: underline;
-            }
-
         .message-content {
             padding: 10px 14px;
             border-radius: 18px;
-            background: #1a1a1a;
+            background: #1f1f1f;
             word-wrap: break-word;
         }
 
         .message.own .message-content {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            background: #dc2626;
             color: white;
-        }
-
-        .message.system .message-content {
-            background: #1a1a1a;
-            color: #6b7280;
-            font-style: italic;
         }
 
         .message-time {
@@ -503,49 +407,41 @@
         }
 
         .message-actions {
-            position: absolute;
-            right: -40px;
-            top: 0;
-            display: none;
-            gap: 8px;
-        }
-
-        .message:hover .message-actions {
             display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            flex-wrap: wrap;
         }
 
-        .message-actions button {
-            background: #2a2a2a;
-            border: none;
-            border-radius: 8px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-            .message-actions button:hover {
-                background: #dc2626;
-                color: white;
+            .message-actions button {
+                background: #2a2a2a;
+                border: none;
+                border-radius: 8px;
+                padding: 5px 10px;
+                cursor: pointer;
+                font-size: 11px;
+                color: #e0e0e0;
             }
 
+                .message-actions button:hover {
+                    background: #dc2626;
+                    color: white;
+                }
+
+        /* FILE MESSAGE - ВИДИМАЯ КНОПКА СКАЧИВАНИЯ */
         .message-file {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 14px;
-            background: #1a1a1a;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 12px;
+            background: #1f1f1f;
+            border-radius: 14px;
+            border: 1px solid #2a2a2a;
+            flex-wrap: wrap;
         }
 
-            .message-file:hover {
-                background: #2a2a2a;
-            }
-
         .file-icon {
-            font-size: 28px;
+            font-size: 32px;
         }
 
         .file-info {
@@ -553,104 +449,99 @@
         }
 
         .file-name {
-            font-weight: 500;
+            font-weight: 600;
             font-size: 14px;
+            word-break: break-all;
         }
 
         .file-size {
             font-size: 11px;
             color: #6b7280;
+            margin-top: 2px;
         }
+
+        /* КНОПКА СКАЧИВАНИЯ - ЗЕЛЕНАЯ И ВИДИМАЯ */
+        .download-btn {
+            background: #22c55e !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            color: white !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            font-size: 13px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: all 0.2s !important;
+        }
+
+            .download-btn:hover {
+                background: #16a34a !important;
+                transform: scale(1.02) !important;
+            }
 
         .message-caption {
             margin-top: 6px;
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.8;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
         }
 
+        /* Input */
         .message-input-area {
-            padding: 20px;
+            padding: 16px 20px;
             border-top: 1px solid #2a2a2a;
             background: #0f0f0f;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            position: relative;
         }
 
-            .message-input-area input[type="text"] {
+            .message-input-area input {
                 flex: 1;
-                background: #1a1a1a;
+                background: #1f1f1f;
                 border: 1px solid #2a2a2a;
                 border-radius: 24px;
-                padding: 12px 20px;
+                padding: 12px 18px;
                 color: #e0e0e0;
                 font-size: 14px;
             }
 
-                .message-input-area input[type="text"]:focus {
+                .message-input-area input:focus {
                     outline: none;
                     border-color: #dc2626;
                 }
 
-        .attach-btn {
+        .attach-btn, .emoji-btn, .send-btn {
             background: #2a2a2a;
             border: none;
             border-radius: 50%;
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s;
+            font-size: 18px;
         }
-
-            .attach-btn:hover {
-                background: #dc2626;
-            }
-
-        .emoji-btn {
-            background: #2a2a2a;
-            border: none;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s;
-        }
-
-            .emoji-btn:hover {
-                background: #dc2626;
-            }
 
         .send-btn {
             background: #dc2626;
-            border: none;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: white;
         }
 
-            .send-btn:hover {
-                background: #b91c1c;
-                transform: scale(1.05);
+            .attach-btn:hover, .emoji-btn:hover, .send-btn:hover {
+                opacity: 0.8;
             }
-
-        .empty-state {
-            text-align: center;
-            color: #6b7280;
-            padding: 40px;
-        }
 
         .typing-indicator {
             font-size: 12px;
             color: #6b7280;
-            padding: 8px 20px;
+            padding: 6px 20px;
             font-style: italic;
         }
 
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -658,10 +549,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.85);
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 2000;
         }
 
             .modal.active {
@@ -671,32 +562,32 @@
         .modal-content {
             background: #141414;
             border-radius: 24px;
-            padding: 32px;
+            padding: 28px;
             width: 90%;
-            max-width: 500px;
-            border: 1px solid rgba(220, 38, 38, 0.3);
-            max-height: 90vh;
+            max-width: 480px;
+            border: 1px solid #2a2a2a;
+            max-height: 85vh;
             overflow-y: auto;
         }
 
             .modal-content h3 {
-                margin-bottom: 20px;
                 color: #ef4444;
+                margin-bottom: 20px;
             }
 
         .modal-buttons {
             display: flex;
             gap: 12px;
             margin-top: 24px;
+            flex-wrap: wrap;
         }
 
         .user-search-result {
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
-            background: #1a1a1a;
+            background: #1f1f1f;
             margin-bottom: 8px;
             cursor: pointer;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -711,8 +602,6 @@
                 width: 40px;
                 height: 40px;
                 border-radius: 50%;
-                object-fit: cover;
-                background: #2a2a2a;
             }
 
         .selected-members {
@@ -737,154 +626,92 @@
                 border: none;
                 color: white;
                 cursor: pointer;
-                font-size: 14px;
             }
-
-        .profile-avatar {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .profile-logo {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-        }
 
         .profile-avatar-img {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #dc2626;
             cursor: pointer;
-            background: #2a2a2a;
         }
 
-        .member-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .member-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #2a2a2a;
-        }
-
-        .member-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-            .member-info img {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                object-fit: cover;
-                background: #2a2a2a;
-            }
-
-        .remove-member-btn {
-            background: #7f1d1d;
-            border: none;
-            border-radius: 8px;
-            padding: 4px 8px;
-            color: white;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-            .remove-member-btn:hover {
-                background: #991b1b;
-            }
-
-        .code-input {
-            letter-spacing: 4px;
-            font-size: 24px;
+        .empty-state {
             text-align: center;
-        }
-
-        .user-profile-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .user-profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #dc2626;
-            background: #2a2a2a;
-        }
-
-        .user-profile-info h4 {
-            font-size: 20px;
-            color: #ef4444;
-        }
-
-        .user-profile-info p {
-            font-size: 12px;
             color: #6b7280;
-            margin-top: 4px;
+            padding: 40px;
         }
 
-        emoji-picker {
-            --background: #1a1a1a;
-            --border-radius: 16px;
-            --category-emoji-size: 24px;
-            --category-padding: 12px;
-            --category-button-color: #ef4444;
-            --input-border-radius: 12px;
-            --input-border-color: #2a2a2a;
-            --input-color: #e0e0e0;
-            --num-columns: 8;
-            --emoji-size: 28px;
-            position: absolute;
-            bottom: 70px;
-            left: 0;
-            z-index: 1000;
-            width: 350px;
-            max-height: 400px;
-            display: none;
+        @media (max-width: 768px) {
+            .menu-btn {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -300px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 1000;
+            }
+
+                .sidebar.open {
+                    left: 0;
+                }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .chat-header {
+                padding-left: 60px;
+            }
         }
 
-        .emoji-picker-container {
-            position: relative;
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #22c55e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            z-index: 9999;
+            font-size: 14px;
+            animation: fadeOut 2s forwards;
         }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
 
-        ::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
+            70% {
+                opacity: 1;
+            }
 
-        ::-webkit-scrollbar-thumb {
-            background: #dc2626;
-            border-radius: 3px;
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- AUTH -->
     <div class="auth-container" id="authContainer">
         <div class="auth-card">
             <div class="logo">
-                <img src="/logo.png" alt="Red Wolf" onerror="this.style.display='none'">
-                <h1>Red Wolf</h1>
+                <h1>🐺 Red Wolf</h1>
                 <p>Secure Messenger</p>
             </div>
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
-                <button class="auth-tab" onclick="switchTab('register')">Register</button>
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Register</button>
             </div>
 
             <div id="loginForm" class="auth-form">
@@ -894,1413 +721,431 @@
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                    <input type="password" id="loginPassword" placeholder="Enter password">
                 </div>
-                <button class="btn btn-primary" onclick="handleLogin()">Login →</button>
-                <div id="loginError" class="error-message" style="display: none;"></div>
+                <button class="btn btn-primary" id="doLoginBtn">Login →</button>
+                <div id="loginError" class="error-message" style="display:none"></div>
             </div>
 
-            <div id="registerForm" class="auth-form" style="display: none;">
+            <div id="registerForm" class="auth-form" style="display:none">
                 <div class="form-group">
                     <label>Phone Number</label>
                     <input type="tel" id="regPhone" placeholder="+79991234567">
                 </div>
                 <div class="form-group">
                     <label>Name</label>
-                    <input type="text" id="regName" placeholder="Your username">
+                    <input type="text" id="regName" placeholder="Username">
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="regPassword" placeholder="Min 6 characters">
+                    <label>Password (min 6)</label>
+                    <input type="password" id="regPassword" placeholder="Password">
                 </div>
-                <button class="btn btn-primary" onclick="requestVerificationCode()">Send Code →</button>
-                <div id="registerError" class="error-message" style="display: none;"></div>
+                <button class="btn btn-primary" id="sendCodeBtn">Send Code →</button>
             </div>
 
-            <div id="verifyForm" class="auth-form" style="display: none;">
+            <div id="verifyForm" class="auth-form" style="display:none">
                 <div class="form-group">
                     <label>Verification Code</label>
-                    <input type="text" id="verifyCode" class="code-input" placeholder="Enter 6-digit code" maxlength="6">
+                    <input type="text" id="verifyCode" placeholder="6-digit code" maxlength="6">
                 </div>
-                <button class="btn btn-primary" onclick="verifyAndRegister()">Verify & Register →</button>
-                <button class="btn btn-secondary" onclick="backToRegister()">← Back</button>
-                <div id="verifyError" class="error-message" style="display: none;"></div>
-                <div id="verifySuccess" class="success-message" style="display: none;"></div>
+                <button class="btn btn-primary" id="verifyBtn">Verify & Register →</button>
+                <button class="btn btn-secondary" id="backToRegisterBtn">← Back</button>
             </div>
         </div>
     </div>
 
+    <!-- APP -->
     <div class="app-container" id="appContainer">
-        <div class="sidebar">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <img class="sidebar-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                <img id="sidebarAvatar" class="sidebar-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar" onclick="showProfileModal()">
-                <h3 id="currentUserName" onclick="showProfileModal()">Loading...</h3>
-                <button class="logout-btn" onclick="logout()">🚪</button>
+                <img id="sidebarAvatar" class="sidebar-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+                <h3 id="currentUserName">Loading...</h3>
+                <button class="logout-btn" id="logoutBtn">🚪</button>
             </div>
-
-            <button class="btn-new-chat" onclick="showNewChatModal()">+ New Chat</button>
-            <button class="btn-create-group" onclick="showCreateGroupModal()">👥 Create Group</button>
-
-            <div class="chats-list" id="chatsList">
-                <div class="empty-state">Loading chats...</div>
-            </div>
+            <button class="btn-new-chat" id="newChatBtn">+ New Chat</button>
+            <button class="btn-create-group" id="createGroupBtn">👥 Create Group</button>
+            <div class="chats-list" id="chatsList"><div class="empty-state">Loading chats...</div></div>
         </div>
+
         <div class="chat-area">
-            <div class="chat-header" id="chatHeader">
-                <h2>Select a chat</h2>
-                <p>Choose conversation to start messaging</p>
-            </div>
-            <div class="messages-container" id="messagesContainer">
-                <div class="empty-state">No messages yet</div>
-            </div>
-            <div class="typing-indicator" id="typingIndicator" style="display: none;"></div>
+            <div class="chat-header" id="chatHeader"><h2>Select a chat</h2></div>
+            <div class="messages-container" id="messagesContainer"><div class="empty-state">No messages</div></div>
+            <div class="typing-indicator" id="typingIndicator" style="display:none"></div>
             <div class="message-input-area">
-                <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
-                <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
-                <div class="emoji-picker-container">
-                    <button class="emoji-btn" id="emojiBtn">😊</button>
-                </div>
+                <input type="file" id="fileInput" style="display:none">
+                <button class="attach-btn" id="attachBtn">📎</button>
+                <button class="emoji-btn" id="emojiBtn">😊</button>
                 <input type="text" id="messageInput" placeholder="Type a message..." disabled>
-                <button class="send-btn" onclick="sendMessage()" id="sendBtn" disabled>➤</button>
+                <button class="send-btn" id="sendBtn" disabled>➤</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="userProfileModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h3 style="color: #ef4444;">User Profile</h3>
-                <button onclick="closeUserProfileModal()" style="background: none; border: none; color: #6b7280; font-size: 24px; cursor: pointer;">&times;</button>
-            </div>
-            <div id="userProfileContent"></div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeUserProfileModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="newChatModal">
-        <div class="modal-content">
-            <h3>New Private Chat</h3>
-            <div class="form-group">
-                <label>Search by username</label>
-                <input type="text" id="searchUserInput" placeholder="Enter username..." oninput="searchUsers()">
-            </div>
-            <div id="searchResults" style="max-height: 300px; overflow-y: auto; margin-top: 16px;"></div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeNewChatModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="createGroupModal">
-        <div class="modal-content">
-            <h3>Create Group</h3>
-            <div class="form-group">
-                <label>Group Name</label>
-                <input type="text" id="groupName" placeholder="Enter group name">
-            </div>
-            <div class="form-group">
-                <label>Max Users (2-500)</label>
-                <input type="number" id="groupMaxUsers" value="100" min="2" max="500">
-            </div>
-            <div class="form-group">
-                <label>Search members</label>
-                <input type="text" id="groupSearchInput" placeholder="Search users..." oninput="searchGroupUsers()">
-            </div>
-            <div id="groupSearchResults" style="max-height: 200px; overflow-y: auto;"></div>
-            <div class="selected-members" id="selectedMembers"></div>
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="createGroup()">Create Group</button>
-                <button class="btn btn-secondary" onclick="closeCreateGroupModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="editChatModal">
-        <div class="modal-content">
-            <h3 id="editChatTitle">Edit Chat</h3>
-            <div class="form-group">
-                <label>Chat Name</label>
-                <input type="text" id="editChatName" placeholder="Chat name">
-            </div>
-            <div id="groupMembersSection" style="display: none;">
-                <div class="form-group">
-                    <label>Add Member</label>
-                    <input type="text" id="addMemberSearch" placeholder="Search users..." oninput="searchAddMember()">
-                    <div id="addMemberResults" style="max-height: 150px; overflow-y: auto; margin-top: 8px;"></div>
-                </div>
-                <div class="form-group">
-                    <label>Members</label>
-                    <div id="membersList" class="member-list"></div>
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="saveChatEdit()">Save</button>
-                <button class="btn btn-danger" onclick="leaveOrDeleteChat()" id="leaveDeleteBtn">Leave Chat</button>
-                <button class="btn btn-secondary" onclick="closeEditChatModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="profileModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h3 style="color: #ef4444;">My Profile</h3>
-                <button onclick="closeProfileModal()" style="background: none; border: none; color: #6b7280; font-size: 24px; cursor: pointer;">&times;</button>
-            </div>
-            <div class="profile-avatar">
-                <img class="profile-logo" src="/logo.png" alt="Red Wolf" onerror="this.style.display='none'">
-                <img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar" onclick="document.getElementById('avatarFileInput').click()">
-                <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="uploadAvatarFromProfile(this)">
-                <div style="margin-top: 12px;">
-                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="deleteAvatar()">Remove Avatar</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Name</label>
-                <input type="text" id="profileName" placeholder="Your name">
-            </div>
-            <div class="form-group">
-                <label>New Password (leave empty to keep current)</label>
-                <input type="password" id="profileNewPassword" placeholder="New password">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
-                <button class="btn btn-secondary" onclick="closeProfileModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="editMessageModal">
-        <div class="modal-content">
-            <h3>Edit Message</h3>
-            <div class="form-group">
-                <textarea id="editMessageText" rows="3" style="width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 12px; color: white;"></textarea>
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="saveEditedMessage()">Save</button>
-                <button class="btn btn-secondary" onclick="closeEditMessageModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
+    <!-- MODALS -->
+    <div class="modal" id="userProfileModal"><div class="modal-content"><div id="userProfileContent"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Close</button></div></div></div>
+    <div class="modal" id="newChatModal"><div class="modal-content"><h3>New Private Chat</h3><input type="text" id="searchUserInput" placeholder="Search username..."><div id="searchResults"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <div class="modal" id="createGroupModal"><div class="modal-content"><h3>Create Group</h3><input type="text" id="groupName" placeholder="Group name"><input type="number" id="groupMaxUsers" value="100"><input type="text" id="groupSearchInput" placeholder="Search members..."><div id="groupSearchResults"></div><div id="selectedMembers"></div><div class="modal-buttons"><button class="btn btn-primary" id="createGroupSubmit">Create</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <div class="modal" id="editChatModal"><div class="modal-content"><h3 id="editChatTitle">Edit Chat</h3><input type="text" id="editChatName" placeholder="Chat name"><div id="groupMembersSection" style="display:none"><input type="text" id="addMemberSearch" placeholder="Add member..."><div id="addMemberResults"></div><div id="membersList"></div></div><div class="modal-buttons"><button class="btn btn-primary" id="saveChatEdit">Save</button><button class="btn btn-danger" id="leaveDeleteBtn">Leave</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <div class="modal" id="profileModal"><div class="modal-content"><h3>My Profile</h3><div style="text-align:center"><img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><input type="file" id="avatarFile" accept="image/*" style="display:none"><button class="btn-secondary" id="removeAvatarBtn" style="margin-top:8px">Remove Avatar</button></div><div class="form-group"><label>Name</label><input type="text" id="profileName"></div><div class="form-group"><label>New Password</label><input type="password" id="profileNewPassword"></div><div class="modal-buttons"><button class="btn btn-primary" id="updateProfileBtn">Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <div class="modal" id="editMessageModal"><div class="modal-content"><h3>Edit Message</h3><textarea id="editMessageText" rows="3" style="width:100%;background:#1f1f1f;border:none;border-radius:12px;padding:12px;color:white"></textarea><div class="modal-buttons"><button class="btn btn-primary" id="saveEditMessage">Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script type="module">
-        import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
-
-        window.initEmojiPicker = () => {
-            const container = document.querySelector('.emoji-picker-container');
-            if (!container) return;
-
-            const picker = document.createElement('emoji-picker');
-            picker.id = 'emojiPicker';
-
-            picker.addEventListener('emoji-click', (event) => {
-                const input = document.getElementById('messageInput');
-                if (input) {
-                    input.value += event.detail.unicode;
-                    picker.style.display = 'none';
-                    input.focus();
-                }
-            });
-
-            container.appendChild(picker);
-
-            const emojiBtn = document.getElementById('emojiBtn');
-            if (emojiBtn) {
-                emojiBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (picker) {
-                        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-                    }
-                });
-            }
-
-            document.addEventListener('click', (e) => {
-                if (container && !container.contains(e.target) && picker && picker.style.display === 'block') {
-                    picker.style.display = 'none';
-                }
-            });
-        };
-    </script>
     <script>
-        let currentUser = null;
-        let currentChat = null;
-        let currentChatInfo = null;
-        let token = null;
-        let connection = null;
-        let typingTimeout = null;
-        let editingMessageId = null;
-        let selectedGroupMembers = [];
-        let tempPhoneNumber = null;
+        // ==================== STATE ====================
+        let currentUser = null, currentChat = null, currentChatInfo = null, token = null, connection = null;
+        let typingTimeout = null, editingMessageId = null;
+        let selectedGroupMembers = [], tempPhoneNumber = null;
         let onlineUsers = new Map();
-
         const API_BASE = '/api';
+        const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+        function showToast(msg, isErr = false) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            toast.style.background = isErr ? '#ef4444' : '#22c55e';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function (m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+
+        function formatFileSize(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]; }
+        function getFileIcon(name) { const e = name?.split('.').pop()?.toLowerCase(); if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(e)) return '🖼️'; if (['mp4', 'mov', 'avi', 'mkv'].includes(e)) return '🎥'; if (['pdf'].includes(e)) return '📕'; if (['doc', 'docx'].includes(e)) return '📘'; if (['xls', 'xlsx'].includes(e)) return '📊'; if (['txt', 'json', 'xml'].includes(e)) return '📄'; if (['zip', 'rar', '7z'].includes(e)) return '🗜️'; return '📎'; }
+        function formatTime(d) { if (!d) return ''; const date = new Date(d); return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+        function formatDate(d) { if (!d) return ''; const date = new Date(d); const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()); const diff = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24)); if (diff === 0) return formatTime(d); if (diff === 1) return 'Yesterday at ' + formatTime(d); if (diff < 7) return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()] + ' at ' + formatTime(d); return date.toLocaleDateString() + ' at ' + formatTime(d); }
+
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+        function showModal(id) { closeModals(); document.getElementById(id).classList.add('active'); }
+
+        // ==================== API ====================
+        async function api(url, opts = {}) {
+            const res = await fetch(API_BASE + url, {
+                headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+                ...opts
+            });
+            if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
+            return res;
+        }
+
+        // ==================== AUTH ====================
+        async function handleLogin() {
+            const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
+            if (!login || !pwd) return showToast('Fill all fields', true);
+            try {
+                const res = await fetch(API_BASE + '/User/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login, password: pwd }) });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                token = data.token; currentUser = { id: data.userId };
+                localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
+                await initApp();
+            } catch (e) { showToast('Login failed: ' + e.message, true); }
+        }
+
+        async function requestCode() {
+            const phone = document.getElementById('regPhone').value.trim(), name = document.getElementById('regName').value.trim(), pwd = document.getElementById('regPassword').value;
+            if (!phone || !name || !pwd) return showToast('Fill all fields', true);
+            if (pwd.length < 6) return showToast('Password min 6 chars', true);
+            try {
+                const res = await fetch(API_BASE + '/User/request-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: phone, name, password: pwd }) });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                tempPhoneNumber = data.phoneNumber;
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('verifyForm').style.display = 'flex';
+                document.getElementById('verifyCode').value = data.code || '';
+                showToast('Code sent to ' + phone);
+            } catch (e) { showToast(e.message, true); }
+        }
+
+        async function verifyReg() {
+            const code = document.getElementById('verifyCode').value.trim();
+            if (!code || code.length !== 6) return showToast('Enter 6-digit code', true);
+            try {
+                const res = await fetch(API_BASE + '/User/verify-and-register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: tempPhoneNumber, code }) });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                token = data.token; currentUser = { id: data.userId };
+                localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
+                await initApp();
+            } catch (e) { showToast(e.message, true); }
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             if (tab === 'login') {
-                document.querySelector('.auth-tab:first-child').classList.add('active');
+                document.querySelector('.auth-tab[data-tab="login"]').classList.add('active');
                 document.getElementById('loginForm').style.display = 'flex';
                 document.getElementById('registerForm').style.display = 'none';
                 document.getElementById('verifyForm').style.display = 'none';
             } else {
-                document.querySelector('.auth-tab:last-child').classList.add('active');
+                document.querySelector('.auth-tab[data-tab="register"]').classList.add('active');
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('registerForm').style.display = 'flex';
                 document.getElementById('verifyForm').style.display = 'none';
             }
         }
 
-        async function requestVerificationCode() {
-            const phone = document.getElementById('regPhone').value.trim();
-            const name = document.getElementById('regName').value.trim();
-            const password = document.getElementById('regPassword').value;
-            if (!phone || !name || !password) {
-                alert('Please fill all fields');
-                return;
-            }
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters');
-                return;
-            }
+        // ==================== CORE ====================
+        async function loadUser() {
             try {
-                const response = await fetch(`${API_BASE}/User/request-verification`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone, name, password })
-                });
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error);
-                }
-                const data = await response.json();
-                tempPhoneNumber = data.phoneNumber;
-                document.getElementById('registerForm').style.display = 'none';
-                document.getElementById('verifyForm').style.display = 'flex';
-                document.getElementById('verifyCode').value = data.code || '';
-                alert(`Code sent to ${phone}`);
-            } catch (error) {
-                alert('Failed to send code: ' + error.message);
-            }
-        }
-
-        async function verifyAndRegister() {
-            const code = document.getElementById('verifyCode').value.trim();
-            if (!code || code.length !== 6) {
-                alert('Please enter 6-digit code');
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/verify-and-register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: tempPhoneNumber, code: code })
-                });
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error);
-                }
-                const data = await response.json();
-                token = data.token;
-                currentUser = { id: data.userId };
-                localStorage.setItem('token', token);
-                localStorage.setItem('userId', data.userId);
-                await initApp();
-            } catch (error) {
-                alert('Verification failed: ' + error.message);
-            }
-        }
-
-        function backToRegister() {
-            document.getElementById('verifyForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'flex';
-        }
-
-        async function handleLogin() {
-            const login = document.getElementById('loginLogin').value;
-            const password = document.getElementById('loginPassword').value;
-            if (!login || !password) {
-                alert('Please fill all fields');
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, password })
-                });
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error);
-                }
-                const data = await response.json();
-                token = data.token;
-                currentUser = { id: data.userId };
-                localStorage.setItem('token', token);
-                localStorage.setItem('userId', data.userId);
-                await initApp();
-            } catch (error) {
-                alert('Login failed: ' + error.message);
-            }
-        }
-
-        async function initApp() {
-            if (!token) {
-                token = localStorage.getItem('token');
-                const userId = localStorage.getItem('userId');
-                if (token && userId) currentUser = { id: userId };
-                else return;
-            }
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('appContainer').classList.add('active');
-            await loadUserProfile();
-            await loadChats();
-            await initSignalR();
-            if (typeof window.initEmojiPicker === 'function') {
-                window.initEmojiPicker();
-            }
-        }
-
-        async function loadUserProfile() {
-            try {
-                const response = await fetch(`${API_BASE}/User/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const user = await response.json();
-                    currentUser = { ...currentUser, ...user };
-                    document.getElementById('currentUserName').textContent = user.name;
-                    if (user.avatarPath && user.avatarPath !== '/avatars/default-avatar.png') {
-                        const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
-                        document.getElementById('sidebarAvatar').src = avatarUrl;
-                        document.getElementById('profileAvatar').src = avatarUrl;
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load profile:', error);
-            }
+                const res = await api('/User/profile');
+                const user = await res.json();
+                currentUser = { ...currentUser, ...user };
+                document.getElementById('currentUserName').innerText = user.name;
+                const avUrl = API_BASE + '/User/avatar/' + currentUser.id + '?t=' + Date.now();
+                document.getElementById('sidebarAvatar').src = avUrl;
+                document.getElementById('profileAvatar').src = avUrl;
+            } catch (e) { console.error(e); }
         }
 
         async function loadChats() {
             try {
-                const response = await fetch(`${API_BASE}/Chat/user-chats/${currentUser.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const chats = await response.json();
-                    renderChats(chats);
-                }
-            } catch (error) {
-                console.error('Failed to load chats:', error);
-            }
-        }
-
-        function renderChats(chats) {
-            const container = document.getElementById('chatsList');
-            if (!chats || chats.length === 0) {
-                container.innerHTML = '<div class="empty-state">No chats yet. Click +New Chat to start!</div>';
-                return;
-            }
-            container.innerHTML = chats.map(chat => {
-                const isGroup = chat.maxUsers > 2 || (chat.users && chat.users.length > 2);
-                const otherUser = chat.otherUser;
-                const avatarUrl = otherUser?.id ? `${API_BASE}/User/avatar/${otherUser.id}` : null;
-                const preview = isGroup ? `${chat.users?.length || 0} members` : (chat.otherUser?.name || chat.chatName);
-                const isOnline = otherUser?.id ? onlineUsers.get(otherUser.id) === true : false;
-                return `
-                        <div class="chat-item" data-user-id="${otherUser?.id || ''}" onclick="selectChat('${chat.id}', '${escapeHtml(chat.chatName)}')">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div class="chat-avatar-container">
-                                    <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #2a2a2a;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
-                                    ${!isGroup ? `<div class="online-dot ${isOnline ? 'online' : 'offline'}"></div>` : ''}
-                                </div>
-                                <div>
-                                    <div class="chat-name">
-                                        ${escapeHtml(chat.chatName)}
-                                        ${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}
-                                    </div>
-                                    <div class="chat-preview">${escapeHtml(preview)}</div>
-                                </div>
-                            </div>
+                const res = await api(`/Chat/user-chats/${currentUser.id}`);
+                const chats = await res.json();
+                const container = document.getElementById('chatsList');
+                if (!chats?.length) { container.innerHTML = '<div class="empty-state">No chats. +New Chat</div>'; return; }
+                container.innerHTML = chats.map(chat => {
+                    const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
+                    const other = chat.otherUser;
+                    const name = isGroup ? chat.chatName : (other?.name || chat.chatName);
+                    const avatar = other?.id ? API_BASE + '/User/avatar/' + other.id : DEFAULT_AVATAR;
+                    const online = other?.id ? onlineUsers.get(other.id) === true : false;
+                    return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}" data-other="${other?.id || ''}">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <div class="chat-avatar-container"><img src="${avatar}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}</div>
+                            <div><div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div><div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div></div>
                         </div>
-                    `;
-            }).join('');
+                    </div>`;
+                }).join('');
+                document.querySelectorAll('.chat-item').forEach(el => {
+                    el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name));
+                });
+            } catch (e) { console.error(e); }
         }
 
         async function getChatInfo(chatId) {
-            try {
-                const response = await fetch(`${API_BASE}/Chat/${chatId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) return await response.json();
-            } catch (error) {
-                console.error('Failed to get chat info:', error);
-            }
-            return null;
+            try { const res = await api('/Chat/' + chatId); return await res.json(); } catch (e) { return null; }
         }
 
         async function selectChat(chatId, chatName) {
             currentChat = { id: chatId, name: chatName };
             currentChatInfo = await getChatInfo(chatId);
-            const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users && currentChatInfo.users.length > 2));
-            const otherUserId = !isGroup && currentChatInfo?.otherUser?.id;
-            let statusText = '';
-            if (!isGroup && otherUserId) {
-                const isOnline = onlineUsers.get(otherUserId) === true;
-                statusText = isOnline ? '🟢 Online' : '⚫ Offline';
-            }
-            document.getElementById('chatHeader').innerHTML = `
-                    <div class="chat-header-top">
-                        <div class="chat-header-info">
-                            <img class="chat-header-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                            <div>
-                                <h2>${escapeHtml(chatName)}</h2>
-                                ${!isGroup ? `<div class="chat-header-status ${statusText === '🟢 Online' ? 'online' : ''}">${statusText}</div>` : `<p>${currentChatInfo?.users?.length || 0} members</p>`}
-                            </div>
-                        </div>
-                        <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
-                    </div>
-                `;
+            const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2));
+            const title = isGroup ? currentChatInfo.chatName : (currentChatInfo?.otherUser?.name || chatName);
+            document.getElementById('chatHeader').innerHTML = `<div class="chat-header-top"><h2>${escapeHtml(title)}</h2><button class="edit-chat-btn" id="editChatBtn">✏️ Edit</button></div>`;
+            document.getElementById('editChatBtn')?.addEventListener('click', showEditChatModal);
             document.getElementById('messageInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
             await loadMessages(chatId);
-            if (connection) {
-                await connection.invoke('JoinChat', chatId, currentUser.id, currentUser.name);
-            }
+            if (connection) await connection.invoke('JoinChat', chatId, currentUser.id, currentUser.name);
+            if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
         }
 
         async function loadMessages(chatId) {
             try {
-                const response = await fetch(`${API_BASE}/Chat/${chatId}/messages?page=1&pageSize=100`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    renderMessages(data.messages);
-                }
-            } catch (error) {
-                console.error('Failed to load messages:', error);
-            }
+                const res = await api(`/Chat/${chatId}/messages?page=1&pageSize=100`);
+                const data = await res.json();
+                renderMessages(data.messages || []);
+            } catch (e) { console.error(e); }
         }
 
-        function getFileIcon(fileName) {
-            const ext = fileName.split('.').pop().toLowerCase();
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️';
-            if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return '🎥';
-            if (['pdf'].includes(ext)) return '📕';
-            if (['doc', 'docx'].includes(ext)) return '📘';
-            if (['xls', 'xlsx'].includes(ext)) return '📊';
-            if (['ppt', 'pptx'].includes(ext)) return '📙';
-            if (['txt'].includes(ext)) return '📄';
-            return '📎';
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        async function showUserProfile(userId) {
-            try {
-                const response = await fetch(`${API_BASE}/Chat/user-profile/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const user = await response.json();
-                    const avatarUrl = `${API_BASE}/User/avatar/${userId}?t=${Date.now()}`;
-                    const registerDate = new Date(user.registerDate).toLocaleDateString('ru-RU');
-                    document.getElementById('userProfileContent').innerHTML = `
-                            <div class="user-profile-header">
-                                <img class="user-profile-avatar" src="${avatarUrl}" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
-                                <div class="user-profile-info">
-                                    <h4>${escapeHtml(user.name)}</h4>
-                                    <p>📅 Joined ${registerDate}</p>
-                                    <p>🆔 ${user.id}</p>
-                                </div>
-                            </div>
-                        `;
-                    document.getElementById('userProfileModal').classList.add('active');
-                } else {
-                    alert('User profile not available');
-                }
-            } catch (error) {
-                console.error('Failed to load user profile:', error);
-                alert('Failed to load user profile');
-            }
-        }
-
-        function closeUserProfileModal() {
-            document.getElementById('userProfileModal').classList.remove('active');
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const toast = document.createElement('div');
-                toast.textContent = 'Copied!';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '20px';
-                toast.style.right = '20px';
-                toast.style.background = '#22c55e';
-                toast.style.color = 'white';
-                toast.style.padding = '8px 16px';
-                toast.style.borderRadius = '8px';
-                toast.style.zIndex = '9999';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert('Failed to copy to clipboard');
-            });
-        }
-
+        // ГЛАВНАЯ ФУНКЦИЯ ОТРИСОВКИ С ВИДИМОЙ КНОПКОЙ СКАЧИВАНИЯ
         function renderMessages(messages) {
             const container = document.getElementById('messagesContainer');
-            if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="empty-state">No messages yet. Send the first message!</div>';
-                return;
-            }
-
-            const sortedMessages = [...messages].sort((a, b) =>
-                new Date(a.messageCreateDate) - new Date(b.messageCreateDate)
-            );
-
-            const messagesHtml = sortedMessages.map(msg => {
-                if (msg.fileName) {
-                    const isOwn = msg.userId === currentUser.id;
-                    const avatarUrl = msg.user?.id ? `${API_BASE}/User/avatar/${msg.userId}` : null;
-                    const icon = getFileIcon(msg.fileName);
-                    return `
-                            <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
-                                <div class="message-header">
-                                    <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; background: #2a2a2a;" onclick="showUserProfile('${msg.userId}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
-                                    <span class="message-sender" onclick="showUserProfile('${msg.userId}')">${escapeHtml(msg.user?.name || 'Unknown')}</span>
-                                </div>
-                                <div class="message-file" onclick="downloadFile('${msg.messageId}', '${escapeHtml(msg.fileName)}')">
-                                    <div class="file-icon">${icon}</div>
-                                    <div class="file-info">
-                                        <div class="file-name">${escapeHtml(msg.fileName)}</div>
-                                        <div class="file-size">${formatFileSize(msg.fileSize)}</div>
-                                    </div>
-                                </div>
-                                ${msg.caption ? `<div class="message-caption">${escapeHtml(msg.caption)}</div>` : ''}
-                                <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                                ${isOwn ? `<div class="message-actions"><button onclick="deleteFileMessage('${msg.messageId}')">🗑️ Delete</button></div>` : ''}
-                            </div>
-                        `;
-                }
-                const isSystem = msg.isSystemMessage;
-                const avatarUrl = msg.messageCreator?.id && !isSystem ? `${API_BASE}/User/avatar/${msg.userId}` : null;
+            if (!messages?.length) { container.innerHTML = '<div class="empty-state">No messages yet</div>'; return; }
+            const sorted = [...messages].sort((a, b) => new Date(a.messageCreateDate) - new Date(b.messageCreateDate));
+            container.innerHTML = sorted.map(msg => {
                 const isOwn = msg.userId === currentUser.id;
                 const edited = msg.messageCreateDate !== msg.messageLastUpdateDate;
-                if (isSystem) {
-                    return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div></div>`;
-                }
-                return `
-                        <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.messageId}">
-                            <div class="message-header">
-                                <img src="${avatarUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; cursor: pointer; background: #2a2a2a;" onclick="showUserProfile('${msg.userId}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'">
-                                <span class="message-sender" onclick="showUserProfile('${msg.userId}')">${escapeHtml(msg.messageCreator?.name || 'Unknown')}</span>
-                            </div>
-                            <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size: 10px; opacity: 0.6;">(edited)</span>' : ''}</div>
-                            <div class="message-time">${new Date(msg.messageCreateDate).toLocaleTimeString()}</div>
-                            ${isOwn && !msg.isDeleted ? `
-                                <div class="message-actions">
-                                    <button onclick="copyToClipboard('${escapeHtml(msg.messageText).replace(/'/g, "\\'")}')">📋 Copy</button>
-                                    <button onclick="editMessage('${msg.messageId}', '${escapeHtml(msg.messageText)}')">✏️ Edit</button>
-                                    <button onclick="deleteMessage('${msg.messageId}')">🗑️ Delete</button>
-                                </div>
-                            ` : ''}
-                            ${!isOwn && !msg.isDeleted ? `
-                                <div class="message-actions">
-                                    <button onclick="copyToClipboard('${escapeHtml(msg.messageText).replace(/'/g, "\\'")}')">📋 Copy</button>
-                                </div>
-                            ` : ''}
+                const avatar = API_BASE + '/User/avatar/' + msg.userId;
+                const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
+
+                // ФАЙЛОВОЕ СООБЩЕНИЕ
+                if (msg.fileName) {
+                    return `<div class="message ${isOwn ? 'own' : ''}" data-mid="${msg.messageId}">
+                        <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
+                        <div class="message-file">
+                            <div class="file-icon">${getFileIcon(msg.fileName)}</div>
+                            <div class="file-info"><div class="file-name">📁 ${escapeHtml(msg.fileName)}</div><div class="file-size">${formatFileSize(msg.fileSize)}</div></div>
+                            <button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ СКАЧАТЬ</button>
                         </div>
-                    `;
+                        ${msg.messageText ? `<div class="message-caption">${escapeHtml(msg.messageText)}${edited ? ' ✏️(edited)' : ''}</div>` : ''}
+                        <div class="message-time">🕐 ${formatDate(msg.messageCreateDate)}</div>
+                        <div class="message-actions">${isOwn ? `<button class="del-file-btn" data-id="${msg.messageId}">🗑️ Удалить</button>` : ''}</div>
+                    </div>`;
+                }
+                // СИСТЕМНОЕ
+                if (msg.isSystemMessage) return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatDate(msg.messageCreateDate)}</div></div>`;
+                // ТЕКСТ
+                const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
+                return `<div class="message ${isOwn ? 'own' : ''}">
+                    <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
+                    <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' ✏️(edited)' : ''}</div>
+                    <div class="message-time">${formatDate(msg.messageCreateDate)}</div>
+                    <div class="message-actions">
+                        <button class="copy-btn" data-text="${textEsc}">📋 Copy</button>
+                        ${isOwn ? `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}">✏️ Edit</button>` : ''}
+                        ${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}
+                    </div>
+                </div>`;
             }).join('');
-            container.innerHTML = messagesHtml;
+
+            // НАВЕШИВАЕМ ОБРАБОТЧИКИ
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id, name = btn.dataset.name;
+                    if (id) downloadFile(id, name);
+                    else showToast('Ошибка: нет ID', true);
+                });
+            });
+            document.querySelectorAll('.del-file-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteFileMessage(btn.dataset.id); }));
+            document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
+            document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => editMessage(btn.dataset.id, btn.dataset.text)));
+            document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', () => deleteMessage(btn.dataset.id)));
+            document.querySelectorAll('.message-sender, .message-header img').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const msgDiv = el.closest('.message');
+                    const mid = msgDiv?.dataset.mid;
+                    const found = sorted.find(m => m.messageId === mid);
+                    if (found?.userId) showUserProfile(found.userId);
+                });
+            });
             container.scrollTop = container.scrollHeight;
+        }
+
+        // СКАЧИВАНИЕ ФАЙЛА - РАБОТАЕТ
+        async function downloadFile(messageId, fileName) {
+            if (!messageId) return showToast('No file ID', true);
+            showToast('⏳ Downloading...');
+            try {
+                const res = await fetch(`${API_BASE}/File/download/${messageId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName || 'file';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+                    showToast('✅ Downloaded!');
+                } else showToast('File not found', true);
+            } catch (e) { showToast('Download failed', true); }
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            if (!text || !currentChat || !currentUser) return;
+            if (!text || !currentChat) return;
             try {
-                const response = await fetch(`${API_BASE}/Message`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ messageText: text, userId: currentUser.id, chatId: currentChat.id })
-                });
-                if (response.ok) {
-                    input.value = '';
-                    await loadMessages(currentChat.id);
-                    if (connection) {
-                        await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, text);
-                    }
-                } else {
-                    const error = await response.text();
-                    alert('Failed to send message: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to send message:', error);
-                alert('Failed to send message');
-            }
+                await api('/Message', { method: 'POST', body: JSON.stringify({ messageText: text, userId: currentUser.id, chatId: currentChat.id }) });
+                input.value = '';
+                await loadMessages(currentChat.id);
+                if (connection) await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, text);
+            } catch (e) { showToast('Send failed', true); }
         }
 
         async function uploadFile() {
             const input = document.getElementById('fileInput');
             const file = input.files[0];
             if (!file || !currentChat) return;
-            if (file.size > 50 * 1024 * 1024) {
-                alert('File too large! Max 50MB');
-                input.value = '';
-                return;
-            }
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('chatId', currentChat.id);
+            if (file.size > 50 * 1024 * 1024) return showToast('Max 50MB', true);
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('chatId', currentChat.id);
             try {
-                const response = await fetch(`${API_BASE}/File/upload`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                if (response.ok) {
-                    input.value = '';
-                    await loadMessages(currentChat.id);
-                    if (connection) {
-                        await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, `📎 ${file.name}`);
-                    }
-                } else {
-                    const error = await response.text();
-                    alert('Failed to upload file: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to upload file:', error);
-                alert('Failed to upload file');
-            }
+                const res = await fetch(`${API_BASE}/File/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+                if (res.ok) { input.value = ''; await loadMessages(currentChat.id); showToast('File uploaded'); }
+                else showToast('Upload failed', true);
+            } catch (e) { showToast('Upload error', true); }
         }
 
-        async function downloadFile(messageId, fileName) {
-            try {
-                const response = await fetch(`${API_BASE}/File/download/${messageId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                } else {
-                    alert('Failed to download file');
-                }
-            } catch (error) {
-                console.error('Failed to download file:', error);
-                alert('Failed to download file');
-            }
-        }
+        async function deleteFileMessage(id) { if (confirm('Delete file?')) { try { await api('/File/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); showToast('Deleted'); } catch (e) { showToast('Error', true); } } }
+        async function editMessage(id, txt) { editingMessageId = id; document.getElementById('editMessageText').value = txt; showModal('editMessageModal'); }
+        async function saveEditedMsg() { const newText = document.getElementById('editMessageText').value.trim(); if (!newText || !editingMessageId) return; try { await api('/Message/' + editingMessageId, { method: 'PUT', body: JSON.stringify({ messageId: editingMessageId, messageText: newText }) }); closeModals(); await loadMessages(currentChat.id); showToast('Edited'); } catch (e) { showToast('Error', true); } }
+        async function deleteMessage(id) { if (confirm('Delete message?')) { try { await api('/Message/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); } catch (e) { showToast('Error', true); } } }
+        function copyToClipboard(t) { navigator.clipboard.writeText(t); showToast('Copied!'); }
+        async function showUserProfile(id) { try { const res = await api('/Chat/user-profile/' + id); const u = await res.json(); document.getElementById('userProfileContent').innerHTML = `<div><img src="${API_BASE}/User/avatar/${id}?t=${Date.now()}" style="width:80px;height:80px;border-radius:50%"><h4>${escapeHtml(u.name)}</h4><p>Joined ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); } catch (e) { showToast('Error', true); } }
 
-        async function deleteFileMessage(messageId) {
-            if (!confirm('Delete this file?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/File/${messageId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    await loadMessages(currentChat.id);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to delete file: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to delete file:', error);
-                alert('Failed to delete file');
-            }
-        }
+        async function createPrivateChat(uid, uname) { try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Chat with ${uname} created`); } } catch (e) { showToast('Error', true); } }
+        async function searchUsers() { const q = document.getElementById('searchUserInput').value.trim(); const div = document.getElementById('searchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id); if (!filtered.length) { div.innerHTML = '<div class="empty-state">Not found</div>'; return; } div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el => el.addEventListener('click', () => createPrivateChat(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
 
-        async function editMessage(messageId, currentText) {
-            editingMessageId = messageId;
-            document.getElementById('editMessageText').value = currentText;
-            document.getElementById('editMessageModal').classList.add('active');
-        }
+        function showCreateGroup() { selectedGroupMembers = []; updateSelected(); document.getElementById('groupName').value = ''; document.getElementById('groupMaxUsers').value = '100'; document.getElementById('groupSearchInput').value = ''; document.getElementById('groupSearchResults').innerHTML = ''; showModal('createGroupModal'); }
+        async function searchGroupUsers() { const q = document.getElementById('groupSearchInput').value.trim(); const div = document.getElementById('groupSearchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !selectedGroupMembers.some(m => m.id === u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el => el.addEventListener('click', () => { selectedGroupMembers.push({ id: el.dataset.id, name: el.dataset.name }); updateSelected(); document.getElementById('groupSearchInput').value = ''; div.innerHTML = ''; })); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
+        function updateSelected() { const div = document.getElementById('selectedMembers'); if (!selectedGroupMembers.length) { div.innerHTML = '<div class="empty-state">No members</div>'; return; } div.innerHTML = selectedGroupMembers.map(m => `<div class="member-tag">${escapeHtml(m.name)}<button data-id="${m.id}">×</button></div>`).join(''); document.querySelectorAll('#selectedMembers .member-tag button').forEach(btn => btn.addEventListener('click', () => { selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== btn.dataset.id); updateSelected(); })); }
+        async function createGroup() { const name = document.getElementById('groupName').value.trim(); const max = parseInt(document.getElementById('groupMaxUsers').value); if (!name) return showToast('Enter group name', true); if (!selectedGroupMembers.length) return showToast('Select members', true); const ids = [currentUser.id, ...selectedGroupMembers.map(m => m.id)]; try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: ids, maxUsers: max, chatName: name }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Group "${name}" created`); } } catch (e) { showToast('Error', true); } }
 
-        async function saveEditedMessage() {
-            const newText = document.getElementById('editMessageText').value.trim();
-            if (!newText || !editingMessageId) return;
-            try {
-                const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ messageId: editingMessageId, messageText: newText })
-                });
-                if (response.ok) {
-                    closeEditMessageModal();
-                    await loadMessages(currentChat.id);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to edit message: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to edit message:', error);
-                alert('Failed to edit message');
-            }
-        }
+        async function showEditChatModal() { if (!currentChatInfo) return; const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2; document.getElementById('editChatTitle').innerText = isGroup ? 'Edit Group' : 'Edit Chat'; document.getElementById('editChatName').value = currentChatInfo.chatName; document.getElementById('leaveDeleteBtn').innerText = isGroup ? 'Leave Group' : 'Delete Chat'; if (isGroup) { document.getElementById('groupMembersSection').style.display = 'block'; await renderMembers(); } else document.getElementById('groupMembersSection').style.display = 'none'; showModal('editChatModal'); }
+        async function renderMembers() { const members = currentChatInfo.users || []; const container = document.getElementById('membersList'); container.innerHTML = members.map(m => `<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}" style="width:32px;height:32px;border-radius:50%"> ${escapeHtml(m.name)}${m.id === currentChatInfo.createdById ? ' 👑' : ''}</div>${m.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>` : ''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn => btn.addEventListener('click', () => removeMember(btn.dataset.id, btn.dataset.name))); }
+        async function searchAddMember() { const q = document.getElementById('addMemberSearch').value.trim(); const div = document.getElementById('addMemberResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const existing = currentChatInfo.users.map(u => u.id); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !existing.includes(u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#addMemberResults .user-search-result').forEach(el => el.addEventListener('click', () => addMemberToGroup(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
+        async function addMemberToGroup(uid, uname) { try { await api('/Chat/add-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: uid }) }); currentChatInfo = await getChatInfo(currentChat.id); await renderMembers(); document.getElementById('addMemberSearch').value = ''; document.getElementById('addMemberResults').innerHTML = ''; showToast(`${uname} added`); } catch (e) { showToast('Error', true); } }
+        async function removeMember(uid, uname) { if (!confirm(`Remove ${uname}?`)) return; try { await api('/Chat/remove-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: uid }) }); currentChatInfo = await getChatInfo(currentChat.id); if (currentChatInfo) { await renderMembers(); showToast(`${uname} removed`); } else { closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); } } catch (e) { showToast('Error', true); } }
+        async function saveChatEdit() { const newName = document.getElementById('editChatName').value.trim(); if (newName && newName !== currentChatInfo.chatName) { try { await api('/Chat/' + currentChat.id, { method: 'PUT', body: JSON.stringify({ chatName: newName }) }); currentChatInfo.chatName = newName; await loadChats(); showToast('Renamed'); } catch (e) { showToast('Error', true); } } closeModals(); }
+        function leaveOrDelete() { const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2; if (isGroup) leaveGroup(); else deleteChat(); }
+        async function leaveGroup() { if (!confirm('Leave group?')) return; try { await api('/Chat/remove-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: currentUser.id }) }); closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); showToast('Left group'); } catch (e) { showToast('Error', true); } }
+        async function deleteChat() { if (!confirm('Delete chat?')) return; try { await api('/Chat/' + currentChat.id, { method: 'DELETE' }); closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); showToast('Chat deleted'); } catch (e) { showToast('Error', true); } }
 
-        async function deleteMessage(messageId) {
-            if (!confirm('Delete this message?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/Message/${messageId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    await loadMessages(currentChat.id);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to delete message: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to delete message:', error);
-                alert('Failed to delete message');
-            }
-        }
-
-        async function showEditChatModal() {
-            if (!currentChatInfo) return;
-            const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
-            document.getElementById('editChatTitle').textContent = isGroup ? 'Edit Group' : 'Edit Chat';
-            document.getElementById('editChatName').value = currentChatInfo.chatName;
-            if (isGroup) {
-                document.getElementById('groupMembersSection').style.display = 'block';
-                document.getElementById('leaveDeleteBtn').textContent = 'Leave Group';
-                await renderMembersList();
-            } else {
-                document.getElementById('groupMembersSection').style.display = 'none';
-                document.getElementById('leaveDeleteBtn').textContent = 'Delete Chat';
-            }
-            document.getElementById('editChatModal').classList.add('active');
-        }
-
-        async function renderMembersList() {
-            const members = currentChatInfo.users || [];
-            const container = document.getElementById('membersList');
-            container.innerHTML = members.map(member => `
-                    <div class="member-item">
-                        <div class="member-info">
-                            <img src="${API_BASE}/User/avatar/${member.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
-                            <span>${escapeHtml(member.name)}${member.id === currentChatInfo.createdById ? ' 👑' : ''}</span>
-                        </div>
-                        ${member.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `<button class="remove-member-btn" onclick="removeMember('${member.id}', '${escapeHtml(member.name)}')">Remove</button>` : ''}
-                    </div>
-                `).join('');
-        }
-
-        async function searchAddMember() {
-            const query = document.getElementById('addMemberSearch').value.trim();
-            const resultsDiv = document.getElementById('addMemberResults');
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '';
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/all`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const users = await response.json();
-                    const existingMemberIds = currentChatInfo.users.map(u => u.id);
-                    const filtered = users.filter(u =>
-                        u.name.toLowerCase().includes(query.toLowerCase()) &&
-                        u.id !== currentUser.id &&
-                        !existingMemberIds.includes(u.id)
-                    );
-                    if (filtered.length === 0) {
-                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
-                        return;
-                    }
-                    resultsDiv.innerHTML = filtered.map(user => `
-                            <div class="user-search-result" onclick="addMemberToGroup('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
-                                <div><strong>${escapeHtml(user.name)}</strong></div>
-                            </div>
-                        `).join('');
-                }
-            } catch (error) {
-                console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
-            }
-        }
-
-        async function addMemberToGroup(userId, userName) {
-            try {
-                const response = await fetch(`${API_BASE}/Chat/add-user`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ chatId: currentChat.id, userId: userId })
-                });
-                if (response.ok) {
-                    currentChatInfo = await getChatInfo(currentChat.id);
-                    await renderMembersList();
-                    document.getElementById('addMemberSearch').value = '';
-                    document.getElementById('addMemberResults').innerHTML = '';
-                    document.getElementById('chatHeader').innerHTML = `
-                            <div class="chat-header-top">
-                                <div class="chat-header-info">
-                                    <img class="chat-header-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                                    <div>
-                                        <h2>${escapeHtml(currentChatInfo.chatName)}</h2>
-                                        <p>${currentChatInfo.users.length} members</p>
-                                    </div>
-                                </div>
-                                <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
-                            </div>
-                        `;
-                } else {
-                    const error = await response.text();
-                    alert('Failed to add member: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to add member:', error);
-                alert('Failed to add member');
-            }
-        }
-
-        async function removeMember(userId, userName) {
-            if (!confirm(`Remove ${userName} from group?`)) return;
-            try {
-                const response = await fetch(`${API_BASE}/Chat/remove-user`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ chatId: currentChat.id, userId: userId })
-                });
-                if (response.ok) {
-                    currentChatInfo = await getChatInfo(currentChat.id);
-                    if (currentChatInfo) {
-                        await renderMembersList();
-                        document.getElementById('chatHeader').innerHTML = `
-                                <div class="chat-header-top">
-                                    <div class="chat-header-info">
-                                        <img class="chat-header-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                                        <div>
-                                            <h2>${escapeHtml(currentChatInfo.chatName)}</h2>
-                                            <p>${currentChatInfo.users.length} members</p>
-                                        </div>
-                                    </div>
-                                    <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
-                                </div>
-                            `;
-                    } else {
-                        closeEditChatModal();
-                        currentChat = null;
-                        currentChatInfo = null;
-                        document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
-                        document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
-                        document.getElementById('messageInput').disabled = true;
-                        document.getElementById('sendBtn').disabled = true;
-                        await loadChats();
-                    }
-                } else {
-                    const error = await response.text();
-                    alert('Failed to remove member: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to remove member:', error);
-                alert('Failed to remove member');
-            }
-        }
-
-        async function saveChatEdit() {
-            const newName = document.getElementById('editChatName').value.trim();
-            if (newName && newName !== currentChatInfo.chatName) {
-                try {
-                    const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ chatName: newName })
-                    });
-                    if (response.ok) {
-                        currentChat.name = newName;
-                        currentChatInfo.chatName = newName;
-                        document.getElementById('chatHeader').innerHTML = `
-                                <div class="chat-header-top">
-                                    <div class="chat-header-info">
-                                        <img class="chat-header-logo" src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-                                        <div>
-                                            <h2>${escapeHtml(newName)}</h2>
-                                            <p>${currentChatInfo.users?.length || 0} members</p>
-                                        </div>
-                                    </div>
-                                    <button class="edit-chat-btn" onclick="showEditChatModal()">✏️ Edit</button>
-                                </div>
-                            `;
-                        await loadChats();
-                    } else {
-                        const error = await response.text();
-                        alert('Failed to rename: ' + error);
-                    }
-                } catch (error) {
-                    console.error('Failed to rename:', error);
-                    alert('Failed to rename');
-                }
-            }
-            closeEditChatModal();
-        }
-
-        async function leaveGroup() {
-            if (!confirm('Are you sure you want to leave this group?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/Chat/remove-user`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ chatId: currentChat.id, userId: currentUser.id })
-                });
-                if (response.ok) {
-                    closeEditChatModal();
-                    currentChat = null;
-                    currentChatInfo = null;
-                    document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
-                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
-                    document.getElementById('messageInput').disabled = true;
-                    document.getElementById('sendBtn').disabled = true;
-                    await loadChats();
-                    alert('You left the group');
-                } else {
-                    const error = await response.text();
-                    alert('Failed to leave group: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to leave group:', error);
-                alert('Failed to leave group');
-            }
-        }
-
-        async function deleteChat() {
-            if (!confirm('Delete this chat?')) return;
-            try {
-                const response = await fetch(`${API_BASE}/Chat/${currentChat.id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    closeEditChatModal();
-                    currentChat = null;
-                    currentChatInfo = null;
-                    document.getElementById('chatHeader').innerHTML = '<h2>Select a chat</h2><p>Choose conversation to start messaging</p>';
-                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">No messages yet</div>';
-                    document.getElementById('messageInput').disabled = true;
-                    document.getElementById('sendBtn').disabled = true;
-                    await loadChats();
-                } else {
-                    const error = await response.text();
-                    alert('Failed to delete chat: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to delete chat:', error);
-                alert('Failed to delete chat');
-            }
-        }
-
-        function leaveOrDeleteChat() {
-            const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2;
-            if (isGroup) leaveGroup();
-            else deleteChat();
-        }
-
-        function closeEditChatModal() {
-            document.getElementById('editChatModal').classList.remove('active');
-            document.getElementById('addMemberSearch').value = '';
-            document.getElementById('addMemberResults').innerHTML = '';
-        }
-
-        async function searchUsers() {
-            const query = document.getElementById('searchUserInput').value.trim();
-            const resultsDiv = document.getElementById('searchResults');
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '<div class="empty-state">Enter at least 2 characters</div>';
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/all`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const users = await response.json();
-                    const filtered = users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()) && u.id !== currentUser.id);
-                    if (filtered.length === 0) {
-                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
-                        return;
-                    }
-                    resultsDiv.innerHTML = filtered.map(user => `
-                            <div class="user-search-result" onclick="createPrivateChat('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
-                                <div><strong>${escapeHtml(user.name)}</strong><div style="font-size: 12px; color: #6b7280;">Click to start chat</div></div>
-                            </div>
-                        `).join('');
-                }
-            } catch (error) {
-                console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
-            }
-        }
-
-        async function createPrivateChat(userId, userName) {
-            try {
-                const response = await fetch(`${API_BASE}/Chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ memberIds: [currentUser.id, userId], maxUsers: 2 })
-                });
-                if (response.ok) {
-                    const newChat = await response.json();
-                    alert(`Chat with ${userName} created!`);
-                    closeNewChatModal();
-                    await loadChats();
-                    await selectChat(newChat.id, newChat.chatName);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to create chat: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to create chat:', error);
-                alert('Failed to create chat');
-            }
-        }
-
-        function showCreateGroupModal() {
-            selectedGroupMembers = [];
-            updateSelectedMembersDisplay();
-            document.getElementById('groupName').value = '';
-            document.getElementById('groupMaxUsers').value = '100';
-            document.getElementById('groupSearchInput').value = '';
-            document.getElementById('groupSearchResults').innerHTML = '';
-            document.getElementById('createGroupModal').classList.add('active');
-        }
-
-        function closeCreateGroupModal() {
-            document.getElementById('createGroupModal').classList.remove('active');
-        }
-
-        async function searchGroupUsers() {
-            const query = document.getElementById('groupSearchInput').value.trim();
-            const resultsDiv = document.getElementById('groupSearchResults');
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '';
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/all`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const users = await response.json();
-                    const filtered = users.filter(u =>
-                        u.name.toLowerCase().includes(query.toLowerCase()) &&
-                        u.id !== currentUser.id &&
-                        !selectedGroupMembers.some(m => m.id === u.id)
-                    );
-                    if (filtered.length === 0) {
-                        resultsDiv.innerHTML = '<div class="empty-state">No users found</div>';
-                        return;
-                    }
-                    resultsDiv.innerHTML = filtered.map(user => `
-                            <div class="user-search-result" onclick="addGroupMember('${user.id}', '${escapeHtml(user.name)}')">
-                                <img src="${API_BASE}/User/avatar/${user.id}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #2a2a2a;">
-                                <div><strong>${escapeHtml(user.name)}</strong></div>
-                            </div>
-                        `).join('');
-                }
-            } catch (error) {
-                console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="empty-state">Search failed</div>';
-            }
-        }
-
-        function addGroupMember(userId, userName) {
-            if (selectedGroupMembers.some(m => m.id === userId)) return;
-            selectedGroupMembers.push({ id: userId, name: userName });
-            updateSelectedMembersDisplay();
-            document.getElementById('groupSearchInput').value = '';
-            document.getElementById('groupSearchResults').innerHTML = '';
-        }
-
-        function removeGroupMember(userId) {
-            selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== userId);
-            updateSelectedMembersDisplay();
-        }
-
-        function updateSelectedMembersDisplay() {
-            const container = document.getElementById('selectedMembers');
-            if (selectedGroupMembers.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="padding: 12px;">No members selected yet</div>';
-                return;
-            }
-            container.innerHTML = selectedGroupMembers.map(member => `<div class="member-tag">${escapeHtml(member.name)}<button onclick="removeGroupMember('${member.id}')">×</button></div>`).join('');
-        }
-
-        async function createGroup() {
-            const groupName = document.getElementById('groupName').value.trim();
-            const maxUsers = parseInt(document.getElementById('groupMaxUsers').value);
-            if (!groupName) {
-                alert('Please enter group name');
-                return;
-            }
-            if (selectedGroupMembers.length === 0) {
-                alert('Please select at least one member');
-                return;
-            }
-            const memberIds = [currentUser.id, ...selectedGroupMembers.map(m => m.id)];
-            try {
-                const response = await fetch(`${API_BASE}/Chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ memberIds: memberIds, maxUsers: maxUsers, chatName: groupName })
-                });
-                if (response.ok) {
-                    const newChat = await response.json();
-                    alert(`Group "${groupName}" created!`);
-                    closeCreateGroupModal();
-                    await loadChats();
-                    await selectChat(newChat.id, newChat.chatName);
-                } else {
-                    const error = await response.text();
-                    alert('Failed to create group: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to create group:', error);
-                alert('Failed to create group');
-            }
-        }
-
-        function showNewChatModal() {
-            document.getElementById('newChatModal').classList.add('active');
-            document.getElementById('searchUserInput').value = '';
-            document.getElementById('searchResults').innerHTML = '';
-        }
-
-        function closeNewChatModal() {
-            document.getElementById('newChatModal').classList.remove('active');
-        }
-
-        function closeEditMessageModal() {
-            document.getElementById('editMessageModal').classList.remove('active');
-            editingMessageId = null;
-        }
-
-        async function showProfileModal() {
-            try {
-                const response = await fetch(`${API_BASE}/User/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const user = await response.json();
-                    document.getElementById('profileName').value = user.name;
-                    if (user.avatarPath && user.avatarPath !== '/avatars/default-avatar.png') {
-                        document.getElementById('profileAvatar').src = `${API_BASE}/User/avatar/${user.id}?t=${Date.now()}`;
-                    }
-                    document.getElementById('profileNewPassword').value = '';
-                    document.getElementById('profileModal').classList.add('active');
-                }
-            } catch (error) {
-                console.error('Failed to load profile:', error);
-                alert('Failed to load profile');
-            }
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.remove('active');
-        }
-
-        async function updateProfile() {
-            const newName = document.getElementById('profileName').value.trim();
-            const newPassword = document.getElementById('profileNewPassword').value;
-            const updateData = {};
-            if (newName) updateData.name = newName;
-            if (newPassword) updateData.newPassword = newPassword;
-            if (Object.keys(updateData).length === 0) {
-                closeProfileModal();
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/User/update-profile`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify(updateData)
-                });
-                if (response.ok) {
-                    const user = await response.json();
-                    currentUser.name = user.name;
-                    document.getElementById('currentUserName').textContent = user.name;
-                    alert('Profile updated successfully!');
-                    closeProfileModal();
-                } else {
-                    const error = await response.text();
-                    alert('Failed to update profile: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to update profile:', error);
-                alert('Failed to update profile');
-            }
-        }
-
-        async function uploadAvatarFromProfile(input) {
-            const file = input.files[0];
-            if (!file) return;
-            if (file.size > 5 * 1024 * 1024) {
-                alert('File too large! Max 5MB');
-                return;
-            }
-            const formData = new FormData();
-            formData.append('file', file);
-            try {
-                const response = await fetch(`${API_BASE}/User/upload-avatar`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`;
-                    document.getElementById('sidebarAvatar').src = avatarUrl;
-                    document.getElementById('profileAvatar').src = avatarUrl;
-                    await loadChats();
-                    alert('Avatar updated!');
-                } else {
-                    const error = await response.text();
-                    alert('Failed to upload avatar: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to upload avatar:', error);
-                alert('Failed to upload avatar');
-            }
-        }
-
-        async function deleteAvatar() {
-            if (!confirm('Remove your avatar? It will be replaced with default.')) return;
-            try {
-                const response = await fetch(`${API_BASE}/User/avatar`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    document.getElementById('sidebarAvatar').src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E';
-                    document.getElementById('profileAvatar').src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%236b7280\'%3E%3Cpath d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/%3E%3C/svg%3E';
-                    await loadChats();
-                    alert('Avatar removed!');
-                } else {
-                    const error = await response.text();
-                    alert('Failed to remove avatar: ' + error);
-                }
-            } catch (error) {
-                console.error('Failed to delete avatar:', error);
-                alert('Failed to delete avatar');
-            }
-        }
+        async function showProfile() { try { const res = await api('/User/profile'); const u = await res.json(); document.getElementById('profileName').value = u.name; document.getElementById('profileNewPassword').value = ''; showModal('profileModal'); } catch (e) { showToast('Error', true); } }
+        async function updateProfile() { const name = document.getElementById('profileName').value.trim(); const pwd = document.getElementById('profileNewPassword').value; const upd = {}; if (name) upd.name = name; if (pwd) upd.newPassword = pwd; if (Object.keys(upd).length === 0) return closeModals(); try { await api('/User/update-profile', { method: 'PUT', body: JSON.stringify(upd) }); const user = (await (await api('/User/profile')).json()); currentUser.name = user.name; document.getElementById('currentUserName').innerText = user.name; showToast('Profile updated'); closeModals(); } catch (e) { showToast('Error', true); } }
+        async function uploadAvatar(file) { if (!file || file.size > 5 * 1024 * 1024) return showToast('Max 5MB', true); const fd = new FormData(); fd.append('file', file); try { const res = await fetch(`${API_BASE}/User/upload-avatar`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd }); if (res.ok) { const url = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`; document.getElementById('sidebarAvatar').src = url; document.getElementById('profileAvatar').src = url; showToast('Avatar updated'); } } catch (e) { showToast('Error', true); } }
+        async function deleteAvatar() { if (!confirm('Remove avatar?')) return; try { await fetch(`${API_BASE}/User/avatar`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); document.getElementById('sidebarAvatar').src = DEFAULT_AVATAR; document.getElementById('profileAvatar').src = DEFAULT_AVATAR; showToast('Avatar removed'); } catch (e) { showToast('Error', true); } }
 
         async function initSignalR() {
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl("/messengerHub", { accessTokenFactory: () => token })
-                .withAutomaticReconnect()
-                .build();
-            connection.on("ReceiveMessage", () => {
-                if (currentChat) loadMessages(currentChat.id);
-            });
-            connection.on("UserOnline", (userId, isOnline) => {
-                onlineUsers.set(userId, isOnline);
-                const chatItem = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
-                if (chatItem) {
-                    const dot = chatItem.querySelector('.online-dot');
-                    if (dot) dot.className = `online-dot ${isOnline ? 'online' : 'offline'}`;
-                }
-                if (currentChatInfo && currentChatInfo.otherUser?.id === userId) {
-                    const statusDiv = document.querySelector('.chat-header-status');
-                    if (statusDiv) {
-                        if (isOnline) {
-                            statusDiv.textContent = '🟢 Online';
-                            statusDiv.classList.add('online');
-                        } else {
-                            statusDiv.textContent = '⚫ Offline';
-                            statusDiv.classList.remove('online');
-                        }
-                    }
-                }
-            });
-            connection.on("UserTyping", (userId, userName) => {
-                if (currentChat && userId !== currentUser.id) {
-                    const typingDiv = document.getElementById('typingIndicator');
-                    typingDiv.textContent = `${userName} is typing...`;
-                    typingDiv.style.display = 'block';
-                    clearTimeout(typingTimeout);
-                    typingTimeout = setTimeout(() => typingDiv.style.display = 'none', 2000);
-                }
-            });
-            connection.on("UserStoppedTyping", (userId) => {
-                if (userId !== currentUser.id) document.getElementById('typingIndicator').style.display = 'none';
-            });
-            try {
-                await connection.start();
-                console.log("SignalR connected");
-                if (currentChat) await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name);
-            } catch (error) {
-                console.error("SignalR connection failed:", error);
-            }
+            connection = new signalR.HubConnectionBuilder().withUrl("/messengerHub", { accessTokenFactory: () => token }).withAutomaticReconnect().build();
+            connection.on("ReceiveMessage", () => { if (currentChat) loadMessages(currentChat.id); });
+            connection.on("UserOnline", (uid, isOnline) => { onlineUsers.set(uid, isOnline); loadChats(); if (currentChatInfo?.otherUser?.id === uid) { const status = document.querySelector('.chat-header-status'); if (status) status.innerText = isOnline ? '🟢 Online' : '⚫ Offline'; } });
+            connection.on("UserTyping", (uid, name) => { if (currentChat && uid !== currentUser.id) { const div = document.getElementById('typingIndicator'); div.innerText = `${name} typing...`; div.style.display = 'block'; clearTimeout(typingTimeout); typingTimeout = setTimeout(() => div.style.display = 'none', 2000); } });
+            connection.on("UserStoppedTyping", () => { document.getElementById('typingIndicator').style.display = 'none'; });
+            try { await connection.start(); if (currentChat) await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name); } catch (e) { console.error(e); }
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            token = null;
-            currentUser = null;
-            currentChat = null;
-            currentChatInfo = null;
-            onlineUsers.clear();
-            if (connection) connection.stop();
-            document.getElementById('authContainer').style.display = 'flex';
-            document.getElementById('appContainer').classList.remove('active');
-            document.getElementById('loginLogin').value = '';
-            document.getElementById('loginPassword').value = '';
+        function startTyping() { if (connection && currentChat && document.getElementById('messageInput').value.length > 0) { connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id), 1000); } }
+
+        async function initApp() {
+            if (!token) { const t = localStorage.getItem('token'), uid = localStorage.getItem('userId'); if (t && uid) { token = t; currentUser = { id: uid }; } else return; }
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+            await loadUser();
+            await loadChats();
+            await initSignalR();
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function logout() { localStorage.clear(); token = null; currentUser = null; currentChat = null; if (connection) connection.stop(); document.getElementById('authContainer').style.display = 'flex'; document.getElementById('appContainer').classList.remove('active'); }
 
-        function startTyping() {
-            if (connection && currentChat && document.getElementById('messageInput').value.length > 0) {
-                connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name);
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id), 1000);
-            }
-        }
-
+        // EVENT BINDINGS
+        document.getElementById('doLoginBtn')?.addEventListener('click', handleLogin);
+        document.getElementById('sendCodeBtn')?.addEventListener('click', requestCode);
+        document.getElementById('verifyBtn')?.addEventListener('click', verifyReg);
+        document.getElementById('backToRegisterBtn')?.addEventListener('click', () => { document.getElementById('verifyForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'flex'; });
+        document.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
+        document.getElementById('menuBtn')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+        document.getElementById('newChatBtn')?.addEventListener('click', () => { document.getElementById('searchUserInput').value = ''; document.getElementById('searchResults').innerHTML = ''; showModal('newChatModal'); });
+        document.getElementById('createGroupBtn')?.addEventListener('click', showCreateGroup);
+        document.getElementById('attachBtn')?.addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('fileInput')?.addEventListener('change', uploadFile);
+        document.getElementById('sendBtn')?.addEventListener('click', sendMessage);
         document.getElementById('messageInput')?.addEventListener('input', startTyping);
-        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        document.getElementById('searchUserInput')?.addEventListener('input', searchUsers);
+        document.getElementById('groupSearchInput')?.addEventListener('input', searchGroupUsers);
+        document.getElementById('createGroupSubmit')?.addEventListener('click', createGroup);
+        document.getElementById('addMemberSearch')?.addEventListener('input', searchAddMember);
+        document.getElementById('saveChatEdit')?.addEventListener('click', saveChatEdit);
+        document.getElementById('leaveDeleteBtn')?.addEventListener('click', leaveOrDelete);
+        document.getElementById('sidebarAvatar')?.addEventListener('click', showProfile);
+        document.getElementById('currentUserName')?.addEventListener('click', showProfile);
+        document.getElementById('updateProfileBtn')?.addEventListener('click', updateProfile);
+        document.getElementById('removeAvatarBtn')?.addEventListener('click', deleteAvatar);
+        document.getElementById('profileAvatar')?.addEventListener('click', () => document.getElementById('avatarFile').click());
+        document.getElementById('avatarFile')?.addEventListener('change', (e) => uploadAvatar(e.target.files[0]));
+        document.getElementById('saveEditMessage')?.addEventListener('click', saveEditedMsg);
+        document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
 
-        if (localStorage.getItem('token')) {
-            token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                currentUser = { id: userId };
-                initApp();
-            }
-        }
+        if (localStorage.getItem('token')) initApp();
     </script>
 </body>
 </html>

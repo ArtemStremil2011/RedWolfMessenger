@@ -2,7 +2,8 @@
 using Messenger.DTOs;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Messenger.Models.BaseModels;  // для UserRole
+using Messenger.Models.BaseModels;
+using Messenger.Models.ChatModels;
 
 namespace Messenger.Services
 {
@@ -21,33 +22,74 @@ namespace Messenger.Services
         {
             try
             {
-                var message = await _context.Messages
+                // Проверяем в текстовых сообщениях
+                var textMessage = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .FirstOrDefaultAsync(m => m.MessageId == messageId);
 
-                if (message == null) return null;
-
-                var chat = await _context.Chats
-                    .Include(c => c.Users)
-                    .FirstOrDefaultAsync(c => c.Id == message.ChatId);
-
-                if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
+                if (textMessage != null)
                 {
-                    _logger.LogWarning("User {UserId} not in chat containing message {MessageId}", currentUserId, messageId);
-                    return null;
+                    var chat = await _context.Chats
+                        .Include(c => c.Users)
+                        .FirstOrDefaultAsync(c => c.Id == textMessage.ChatId);
+
+                    if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
+                        return null;
+
+                    return new MessageResponseDTO(
+                        textMessage.MessageId,
+                        textMessage.MessageText,
+                        textMessage.MessageCreateDate,
+                        textMessage.MessageLastUpdateDate,
+                        textMessage.UserId,
+                        textMessage.ChatId,
+                        textMessage.MessageCreator != null ? new UserResponseDTO(
+                            textMessage.MessageCreator.Id,
+                            textMessage.MessageCreator.Name,
+                            textMessage.MessageCreator.AvatarPath,
+                            textMessage.MessageCreator.RegisterDate
+                        ) : null,
+                        textMessage.IsDeleted,
+                        textMessage.IsSystemMessage
+                    );
                 }
 
-                return new MessageResponseDTO(
-                    message.MessageId,
-                    message.MessageText,
-                    message.MessageCreateDate,
-                    message.MessageLastUpdateDate,
-                    message.UserId,
-                    message.ChatId,
-                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
-                    message.IsDeleted,
-                    message.IsSystemMessage
-                );
+                // Проверяем в файловых сообщениях
+                var fileMessage = await _context.Set<FileMessage>()
+                    .Include(f => f.MessageCreator)
+                    .FirstOrDefaultAsync(f => f.MessageId == messageId);
+
+                if (fileMessage != null)
+                {
+                    var chat = await _context.Chats
+                        .Include(c => c.Users)
+                        .FirstOrDefaultAsync(c => c.Id == fileMessage.ChatId);
+
+                    if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
+                        return null;
+
+                    return new MessageResponseDTO(
+                        fileMessage.MessageId,
+                        fileMessage.MessageText,
+                        fileMessage.MessageCreateDate,
+                        fileMessage.MessageLastUpdateDate,
+                        fileMessage.UserId,
+                        fileMessage.ChatId,
+                        fileMessage.MessageCreator != null ? new UserResponseDTO(
+                            fileMessage.MessageCreator.Id,
+                            fileMessage.MessageCreator.Name,
+                            fileMessage.MessageCreator.AvatarPath,
+                            fileMessage.MessageCreator.RegisterDate
+                        ) : null,
+                        fileMessage.IsDeleted,
+                        fileMessage.IsSystemMessage,
+                        fileMessage.FileName,
+                        fileMessage.FileSize,
+                        fileMessage.ContentType
+                    );
+                }
+
+                return null;
             }
             catch (Exception ex)
             {
@@ -67,21 +109,62 @@ namespace Messenger.Services
                     return new List<MessageResponseDTO>();
                 }
 
-                return await _context.Messages
+                var result = new List<MessageResponseDTO>();
+
+                var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .OrderByDescending(m => m.MessageCreateDate)
-                    .Select(m => new MessageResponseDTO(
-                        m.MessageId,
-                        m.MessageText,
-                        m.MessageCreateDate,
-                        m.MessageLastUpdateDate,
-                        m.UserId,
-                        m.ChatId,
-                        m.MessageCreator != null ? new UserResponseDTO(m.MessageCreator.Id, m.MessageCreator.Name, m.MessageCreator.AvatarPath, m.MessageCreator.RegisterDate) : null,
-                        m.IsDeleted,
-                        m.IsSystemMessage
-                    ))
                     .ToListAsync();
+
+                foreach (var msg in textMessages)
+                {
+                    result.Add(new MessageResponseDTO(
+                        msg.MessageId,
+                        msg.MessageText,
+                        msg.MessageCreateDate,
+                        msg.MessageLastUpdateDate,
+                        msg.UserId,
+                        msg.ChatId,
+                        msg.MessageCreator != null ? new UserResponseDTO(
+                            msg.MessageCreator.Id,
+                            msg.MessageCreator.Name,
+                            msg.MessageCreator.AvatarPath,
+                            msg.MessageCreator.RegisterDate
+                        ) : null,
+                        msg.IsDeleted,
+                        msg.IsSystemMessage
+                    ));
+                }
+
+                var fileMessages = await _context.Set<FileMessage>()
+                    .Include(f => f.MessageCreator)
+                    .OrderByDescending(f => f.MessageCreateDate)
+                    .ToListAsync();
+
+                foreach (var fileMsg in fileMessages)
+                {
+                    result.Add(new MessageResponseDTO(
+                        fileMsg.MessageId,
+                        fileMsg.MessageText,
+                        fileMsg.MessageCreateDate,
+                        fileMsg.MessageLastUpdateDate,
+                        fileMsg.UserId,
+                        fileMsg.ChatId,
+                        fileMsg.MessageCreator != null ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name,
+                            fileMsg.MessageCreator.AvatarPath,
+                            fileMsg.MessageCreator.RegisterDate
+                        ) : null,
+                        fileMsg.IsDeleted,
+                        fileMsg.IsSystemMessage,
+                        fileMsg.FileName,
+                        fileMsg.FileSize,
+                        fileMsg.ContentType
+                    ));
+                }
+
+                return result.OrderByDescending(m => m.MessageCreateDate).ToList();
             }
             catch (Exception ex)
             {
@@ -104,24 +187,68 @@ namespace Messenger.Services
                     return new List<MessageResponseDTO>();
                 }
 
-                return await _context.Messages
+                var result = new List<MessageResponseDTO>();
+
+                var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .Where(m => m.ChatId == chatId && !m.IsDeleted)
                     .OrderByDescending(m => m.MessageCreateDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(m => new MessageResponseDTO(
-                        m.MessageId,
-                        m.MessageText,
-                        m.MessageCreateDate,
-                        m.MessageLastUpdateDate,
-                        m.UserId,
-                        m.ChatId,
-                        m.MessageCreator != null ? new UserResponseDTO(m.MessageCreator.Id, m.MessageCreator.Name, m.MessageCreator.AvatarPath, m.MessageCreator.RegisterDate) : null,
-                        m.IsDeleted,
-                        m.IsSystemMessage
-                    ))
                     .ToListAsync();
+
+                foreach (var msg in textMessages)
+                {
+                    result.Add(new MessageResponseDTO(
+                        msg.MessageId,
+                        msg.MessageText,
+                        msg.MessageCreateDate,
+                        msg.MessageLastUpdateDate,
+                        msg.UserId,
+                        msg.ChatId,
+                        msg.MessageCreator != null ? new UserResponseDTO(
+                            msg.MessageCreator.Id,
+                            msg.MessageCreator.Name,
+                            msg.MessageCreator.AvatarPath,
+                            msg.MessageCreator.RegisterDate
+                        ) : null,
+                        msg.IsDeleted,
+                        msg.IsSystemMessage
+                    ));
+                }
+
+                var fileMessages = await _context.Set<FileMessage>()
+                    .Include(f => f.MessageCreator)
+                    .Where(f => f.ChatId == chatId && !f.IsDeleted)
+                    .OrderByDescending(f => f.MessageCreateDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                foreach (var fileMsg in fileMessages)
+                {
+                    result.Add(new MessageResponseDTO(
+                        fileMsg.MessageId,
+                        fileMsg.MessageText,
+                        fileMsg.MessageCreateDate,
+                        fileMsg.MessageLastUpdateDate,
+                        fileMsg.UserId,
+                        fileMsg.ChatId,
+                        fileMsg.MessageCreator != null ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name,
+                            fileMsg.MessageCreator.AvatarPath,
+                            fileMsg.MessageCreator.RegisterDate
+                        ) : null,
+                        fileMsg.IsDeleted,
+                        fileMsg.IsSystemMessage,
+                        fileMsg.FileName,
+                        fileMsg.FileSize,
+                        fileMsg.ContentType
+                    ));
+                }
+
+                return result.OrderByDescending(m => m.MessageCreateDate).ToList();
             }
             catch (Exception ex)
             {
