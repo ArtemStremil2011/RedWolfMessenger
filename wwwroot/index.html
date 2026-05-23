@@ -18,7 +18,6 @@
             color: #e0e0e0;
         }
 
-        /* Auth */
         .auth-container {
             display: flex;
             justify-content: center;
@@ -159,7 +158,6 @@
             text-align: center;
         }
 
-        /* App */
         .app-container {
             display: none;
             height: 100vh;
@@ -306,7 +304,6 @@
             color: #6b7280;
         }
 
-        /* Chat Area */
         .chat-area {
             flex: 1;
             display: flex;
@@ -341,7 +338,6 @@
             color: #e0e0e0;
         }
 
-        /* Messages */
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -428,7 +424,6 @@
                     color: white;
                 }
 
-        /* FILE MESSAGE - ВИДИМАЯ КНОПКА СКАЧИВАНИЯ */
         .message-file {
             display: flex;
             align-items: center;
@@ -460,7 +455,6 @@
             margin-top: 2px;
         }
 
-        /* КНОПКА СКАЧИВАНИЯ - ЗЕЛЕНАЯ И ВИДИМАЯ */
         .download-btn {
             background: #22c55e !important;
             border: none !important;
@@ -473,7 +467,6 @@
             display: inline-flex !important;
             align-items: center !important;
             gap: 6px !important;
-            transition: all 0.2s !important;
         }
 
             .download-btn:hover {
@@ -490,7 +483,6 @@
             border-radius: 8px;
         }
 
-        /* Input */
         .message-input-area {
             padding: 16px 20px;
             border-top: 1px solid #2a2a2a;
@@ -541,7 +533,6 @@
             font-style: italic;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -681,7 +672,7 @@
             border-radius: 30px;
             z-index: 9999;
             font-size: 14px;
-            animation: fadeOut 2s forwards;
+            animation: fadeOut 2.5s forwards;
         }
 
         @keyframes fadeOut {
@@ -791,8 +782,25 @@
     <div class="modal" id="editMessageModal"><div class="modal-content"><h3>Edit Message</h3><textarea id="editMessageText" rows="3" style="width:100%;background:#1f1f1f;border:none;border-radius:12px;padding:12px;color:white"></textarea><div class="modal-buttons"><button class="btn btn-primary" id="saveEditMessage">Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script type="module">
+        import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
+        const initEmojiPicker = () => {
+            const container = document.querySelector('.emoji-picker-container');
+            if (!container) return;
+            const picker = document.createElement('emoji-picker');
+            picker.addEventListener('emoji-click', (event) => {
+                const input = document.getElementById('messageInput');
+                if (input) { input.value += event.detail.unicode; picker.style.display = 'none'; input.focus(); }
+            });
+            container.appendChild(picker);
+            const emojiBtn = document.getElementById('emojiBtn');
+            if (emojiBtn) emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); picker.style.display = picker.style.display === 'none' ? 'block' : 'none'; });
+            document.addEventListener('click', (e) => { if (container && !container.contains(e.target) && picker.style.display === 'block') picker.style.display = 'none'; });
+        };
+        window.initEmojiPicker = initEmojiPicker;
+    </script>
     <script>
-        // ==================== STATE ====================
+        // STATE
         let currentUser = null, currentChat = null, currentChatInfo = null, token = null, connection = null;
         let typingTimeout = null, editingMessageId = null;
         let selectedGroupMembers = [], tempPhoneNumber = null;
@@ -800,26 +808,57 @@
         const API_BASE = '/api';
         const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
+        // UTILS
         function showToast(msg, isErr = false) {
             const toast = document.createElement('div');
             toast.className = 'toast';
             toast.textContent = msg;
             toast.style.background = isErr ? '#ef4444' : '#22c55e';
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
+            setTimeout(() => toast.remove(), 2500);
+        }
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function (m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+        function formatFileSize(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]; }
+        function getFileIcon(name) { const e = name?.split('.').pop()?.toLowerCase(); if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(e)) return '🖼️'; if (['mp4', 'mov', 'avi', 'mkv'].includes(e)) return '🎥'; if (['pdf'].includes(e)) return '📕'; if (['doc', 'docx'].includes(e)) return '📘'; if (['xls', 'xlsx'].includes(e)) return '📊'; if (['txt', 'json', 'xml'].includes(e)) return '📄'; return '📎'; }
+
+        // ФОРМАТИРОВАНИЕ ВРЕМЕНИ С УЧЕТОМ ТОЧНОСТИ
+        function formatMessageDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const diffDays = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24));
+
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+
+            if (diffDays === 0) return timeStr;
+            if (diffDays === 1) return `Yesterday at ${timeStr}`;
+            if (diffDays < 7) {
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                return `${days[date.getDay()]} at ${timeStr}`;
+            }
+            return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} at ${timeStr}`;
         }
 
-        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function (m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+        // ОПРЕДЕЛЕНИЕ РЕДАКТИРОВАНИЯ - СРАВНЕНИЕ С ПОРОГОМ 1 СЕКУНДА
+        function isMessageEdited(msg) {
+            if (!msg.messageLastUpdateDate || !msg.messageCreateDate) return false;
+            const createDate = new Date(msg.messageCreateDate);
+            const updateDate = new Date(msg.messageLastUpdateDate);
+            const diffMs = Math.abs(updateDate - createDate);
+            return diffMs > 1000;
+        }
 
-        function formatFileSize(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]; }
-        function getFileIcon(name) { const e = name?.split('.').pop()?.toLowerCase(); if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(e)) return '🖼️'; if (['mp4', 'mov', 'avi', 'mkv'].includes(e)) return '🎥'; if (['pdf'].includes(e)) return '📕'; if (['doc', 'docx'].includes(e)) return '📘'; if (['xls', 'xlsx'].includes(e)) return '📊'; if (['txt', 'json', 'xml'].includes(e)) return '📄'; if (['zip', 'rar', '7z'].includes(e)) return '🗜️'; return '📎'; }
-        function formatTime(d) { if (!d) return ''; const date = new Date(d); return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
-        function formatDate(d) { if (!d) return ''; const date = new Date(d); const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()); const diff = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24)); if (diff === 0) return formatTime(d); if (diff === 1) return 'Yesterday at ' + formatTime(d); if (diff < 7) return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()] + ' at ' + formatTime(d); return date.toLocaleDateString() + ' at ' + formatTime(d); }
-
+        function copyToClipboard(text) { navigator.clipboard.writeText(text); showToast('Copied!'); }
         function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
         function showModal(id) { closeModals(); document.getElementById(id).classList.add('active'); }
 
-        // ==================== API ====================
+        // API
         async function api(url, opts = {}) {
             const res = await fetch(API_BASE + url, {
                 headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
@@ -829,7 +868,7 @@
             return res;
         }
 
-        // ==================== AUTH ====================
+        // AUTH
         async function handleLogin() {
             const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
             if (!login || !pwd) return showToast('Fill all fields', true);
@@ -887,7 +926,7 @@
             }
         }
 
-        // ==================== CORE ====================
+        // CORE
         async function loadUser() {
             try {
                 const res = await api('/User/profile');
@@ -912,22 +951,13 @@
                     const name = isGroup ? chat.chatName : (other?.name || chat.chatName);
                     const avatar = other?.id ? API_BASE + '/User/avatar/' + other.id : DEFAULT_AVATAR;
                     const online = other?.id ? onlineUsers.get(other.id) === true : false;
-                    return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}" data-other="${other?.id || ''}">
-                        <div style="display:flex;align-items:center;gap:12px">
-                            <div class="chat-avatar-container"><img src="${avatar}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}</div>
-                            <div><div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div><div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div></div>
-                        </div>
-                    </div>`;
+                    return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}"><div style="display:flex;align-items:center;gap:12px"><div class="chat-avatar-container"><img src="${avatar}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}</div><div><div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div><div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div></div></div></div>`;
                 }).join('');
-                document.querySelectorAll('.chat-item').forEach(el => {
-                    el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name));
-                });
+                document.querySelectorAll('.chat-item').forEach(el => { el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name)); });
             } catch (e) { console.error(e); }
         }
 
-        async function getChatInfo(chatId) {
-            try { const res = await api('/Chat/' + chatId); return await res.json(); } catch (e) { return null; }
-        }
+        async function getChatInfo(chatId) { try { const res = await api('/Chat/' + chatId); return await res.json(); } catch (e) { return null; } }
 
         async function selectChat(chatId, chatName) {
             currentChat = { id: chatId, name: chatName };
@@ -951,39 +981,41 @@
             } catch (e) { console.error(e); }
         }
 
-        // ГЛАВНАЯ ФУНКЦИЯ ОТРИСОВКИ С ВИДИМОЙ КНОПКОЙ СКАЧИВАНИЯ
+        // ГЛАВНАЯ ФУНКЦИЯ ОТРИСОВКИ С ИСПРАВЛЕННОЙ ПРОВЕРКОЙ EDITED
         function renderMessages(messages) {
             const container = document.getElementById('messagesContainer');
             if (!messages?.length) { container.innerHTML = '<div class="empty-state">No messages yet</div>'; return; }
             const sorted = [...messages].sort((a, b) => new Date(a.messageCreateDate) - new Date(b.messageCreateDate));
             container.innerHTML = sorted.map(msg => {
                 const isOwn = msg.userId === currentUser.id;
-                const edited = msg.messageCreateDate !== msg.messageLastUpdateDate;
+                const edited = isMessageEdited(msg);
                 const avatar = API_BASE + '/User/avatar/' + msg.userId;
                 const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
 
-                // ФАЙЛОВОЕ СООБЩЕНИЕ
+                // Файловое сообщение
                 if (msg.fileName) {
                     return `<div class="message ${isOwn ? 'own' : ''}" data-mid="${msg.messageId}">
                         <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
                         <div class="message-file">
                             <div class="file-icon">${getFileIcon(msg.fileName)}</div>
                             <div class="file-info"><div class="file-name">📁 ${escapeHtml(msg.fileName)}</div><div class="file-size">${formatFileSize(msg.fileSize)}</div></div>
-                            <button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ СКАЧАТЬ</button>
+                            <button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ DOWNLOAD</button>
                         </div>
-                        ${msg.messageText ? `<div class="message-caption">${escapeHtml(msg.messageText)}${edited ? ' ✏️(edited)' : ''}</div>` : ''}
-                        <div class="message-time">🕐 ${formatDate(msg.messageCreateDate)}</div>
-                        <div class="message-actions">${isOwn ? `<button class="del-file-btn" data-id="${msg.messageId}">🗑️ Удалить</button>` : ''}</div>
+                        ${msg.messageText && !msg.messageText.startsWith('📎') ? `<div class="message-caption">${escapeHtml(msg.messageText)}${edited ? ' ✏️' : ''}</div>` : ''}
+                        <div class="message-time">🕐 ${formatMessageDate(msg.messageCreateDate)}</div>
+                        <div class="message-actions">
+                            ${isOwn ? `<button class="del-file-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}
+                        </div>
                     </div>`;
                 }
-                // СИСТЕМНОЕ
-                if (msg.isSystemMessage) return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatDate(msg.messageCreateDate)}</div></div>`;
-                // ТЕКСТ
+                // Системное
+                if (msg.isSystemMessage) return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
+                // Текст
                 const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
                 return `<div class="message ${isOwn ? 'own' : ''}">
                     <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
-                    <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' ✏️(edited)' : ''}</div>
-                    <div class="message-time">${formatDate(msg.messageCreateDate)}</div>
+                    <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size:10px; opacity:0.6;">✏️ edited</span>' : ''}</div>
+                    <div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div>
                     <div class="message-actions">
                         <button class="copy-btn" data-text="${textEsc}">📋 Copy</button>
                         ${isOwn ? `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}">✏️ Edit</button>` : ''}
@@ -992,31 +1024,15 @@
                 </div>`;
             }).join('');
 
-            // НАВЕШИВАЕМ ОБРАБОТЧИКИ
-            document.querySelectorAll('.download-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = btn.dataset.id, name = btn.dataset.name;
-                    if (id) downloadFile(id, name);
-                    else showToast('Ошибка: нет ID', true);
-                });
-            });
-            document.querySelectorAll('.del-file-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteFileMessage(btn.dataset.id); }));
+            // Обработчики
+            document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
+            document.querySelectorAll('.del-file-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
             document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
             document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => editMessage(btn.dataset.id, btn.dataset.text)));
             document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', () => deleteMessage(btn.dataset.id)));
-            document.querySelectorAll('.message-sender, .message-header img').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    const msgDiv = el.closest('.message');
-                    const mid = msgDiv?.dataset.mid;
-                    const found = sorted.find(m => m.messageId === mid);
-                    if (found?.userId) showUserProfile(found.userId);
-                });
-            });
             container.scrollTop = container.scrollHeight;
         }
 
-        // СКАЧИВАНИЕ ФАЙЛА - РАБОТАЕТ
         async function downloadFile(messageId, fileName) {
             if (!messageId) return showToast('No file ID', true);
             showToast('⏳ Downloading...');
@@ -1063,11 +1079,9 @@
             } catch (e) { showToast('Upload error', true); }
         }
 
-        async function deleteFileMessage(id) { if (confirm('Delete file?')) { try { await api('/File/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); showToast('Deleted'); } catch (e) { showToast('Error', true); } } }
         async function editMessage(id, txt) { editingMessageId = id; document.getElementById('editMessageText').value = txt; showModal('editMessageModal'); }
         async function saveEditedMsg() { const newText = document.getElementById('editMessageText').value.trim(); if (!newText || !editingMessageId) return; try { await api('/Message/' + editingMessageId, { method: 'PUT', body: JSON.stringify({ messageId: editingMessageId, messageText: newText }) }); closeModals(); await loadMessages(currentChat.id); showToast('Edited'); } catch (e) { showToast('Error', true); } }
         async function deleteMessage(id) { if (confirm('Delete message?')) { try { await api('/Message/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); } catch (e) { showToast('Error', true); } } }
-        function copyToClipboard(t) { navigator.clipboard.writeText(t); showToast('Copied!'); }
         async function showUserProfile(id) { try { const res = await api('/Chat/user-profile/' + id); const u = await res.json(); document.getElementById('userProfileContent').innerHTML = `<div><img src="${API_BASE}/User/avatar/${id}?t=${Date.now()}" style="width:80px;height:80px;border-radius:50%"><h4>${escapeHtml(u.name)}</h4><p>Joined ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); } catch (e) { showToast('Error', true); } }
 
         async function createPrivateChat(uid, uname) { try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Chat with ${uname} created`); } } catch (e) { showToast('Error', true); } }
@@ -1096,7 +1110,7 @@
         async function initSignalR() {
             connection = new signalR.HubConnectionBuilder().withUrl("/messengerHub", { accessTokenFactory: () => token }).withAutomaticReconnect().build();
             connection.on("ReceiveMessage", () => { if (currentChat) loadMessages(currentChat.id); });
-            connection.on("UserOnline", (uid, isOnline) => { onlineUsers.set(uid, isOnline); loadChats(); if (currentChatInfo?.otherUser?.id === uid) { const status = document.querySelector('.chat-header-status'); if (status) status.innerText = isOnline ? '🟢 Online' : '⚫ Offline'; } });
+            connection.on("UserOnline", (uid, isOnline) => { onlineUsers.set(uid, isOnline); loadChats(); });
             connection.on("UserTyping", (uid, name) => { if (currentChat && uid !== currentUser.id) { const div = document.getElementById('typingIndicator'); div.innerText = `${name} typing...`; div.style.display = 'block'; clearTimeout(typingTimeout); typingTimeout = setTimeout(() => div.style.display = 'none', 2000); } });
             connection.on("UserStoppedTyping", () => { document.getElementById('typingIndicator').style.display = 'none'; });
             try { await connection.start(); if (currentChat) await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name); } catch (e) { console.error(e); }
@@ -1111,6 +1125,7 @@
             await loadUser();
             await loadChats();
             await initSignalR();
+            if (typeof window.initEmojiPicker === 'function') window.initEmojiPicker();
         }
 
         function logout() { localStorage.clear(); token = null; currentUser = null; currentChat = null; if (connection) connection.stop(); document.getElementById('authContainer').style.display = 'flex'; document.getElementById('appContainer').classList.remove('active'); }

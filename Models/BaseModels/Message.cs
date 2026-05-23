@@ -38,8 +38,9 @@ namespace Messenger.Models.BaseModels
         public Message()
         {
             MessageId = Guid.NewGuid();
-            MessageCreateDate = DateTime.UtcNow;
-            MessageLastUpdateDate = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            MessageCreateDate = now;
+            MessageLastUpdateDate = now;
         }
     }
 }
