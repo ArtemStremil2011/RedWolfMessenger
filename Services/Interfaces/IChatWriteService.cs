@@ -10,5 +10,7 @@ namespace Messenger.Services.Interfaces
         Task<bool> RemoveUserFromChatAsync(Guid chatId, Guid userIdToRemove, Guid currentUserId);
         Task<bool> DeleteChatAsync(Guid chatId, Guid currentUserId);
         Task<bool> LeaveGroupAsync(Guid chatId, Guid currentUserId);
+        Task<string?> UploadGroupAvatarAsync(Guid chatId, IFormFile file, Guid currentUserId);
+        Task<bool> DeleteGroupAvatarAsync(Guid chatId, Guid currentUserId);
     }
 }

@@ -2,6 +2,10 @@
 using Messenger.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Messenger.Data;
+using Microsoft.EntityFrameworkCore;
+using Messenger.Models.ChatModels;
+using Messenger.Models.BaseModels;
 
 namespace Messenger.Controllers.ChatControllers
 {
@@ -13,15 +17,21 @@ namespace Messenger.Controllers.ChatControllers
         private readonly IChatReadService _chatReadService;
         private readonly IChatWriteService _chatWriteService;
         private readonly ILogger<ChatController> _logger;
+        private readonly AppDBContext _context;
+        private readonly IWebHostEnvironment _environment;
 
         public ChatController(
             IChatReadService chatReadService,
             IChatWriteService chatWriteService,
-            ILogger<ChatController> logger)
+            ILogger<ChatController> logger,
+            AppDBContext context,
+            IWebHostEnvironment environment)
         {
             _chatReadService = chatReadService;
             _chatWriteService = chatWriteService;
             _logger = logger;
+            _context = context;
+            _environment = environment;
         }
 
         private Guid GetCurrentUserId()
@@ -166,6 +176,74 @@ namespace Messenger.Controllers.ChatControllers
                 return NotFound(new { message = "Пользователь не найден или нет доступа" });
 
             return Ok(user);
+        }
+
+        // ============ АВАТАРКИ ДЛЯ ГРУПП ============
+
+        [HttpPost("{chatId}/avatar")]
+        public async Task<IActionResult> UploadGroupAvatar(Guid chatId, IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "Файл не выбран" });
+
+                var currentUserId = GetCurrentUserId();
+                var avatarPath = await _chatWriteService.UploadGroupAvatarAsync(chatId, file, currentUserId);
+
+                if (avatarPath == null)
+                    return BadRequest(new { message = "Не удалось загрузить аватарку" });
+
+                return Ok(new { avatarPath });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading group avatar");
+                return StatusCode(500, new { message = "Внутренняя ошибка сервера" });
+            }
+        }
+
+        [HttpGet("{chatId}/avatar")]
+        public async Task<IActionResult> GetGroupAvatar(Guid chatId)
+        {
+            var currentUserId = GetCurrentUserId();
+            var avatarPath = await _chatReadService.GetGroupAvatarPathAsync(chatId, currentUserId);
+
+            if (string.IsNullOrEmpty(avatarPath))
+                return NotFound();
+
+            var filePath = Path.Combine(_environment.WebRootPath, avatarPath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            var contentType = GetContentType(Path.GetExtension(filePath));
+            return File(bytes, contentType);
+        }
+
+        [HttpDelete("{chatId}/avatar")]
+        public async Task<IActionResult> DeleteGroupAvatar(Guid chatId)
+        {
+            var currentUserId = GetCurrentUserId();
+            var result = await _chatWriteService.DeleteGroupAvatarAsync(chatId, currentUserId);
+
+            if (!result)
+                return BadRequest(new { message = "Не удалось удалить аватарку" });
+
+            return Ok(new { message = "Аватарка удалена" });
+        }
+
+        private string GetContentType(string extension)
+        {
+            return extension.ToLower() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                _ => "image/png"
+            };
         }
     }
 }

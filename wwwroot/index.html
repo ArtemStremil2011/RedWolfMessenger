@@ -144,20 +144,6 @@
             color: white;
         }
 
-            .btn-danger:hover {
-                background: #991b1b;
-            }
-
-        .error-message {
-            background: rgba(220, 38, 38, 0.1);
-            border: 1px solid rgba(220, 38, 38, 0.3);
-            border-radius: 12px;
-            padding: 12px;
-            color: #ef4444;
-            font-size: 14px;
-            text-align: center;
-        }
-
         .app-container {
             display: none;
             height: 100vh;
@@ -490,6 +476,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            position: relative;
         }
 
             .message-input-area input {
@@ -525,6 +512,22 @@
             .attach-btn:hover, .emoji-btn:hover, .send-btn:hover {
                 opacity: 0.8;
             }
+
+        .emoji-picker-container {
+            position: relative;
+        }
+
+        emoji-picker {
+            position: absolute;
+            bottom: 55px;
+            left: 0;
+            z-index: 1000;
+            --background: #1f1f1f;
+            --border-radius: 16px;
+            --category-emoji-size: 24px;
+            --emoji-size: 28px;
+            --num-columns: 8;
+        }
 
         .typing-indicator {
             font-size: 12px;
@@ -628,6 +631,16 @@
             cursor: pointer;
         }
 
+        .group-avatar-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            margin-bottom: 16px;
+            border: 2px solid #dc2626;
+        }
+
         .empty-state {
             text-align: center;
             color: #6b7280;
@@ -715,7 +728,6 @@
                     <input type="password" id="loginPassword" placeholder="Enter password">
                 </div>
                 <button class="btn btn-primary" id="doLoginBtn">Login →</button>
-                <div id="loginError" class="error-message" style="display:none"></div>
             </div>
 
             <div id="registerForm" class="auth-form" style="display:none">
@@ -766,7 +778,9 @@
             <div class="message-input-area">
                 <input type="file" id="fileInput" style="display:none">
                 <button class="attach-btn" id="attachBtn">📎</button>
-                <button class="emoji-btn" id="emojiBtn">😊</button>
+                <div class="emoji-picker-container">
+                    <button class="emoji-btn" id="emojiBtn">😊</button>
+                </div>
                 <input type="text" id="messageInput" placeholder="Type a message..." disabled>
                 <button class="send-btn" id="sendBtn" disabled>➤</button>
             </div>
@@ -777,27 +791,46 @@
     <div class="modal" id="userProfileModal"><div class="modal-content"><div id="userProfileContent"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Close</button></div></div></div>
     <div class="modal" id="newChatModal"><div class="modal-content"><h3>New Private Chat</h3><input type="text" id="searchUserInput" placeholder="Search username..."><div id="searchResults"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
     <div class="modal" id="createGroupModal"><div class="modal-content"><h3>Create Group</h3><input type="text" id="groupName" placeholder="Group name"><input type="number" id="groupMaxUsers" value="100"><input type="text" id="groupSearchInput" placeholder="Search members..."><div id="groupSearchResults"></div><div id="selectedMembers"></div><div class="modal-buttons"><button class="btn btn-primary" id="createGroupSubmit">Create</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
-    <div class="modal" id="editChatModal"><div class="modal-content"><h3 id="editChatTitle">Edit Chat</h3><input type="text" id="editChatName" placeholder="Chat name"><div id="groupMembersSection" style="display:none"><input type="text" id="addMemberSearch" placeholder="Add member..."><div id="addMemberResults"></div><div id="membersList"></div></div><div class="modal-buttons"><button class="btn btn-primary" id="saveChatEdit">Save</button><button class="btn btn-danger" id="leaveDeleteBtn">Leave</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <div class="modal" id="editChatModal"><div class="modal-content"><h3 id="editChatTitle">Edit Chat</h3><input type="text" id="editChatName" placeholder="Chat name"><div id="groupAvatarSection" style="display:none; text-align:center; margin-bottom:20px;"><img id="groupAvatarPreview" class="group-avatar-img" src=""><div style="margin-top:8px;"><button class="btn-secondary" id="uploadGroupAvatarBtn" style="padding:6px 12px;">📷 Upload Avatar</button><button class="btn-danger" id="deleteGroupAvatarBtn" style="padding:6px 12px; margin-left:8px;">🗑️ Remove</button></div><input type="file" id="groupAvatarFile" accept="image/*" style="display:none"></div><div id="groupMembersSection" style="display:none"><input type="text" id="addMemberSearch" placeholder="Add member..."><div id="addMemberResults"></div><div id="membersList"></div></div><div class="modal-buttons"><button class="btn btn-primary" id="saveChatEdit">Save</button><button class="btn btn-danger" id="leaveDeleteBtn">Leave</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
     <div class="modal" id="profileModal"><div class="modal-content"><h3>My Profile</h3><div style="text-align:center"><img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><input type="file" id="avatarFile" accept="image/*" style="display:none"><button class="btn-secondary" id="removeAvatarBtn" style="margin-top:8px">Remove Avatar</button></div><div class="form-group"><label>Name</label><input type="text" id="profileName"></div><div class="form-group"><label>New Password</label><input type="password" id="profileNewPassword"></div><div class="modal-buttons"><button class="btn btn-primary" id="updateProfileBtn">Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
     <div class="modal" id="editMessageModal"><div class="modal-content"><h3>Edit Message</h3><textarea id="editMessageText" rows="3" style="width:100%;background:#1f1f1f;border:none;border-radius:12px;padding:12px;color:white"></textarea><div class="modal-buttons"><button class="btn btn-primary" id="saveEditMessage">Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script type="module">
         import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
-        const initEmojiPicker = () => {
+
+        window.initEmojiPicker = () => {
             const container = document.querySelector('.emoji-picker-container');
             if (!container) return;
+
             const picker = document.createElement('emoji-picker');
+            picker.style.display = 'none';
             picker.addEventListener('emoji-click', (event) => {
                 const input = document.getElementById('messageInput');
-                if (input) { input.value += event.detail.unicode; picker.style.display = 'none'; input.focus(); }
+                if (input) {
+                    input.value += event.detail.unicode;
+                    picker.style.display = 'none';
+                    input.focus();
+                }
             });
             container.appendChild(picker);
+
             const emojiBtn = document.getElementById('emojiBtn');
-            if (emojiBtn) emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); picker.style.display = picker.style.display === 'none' ? 'block' : 'none'; });
-            document.addEventListener('click', (e) => { if (container && !container.contains(e.target) && picker.style.display === 'block') picker.style.display = 'none'; });
+            if (emojiBtn) {
+                const newBtn = emojiBtn.cloneNode(true);
+                emojiBtn.parentNode.replaceChild(newBtn, emojiBtn);
+                newBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (container && !container.contains(e.target) && picker.style.display === 'block') {
+                    picker.style.display = 'none';
+                }
+            });
         };
-        window.initEmojiPicker = initEmojiPicker;
     </script>
     <script>
         // STATE
@@ -808,7 +841,7 @@
         const API_BASE = '/api';
         const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
-        // UTILS
+        // UTILITIES
         function showToast(msg, isErr = false) {
             const toast = document.createElement('div');
             toast.className = 'toast';
@@ -817,25 +850,22 @@
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2500);
         }
+
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function (m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
         function formatFileSize(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]; }
         function getFileIcon(name) { const e = name?.split('.').pop()?.toLowerCase(); if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(e)) return '🖼️'; if (['mp4', 'mov', 'avi', 'mkv'].includes(e)) return '🎥'; if (['pdf'].includes(e)) return '📕'; if (['doc', 'docx'].includes(e)) return '📘'; if (['xls', 'xlsx'].includes(e)) return '📊'; if (['txt', 'json', 'xml'].includes(e)) return '📄'; return '📎'; }
 
-        // ФОРМАТИРОВАНИЕ ВРЕМЕНИ С УЧЕТОМ ТОЧНОСТИ
         function formatMessageDate(dateString) {
             if (!dateString) return '';
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return '';
-
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
             const diffDays = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24));
-
             const hours = date.getHours().toString().padStart(2, '0');
             const minutes = date.getMinutes().toString().padStart(2, '0');
             const timeStr = `${hours}:${minutes}`;
-
             if (diffDays === 0) return timeStr;
             if (diffDays === 1) return `Yesterday at ${timeStr}`;
             if (diffDays < 7) {
@@ -845,7 +875,6 @@
             return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} at ${timeStr}`;
         }
 
-        // ОПРЕДЕЛЕНИЕ РЕДАКТИРОВАНИЯ - СРАВНЕНИЕ С ПОРОГОМ 1 СЕКУНДА
         function isMessageEdited(msg) {
             if (!msg.messageLastUpdateDate || !msg.messageCreateDate) return false;
             const createDate = new Date(msg.messageCreateDate);
@@ -858,6 +887,12 @@
         function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
         function showModal(id) { closeModals(); document.getElementById(id).classList.add('active'); }
 
+        // Безопасное получение токена для URL
+        function getSafeToken() {
+            if (!token) return '';
+            return encodeURIComponent(token);
+        }
+
         // API
         async function api(url, opts = {}) {
             const res = await fetch(API_BASE + url, {
@@ -866,6 +901,29 @@
             });
             if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
             return res;
+        }
+
+        // ЗАГРУЗКА АВАТАРКИ ГРУППЫ ЧЕРЕЗ FETCH (С ТОКЕНОМ)
+        async function loadGroupAvatar(chatId, imgElement) {
+            if (!token || !chatId) {
+                if (imgElement) imgElement.src = DEFAULT_AVATAR;
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    imgElement.src = url;
+                } else {
+                    imgElement.src = DEFAULT_AVATAR;
+                }
+            } catch (error) {
+                console.error('Error loading group avatar:', error);
+                imgElement.src = DEFAULT_AVATAR;
+            }
         }
 
         // AUTH
@@ -926,6 +984,123 @@
             }
         }
 
+        // PROFILE
+        async function showProfileModal() {
+            try {
+                const res = await api('/User/profile');
+                const user = await res.json();
+                document.getElementById('profileName').value = user.name;
+                document.getElementById('profileNewPassword').value = '';
+                const avatarUrl = `${API_BASE}/User/avatar/${user.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
+                document.getElementById('profileAvatar').src = avatarUrl;
+                showModal('profileModal');
+            } catch (e) { showToast('Error loading profile', true); }
+        }
+
+        async function updateProfile() {
+            const newName = document.getElementById('profileName').value.trim();
+            const newPassword = document.getElementById('profileNewPassword').value;
+            const updateData = {};
+            if (newName) updateData.name = newName;
+            if (newPassword) updateData.newPassword = newPassword;
+            if (Object.keys(updateData).length === 0) { closeModals(); return; }
+
+            try {
+                const res = await api('/User/update-profile', { method: 'PUT', body: JSON.stringify(updateData) });
+                if (res.ok) {
+                    const updatedUser = await res.json();
+                    if (currentUser) currentUser.name = updatedUser.name;
+                    document.getElementById('currentUserName').innerText = updatedUser.name;
+                    showToast('Profile updated!');
+                    closeModals();
+                    await loadChats();
+                } else showToast('Update failed', true);
+            } catch (e) { showToast('Error', true); }
+        }
+
+        async function uploadAvatar(file) {
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) return showToast('Max 5MB', true);
+            const fd = new FormData();
+            fd.append('file', file);
+            try {
+                const res = await fetch(`${API_BASE}/User/upload-avatar`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+                if (res.ok) {
+                    const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
+                    document.getElementById('sidebarAvatar').src = avatarUrl;
+                    document.getElementById('profileAvatar').src = avatarUrl;
+                    await loadChats();
+                    showToast('Avatar updated!');
+                } else showToast('Upload failed', true);
+            } catch (e) { showToast('Error', true); }
+        }
+
+        async function deleteAvatar() {
+            if (!confirm('Remove avatar?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/User/avatar`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    document.getElementById('sidebarAvatar').src = DEFAULT_AVATAR;
+                    document.getElementById('profileAvatar').src = DEFAULT_AVATAR;
+                    await loadChats();
+                    showToast('Avatar removed');
+                } else showToast('Delete failed', true);
+            } catch (e) { showToast('Error', true); }
+        }
+
+        // GROUP AVATAR
+        async function uploadGroupAvatar(file) {
+            if (!file || !currentChat) return;
+            if (file.size > 5 * 1024 * 1024) return showToast('Max 5MB', true);
+            const fd = new FormData();
+            fd.append('file', file);
+            try {
+                const res = await fetch(`${API_BASE}/Chat/${currentChat.id}/avatar`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('Group avatar updated!');
+                    if (currentChatInfo) {
+                        currentChatInfo.avatarPath = data.avatarPath;
+                    }
+                    await loadChats();
+                    // Обновляем превью в модалке
+                    const avatarUrl = await fetchGroupAvatarAsBlobUrl(currentChat.id);
+                    document.getElementById('groupAvatarPreview').src = avatarUrl;
+                } else showToast('Upload failed', true);
+            } catch (e) { showToast('Error', true); }
+        }
+
+        async function fetchGroupAvatarAsBlobUrl(chatId) {
+            if (!token || !chatId) return '';
+            try {
+                const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    return URL.createObjectURL(blob);
+                }
+                return '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        async function deleteGroupAvatar() {
+            if (!confirm('Remove group avatar?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/Chat/${currentChat.id}/avatar`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    showToast('Group avatar removed');
+                    if (currentChatInfo) {
+                        currentChatInfo.avatarPath = null;
+                    }
+                    document.getElementById('groupAvatarPreview').src = '';
+                    await loadChats();
+                } else showToast('Delete failed', true);
+            } catch (e) { showToast('Error', true); }
+        }
+
         // CORE
         async function loadUser() {
             try {
@@ -933,27 +1108,58 @@
                 const user = await res.json();
                 currentUser = { ...currentUser, ...user };
                 document.getElementById('currentUserName').innerText = user.name;
-                const avUrl = API_BASE + '/User/avatar/' + currentUser.id + '?t=' + Date.now();
+                const avUrl = API_BASE + '/User/avatar/' + currentUser.id + '?access_token=' + getSafeToken() + '&t=' + Date.now();
                 document.getElementById('sidebarAvatar').src = avUrl;
-                document.getElementById('profileAvatar').src = avUrl;
             } catch (e) { console.error(e); }
         }
 
         async function loadChats() {
             try {
+                if (!token) {
+                    console.error('No token in loadChats');
+                    return;
+                }
                 const res = await api(`/Chat/user-chats/${currentUser.id}`);
                 const chats = await res.json();
                 const container = document.getElementById('chatsList');
                 if (!chats?.length) { container.innerHTML = '<div class="empty-state">No chats. +New Chat</div>'; return; }
+
+                // Сначала рендерим без аватарок (поставим дефолтные)
                 container.innerHTML = chats.map(chat => {
                     const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
-                    const other = chat.otherUser;
-                    const name = isGroup ? chat.chatName : (other?.name || chat.chatName);
-                    const avatar = other?.id ? API_BASE + '/User/avatar/' + other.id : DEFAULT_AVATAR;
-                    const online = other?.id ? onlineUsers.get(other.id) === true : false;
-                    return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}"><div style="display:flex;align-items:center;gap:12px"><div class="chat-avatar-container"><img src="${avatar}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}</div><div><div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div><div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div></div></div></div>`;
+                    const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
+                    const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
+                    const avatarId = `avatar-${chat.id}`;
+                    return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <div class="chat-avatar-container">
+                                <img id="${avatarId}" style="width:44px;height:44px;border-radius:50%" src="${DEFAULT_AVATAR}">
+                                ${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}
+                            </div>
+                            <div>
+                                <div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div>
+                                <div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div>
+                            </div>
+                        </div>
+                    </div>`;
                 }).join('');
-                document.querySelectorAll('.chat-item').forEach(el => { el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name)); });
+
+                // Загружаем аватарки для всех чатов
+                for (const chat of chats) {
+                    const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
+                    const img = document.getElementById(`avatar-${chat.id}`);
+                    if (!img) continue;
+
+                    if (isGroup && chat.avatarPath) {
+                        await loadGroupAvatar(chat.id, img);
+                    } else if (!isGroup && chat.otherUser?.id) {
+                        img.src = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}`;
+                    }
+                }
+
+                document.querySelectorAll('.chat-item').forEach(el => {
+                    el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name));
+                });
             } catch (e) { console.error(e); }
         }
 
@@ -981,18 +1187,17 @@
             } catch (e) { console.error(e); }
         }
 
-        // ГЛАВНАЯ ФУНКЦИЯ ОТРИСОВКИ С ИСПРАВЛЕННОЙ ПРОВЕРКОЙ EDITED
         function renderMessages(messages) {
             const container = document.getElementById('messagesContainer');
             if (!messages?.length) { container.innerHTML = '<div class="empty-state">No messages yet</div>'; return; }
             const sorted = [...messages].sort((a, b) => new Date(a.messageCreateDate) - new Date(b.messageCreateDate));
+            const safeToken = getSafeToken();
             container.innerHTML = sorted.map(msg => {
                 const isOwn = msg.userId === currentUser.id;
                 const edited = isMessageEdited(msg);
-                const avatar = API_BASE + '/User/avatar/' + msg.userId;
+                const avatar = API_BASE + '/User/avatar/' + msg.userId + '?access_token=' + safeToken;
                 const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
 
-                // Файловое сообщение
                 if (msg.fileName) {
                     return `<div class="message ${isOwn ? 'own' : ''}" data-mid="${msg.messageId}">
                         <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
@@ -1008,9 +1213,7 @@
                         </div>
                     </div>`;
                 }
-                // Системное
                 if (msg.isSystemMessage) return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
-                // Текст
                 const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
                 return `<div class="message ${isOwn ? 'own' : ''}">
                     <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
@@ -1024,7 +1227,6 @@
                 </div>`;
             }).join('');
 
-            // Обработчики
             document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
             document.querySelectorAll('.del-file-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
             document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
@@ -1072,40 +1274,63 @@
             const fd = new FormData();
             fd.append('file', file);
             fd.append('chatId', currentChat.id);
+            showToast('⏳ Uploading...');
             try {
                 const res = await fetch(`${API_BASE}/File/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
-                if (res.ok) { input.value = ''; await loadMessages(currentChat.id); showToast('File uploaded'); }
-                else showToast('Upload failed', true);
+                if (res.ok) {
+                    input.value = '';
+                    showToast('✅ File uploaded!');
+                    await loadMessages(currentChat.id);
+                    if (connection) await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, `📎 ${file.name}`);
+                } else showToast('Upload failed', true);
             } catch (e) { showToast('Upload error', true); }
         }
 
         async function editMessage(id, txt) { editingMessageId = id; document.getElementById('editMessageText').value = txt; showModal('editMessageModal'); }
         async function saveEditedMsg() { const newText = document.getElementById('editMessageText').value.trim(); if (!newText || !editingMessageId) return; try { await api('/Message/' + editingMessageId, { method: 'PUT', body: JSON.stringify({ messageId: editingMessageId, messageText: newText }) }); closeModals(); await loadMessages(currentChat.id); showToast('Edited'); } catch (e) { showToast('Error', true); } }
         async function deleteMessage(id) { if (confirm('Delete message?')) { try { await api('/Message/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); } catch (e) { showToast('Error', true); } } }
-        async function showUserProfile(id) { try { const res = await api('/Chat/user-profile/' + id); const u = await res.json(); document.getElementById('userProfileContent').innerHTML = `<div><img src="${API_BASE}/User/avatar/${id}?t=${Date.now()}" style="width:80px;height:80px;border-radius:50%"><h4>${escapeHtml(u.name)}</h4><p>Joined ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); } catch (e) { showToast('Error', true); } }
+        async function showUserProfile(id) { try { const res = await api('/Chat/user-profile/' + id); const u = await res.json(); document.getElementById('userProfileContent').innerHTML = `<div><img src="${API_BASE}/User/avatar/${id}?access_token=${getSafeToken()}&t=${Date.now()}" style="width:80px;height:80px;border-radius:50%"><h4>${escapeHtml(u.name)}</h4><p>Joined ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); } catch (e) { showToast('Error', true); } }
 
         async function createPrivateChat(uid, uname) { try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Chat with ${uname} created`); } } catch (e) { showToast('Error', true); } }
-        async function searchUsers() { const q = document.getElementById('searchUserInput').value.trim(); const div = document.getElementById('searchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id); if (!filtered.length) { div.innerHTML = '<div class="empty-state">Not found</div>'; return; } div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el => el.addEventListener('click', () => createPrivateChat(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
+        async function searchUsers() { const q = document.getElementById('searchUserInput').value.trim(); const div = document.getElementById('searchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id); if (!filtered.length) { div.innerHTML = '<div class="empty-state">Not found</div>'; return; } div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el => el.addEventListener('click', () => createPrivateChat(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
 
         function showCreateGroup() { selectedGroupMembers = []; updateSelected(); document.getElementById('groupName').value = ''; document.getElementById('groupMaxUsers').value = '100'; document.getElementById('groupSearchInput').value = ''; document.getElementById('groupSearchResults').innerHTML = ''; showModal('createGroupModal'); }
-        async function searchGroupUsers() { const q = document.getElementById('groupSearchInput').value.trim(); const div = document.getElementById('groupSearchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !selectedGroupMembers.some(m => m.id === u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el => el.addEventListener('click', () => { selectedGroupMembers.push({ id: el.dataset.id, name: el.dataset.name }); updateSelected(); document.getElementById('groupSearchInput').value = ''; div.innerHTML = ''; })); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
+        async function searchGroupUsers() { const q = document.getElementById('groupSearchInput').value.trim(); const div = document.getElementById('groupSearchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !selectedGroupMembers.some(m => m.id === u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el => el.addEventListener('click', () => { selectedGroupMembers.push({ id: el.dataset.id, name: el.dataset.name }); updateSelected(); document.getElementById('groupSearchInput').value = ''; div.innerHTML = ''; })); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
         function updateSelected() { const div = document.getElementById('selectedMembers'); if (!selectedGroupMembers.length) { div.innerHTML = '<div class="empty-state">No members</div>'; return; } div.innerHTML = selectedGroupMembers.map(m => `<div class="member-tag">${escapeHtml(m.name)}<button data-id="${m.id}">×</button></div>`).join(''); document.querySelectorAll('#selectedMembers .member-tag button').forEach(btn => btn.addEventListener('click', () => { selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== btn.dataset.id); updateSelected(); })); }
         async function createGroup() { const name = document.getElementById('groupName').value.trim(); const max = parseInt(document.getElementById('groupMaxUsers').value); if (!name) return showToast('Enter group name', true); if (!selectedGroupMembers.length) return showToast('Select members', true); const ids = [currentUser.id, ...selectedGroupMembers.map(m => m.id)]; try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: ids, maxUsers: max, chatName: name }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Group "${name}" created`); } } catch (e) { showToast('Error', true); } }
 
-        async function showEditChatModal() { if (!currentChatInfo) return; const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2; document.getElementById('editChatTitle').innerText = isGroup ? 'Edit Group' : 'Edit Chat'; document.getElementById('editChatName').value = currentChatInfo.chatName; document.getElementById('leaveDeleteBtn').innerText = isGroup ? 'Leave Group' : 'Delete Chat'; if (isGroup) { document.getElementById('groupMembersSection').style.display = 'block'; await renderMembers(); } else document.getElementById('groupMembersSection').style.display = 'none'; showModal('editChatModal'); }
-        async function renderMembers() { const members = currentChatInfo.users || []; const container = document.getElementById('membersList'); container.innerHTML = members.map(m => `<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}" style="width:32px;height:32px;border-radius:50%"> ${escapeHtml(m.name)}${m.id === currentChatInfo.createdById ? ' 👑' : ''}</div>${m.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>` : ''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn => btn.addEventListener('click', () => removeMember(btn.dataset.id, btn.dataset.name))); }
-        async function searchAddMember() { const q = document.getElementById('addMemberSearch').value.trim(); const div = document.getElementById('addMemberResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const existing = currentChatInfo.users.map(u => u.id); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !existing.includes(u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#addMemberResults .user-search-result').forEach(el => el.addEventListener('click', () => addMemberToGroup(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
+        async function showEditChatModal() {
+            if (!currentChatInfo) return;
+            const isGroup = currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2);
+            document.getElementById('editChatTitle').innerText = isGroup ? 'Edit Group' : 'Edit Chat';
+            document.getElementById('editChatName').value = currentChatInfo.chatName;
+            document.getElementById('leaveDeleteBtn').innerText = isGroup ? 'Leave Group' : 'Delete Chat';
+
+            if (isGroup) {
+                document.getElementById('groupAvatarSection').style.display = 'block';
+                document.getElementById('groupMembersSection').style.display = 'block';
+                if (currentChatInfo.avatarPath) {
+                    const avatarUrl = await fetchGroupAvatarAsBlobUrl(currentChat.id);
+                    document.getElementById('groupAvatarPreview').src = avatarUrl;
+                } else {
+                    document.getElementById('groupAvatarPreview').src = '';
+                }
+                await renderMembers();
+            } else {
+                document.getElementById('groupAvatarSection').style.display = 'none';
+                document.getElementById('groupMembersSection').style.display = 'none';
+            }
+            showModal('editChatModal');
+        }
+
+        async function renderMembers() { const members = currentChatInfo.users || []; const container = document.getElementById('membersList'); container.innerHTML = members.map(m => `<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}?access_token=${getSafeToken()}" style="width:32px;height:32px;border-radius:50%"> ${escapeHtml(m.name)}${m.id === currentChatInfo.createdById ? ' 👑' : ''}</div>${m.id !== currentUser.id && currentChatInfo.createdById === currentUser.id ? `<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>` : ''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn => btn.addEventListener('click', () => removeMember(btn.dataset.id, btn.dataset.name))); }
+        async function searchAddMember() { const q = document.getElementById('addMemberSearch').value.trim(); const div = document.getElementById('addMemberResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const existing = currentChatInfo.users.map(u => u.id); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !existing.includes(u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#addMemberResults .user-search-result').forEach(el => el.addEventListener('click', () => addMemberToGroup(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
         async function addMemberToGroup(uid, uname) { try { await api('/Chat/add-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: uid }) }); currentChatInfo = await getChatInfo(currentChat.id); await renderMembers(); document.getElementById('addMemberSearch').value = ''; document.getElementById('addMemberResults').innerHTML = ''; showToast(`${uname} added`); } catch (e) { showToast('Error', true); } }
         async function removeMember(uid, uname) { if (!confirm(`Remove ${uname}?`)) return; try { await api('/Chat/remove-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: uid }) }); currentChatInfo = await getChatInfo(currentChat.id); if (currentChatInfo) { await renderMembers(); showToast(`${uname} removed`); } else { closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); } } catch (e) { showToast('Error', true); } }
         async function saveChatEdit() { const newName = document.getElementById('editChatName').value.trim(); if (newName && newName !== currentChatInfo.chatName) { try { await api('/Chat/' + currentChat.id, { method: 'PUT', body: JSON.stringify({ chatName: newName }) }); currentChatInfo.chatName = newName; await loadChats(); showToast('Renamed'); } catch (e) { showToast('Error', true); } } closeModals(); }
         function leaveOrDelete() { const isGroup = currentChatInfo.maxUsers > 2 || currentChatInfo.users?.length > 2; if (isGroup) leaveGroup(); else deleteChat(); }
         async function leaveGroup() { if (!confirm('Leave group?')) return; try { await api('/Chat/remove-user', { method: 'POST', body: JSON.stringify({ chatId: currentChat.id, userId: currentUser.id }) }); closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); showToast('Left group'); } catch (e) { showToast('Error', true); } }
         async function deleteChat() { if (!confirm('Delete chat?')) return; try { await api('/Chat/' + currentChat.id, { method: 'DELETE' }); closeModals(); currentChat = null; currentChatInfo = null; document.getElementById('messageInput').disabled = true; document.getElementById('sendBtn').disabled = true; await loadChats(); showToast('Chat deleted'); } catch (e) { showToast('Error', true); } }
-
-        async function showProfile() { try { const res = await api('/User/profile'); const u = await res.json(); document.getElementById('profileName').value = u.name; document.getElementById('profileNewPassword').value = ''; showModal('profileModal'); } catch (e) { showToast('Error', true); } }
-        async function updateProfile() { const name = document.getElementById('profileName').value.trim(); const pwd = document.getElementById('profileNewPassword').value; const upd = {}; if (name) upd.name = name; if (pwd) upd.newPassword = pwd; if (Object.keys(upd).length === 0) return closeModals(); try { await api('/User/update-profile', { method: 'PUT', body: JSON.stringify(upd) }); const user = (await (await api('/User/profile')).json()); currentUser.name = user.name; document.getElementById('currentUserName').innerText = user.name; showToast('Profile updated'); closeModals(); } catch (e) { showToast('Error', true); } }
-        async function uploadAvatar(file) { if (!file || file.size > 5 * 1024 * 1024) return showToast('Max 5MB', true); const fd = new FormData(); fd.append('file', file); try { const res = await fetch(`${API_BASE}/User/upload-avatar`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd }); if (res.ok) { const url = `${API_BASE}/User/avatar/${currentUser.id}?t=${Date.now()}`; document.getElementById('sidebarAvatar').src = url; document.getElementById('profileAvatar').src = url; showToast('Avatar updated'); } } catch (e) { showToast('Error', true); } }
-        async function deleteAvatar() { if (!confirm('Remove avatar?')) return; try { await fetch(`${API_BASE}/User/avatar`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); document.getElementById('sidebarAvatar').src = DEFAULT_AVATAR; document.getElementById('profileAvatar').src = DEFAULT_AVATAR; showToast('Avatar removed'); } catch (e) { showToast('Error', true); } }
 
         async function initSignalR() {
             connection = new signalR.HubConnectionBuilder().withUrl("/messengerHub", { accessTokenFactory: () => token }).withAutomaticReconnect().build();
@@ -1119,13 +1344,13 @@
         function startTyping() { if (connection && currentChat && document.getElementById('messageInput').value.length > 0) { connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name); clearTimeout(typingTimeout); typingTimeout = setTimeout(() => connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id), 1000); } }
 
         async function initApp() {
-            if (!token) { const t = localStorage.getItem('token'), uid = localStorage.getItem('userId'); if (t && uid) { token = t; currentUser = { id: uid }; } else return; }
+            if (!token) { const t = localStorage.getItem('token'), uid = localStorage.getItem('userId'); if (t && uid) { token = t; currentUser = { id: uid }; console.log('Token loaded'); } else return; }
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').classList.add('active');
             await loadUser();
             await loadChats();
             await initSignalR();
-            if (typeof window.initEmojiPicker === 'function') window.initEmojiPicker();
+            setTimeout(() => { if (typeof window.initEmojiPicker === 'function') window.initEmojiPicker(); }, 500);
         }
 
         function logout() { localStorage.clear(); token = null; currentUser = null; currentChat = null; if (connection) connection.stop(); document.getElementById('authContainer').style.display = 'flex'; document.getElementById('appContainer').classList.remove('active'); }
@@ -1151,13 +1376,16 @@
         document.getElementById('addMemberSearch')?.addEventListener('input', searchAddMember);
         document.getElementById('saveChatEdit')?.addEventListener('click', saveChatEdit);
         document.getElementById('leaveDeleteBtn')?.addEventListener('click', leaveOrDelete);
-        document.getElementById('sidebarAvatar')?.addEventListener('click', showProfile);
-        document.getElementById('currentUserName')?.addEventListener('click', showProfile);
+        document.getElementById('sidebarAvatar')?.addEventListener('click', showProfileModal);
+        document.getElementById('currentUserName')?.addEventListener('click', showProfileModal);
         document.getElementById('updateProfileBtn')?.addEventListener('click', updateProfile);
         document.getElementById('removeAvatarBtn')?.addEventListener('click', deleteAvatar);
         document.getElementById('profileAvatar')?.addEventListener('click', () => document.getElementById('avatarFile').click());
         document.getElementById('avatarFile')?.addEventListener('change', (e) => uploadAvatar(e.target.files[0]));
         document.getElementById('saveEditMessage')?.addEventListener('click', saveEditedMsg);
+        document.getElementById('uploadGroupAvatarBtn')?.addEventListener('click', () => document.getElementById('groupAvatarFile').click());
+        document.getElementById('groupAvatarFile')?.addEventListener('change', (e) => uploadGroupAvatar(e.target.files[0]));
+        document.getElementById('deleteGroupAvatarBtn')?.addEventListener('click', deleteGroupAvatar);
         document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
 
         if (localStorage.getItem('token')) initApp();

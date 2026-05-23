@@ -16,6 +16,9 @@ namespace Messenger.Models.ChatModels
         [StringLength(100)]
         public string ChatName { get; set; } = string.Empty;
 
+        [StringLength(500)]
+        public string? AvatarPath { get; set; }
+
         public virtual ICollection<User> Users { get; set; } = new List<User>();
         public virtual ICollection<Message> MessagesHistory { get; set; } = new List<Message>();
 
@@ -36,6 +39,7 @@ namespace Messenger.Models.ChatModels
         {
             Id = Guid.NewGuid();
             CreatedAt = DateTime.UtcNow;
+            AvatarPath = null;
         }
 
         public void AddUser(User user)

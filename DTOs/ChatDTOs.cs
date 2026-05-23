@@ -9,7 +9,8 @@ namespace Messenger.DTOs
         UserResponseDTO? OtherUser,
         int MaxUsers,
         DateTime CreatedAt,
-        DateTime? LastActivityAt
+        DateTime? LastActivityAt,
+        string? AvatarPath  // ← ЭТОТ ПАРАМЕТР ДОЛЖЕН БЫТЬ
     );
 
     public record CreateChatDTO(

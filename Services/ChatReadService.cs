@@ -38,7 +38,8 @@ namespace Messenger.Services
                         null,
                         c.MaxUsers,
                         c.CreatedAt,
-                        c.LastActivityAt
+                        c.LastActivityAt,
+                        c.MaxUsers > 2 ? c.AvatarPath : null
                     ))
                     .ToListAsync();
             }
@@ -72,7 +73,8 @@ namespace Messenger.Services
                     otherUser != null ? new UserResponseDTO(otherUser.Id, otherUser.Name, otherUser.AvatarPath, otherUser.RegisterDate) : null,
                     chat.MaxUsers,
                     chat.CreatedAt,
-                    chat.LastActivityAt
+                    chat.LastActivityAt,
+                    chat.MaxUsers > 2 ? chat.AvatarPath : null
                 );
             }
             catch (Exception ex)
@@ -111,7 +113,8 @@ namespace Messenger.Services
                         otherUser != null ? new UserResponseDTO(otherUser.Id, otherUser.Name, otherUser.AvatarPath, otherUser.RegisterDate) : null,
                         chat.MaxUsers,
                         chat.CreatedAt,
-                        chat.LastActivityAt
+                        chat.LastActivityAt,
+                        chat.MaxUsers > 2 ? chat.AvatarPath : null
                     );
                 }).ToList();
             }
@@ -122,7 +125,6 @@ namespace Messenger.Services
             }
         }
 
-        // ========== ГЛАВНЫЙ МЕТОД - РАБОТАЕТ БЕЗ DISCRIMINATOR ==========
         public async Task<List<MessageResponseDTO>> GetChatMessagesAsync(Guid chatId, Guid currentUserId, int page = 1, int pageSize = 50)
         {
             try
@@ -138,115 +140,67 @@ namespace Messenger.Services
 
                 var result = new List<MessageResponseDTO>();
 
-                // 1. Получаем текстовые сообщения из таблицы Messages
-                var textMessages = await _context.Messages
+                var messages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .Where(m => m.ChatId == chatId && !m.IsDeleted)
                     .OrderByDescending(m => m.MessageCreateDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(m => new
-                    {
-                        m.MessageId,
-                        m.MessageText,
-                        m.MessageCreateDate,
-                        m.MessageLastUpdateDate,
-                        m.UserId,
-                        m.ChatId,
-                        m.IsDeleted,
-                        m.IsSystemMessage,
-                        CreatorName = m.MessageCreator != null ? m.MessageCreator.Name : "Unknown",
-                        CreatorId = m.MessageCreator != null ? m.MessageCreator.Id : Guid.Empty,
-                        CreatorAvatar = m.MessageCreator != null ? m.MessageCreator.AvatarPath : null,
-                        CreatorRegisterDate = m.MessageCreator != null ? m.MessageCreator.RegisterDate : DateTime.MinValue,
-                        IsFile = false,
-                        FileName = (string?)null,
-                        FileSize = (long?)null,
-                        ContentType = (string?)null
-                    })
                     .ToListAsync();
 
-                // 2. Получаем файловые сообщения напрямую через SQL (обход EF Core)
-                var fileMessages = await _context.FileMessages
+                foreach (var msg in messages)
+                {
+                    var creator = msg.MessageCreator != null
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
+                        : null;
+
+                    result.Add(new MessageResponseDTO(
+                        msg.MessageId,
+                        msg.MessageText,
+                        msg.MessageCreateDate,
+                        msg.MessageLastUpdateDate,
+                        msg.UserId,
+                        msg.ChatId,
+                        creator,
+                        msg.IsDeleted,
+                        msg.IsSystemMessage,
+                        null,
+                        null,
+                        null
+                    ));
+                }
+
+                var fileMessages = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .Where(f => f.ChatId == chatId && !f.IsDeleted)
                     .OrderByDescending(f => f.MessageCreateDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(f => new
-                    {
-                        f.MessageId,
-                        f.MessageText,
-                        f.MessageCreateDate,
-                        f.MessageLastUpdateDate,
-                        f.UserId,
-                        f.ChatId,
-                        f.IsDeleted,
-                        f.IsSystemMessage,
-                        CreatorName = f.MessageCreator != null ? f.MessageCreator.Name : "Unknown",
-                        CreatorId = f.MessageCreator != null ? f.MessageCreator.Id : Guid.Empty,
-                        CreatorAvatar = f.MessageCreator != null ? f.MessageCreator.AvatarPath : null,
-                        CreatorRegisterDate = f.MessageCreator != null ? f.MessageCreator.RegisterDate : DateTime.MinValue,
-                        IsFile = true,
-                        FileName = f.FileName,
-                        FileSize = f.FileSize,
-                        ContentType = f.ContentType
-                    })
                     .ToListAsync();
 
-                // 3. Объединяем и сортируем
-                var allMessages = new List<dynamic>();
-                allMessages.AddRange(textMessages);
-                allMessages.AddRange(fileMessages);
-
-                var sorted = allMessages
-                    .OrderByDescending(m => m.MessageCreateDate)
-                    .ToList();
-
-                // 4. Конвертируем в DTO
-                foreach (var msg in sorted)
+                foreach (var fileMsg in fileMessages)
                 {
-                    var creator = new UserResponseDTO(
-                        msg.CreatorId,
-                        msg.CreatorName,
-                        msg.CreatorAvatar,
-                        msg.CreatorRegisterDate
-                    );
+                    var creator = fileMsg.MessageCreator != null
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
+                        : null;
 
-                    if (msg.IsFile)
-                    {
-                        result.Add(new MessageResponseDTO(
-                            msg.MessageId,
-                            msg.MessageText,
-                            msg.MessageCreateDate,
-                            msg.MessageLastUpdateDate,
-                            msg.UserId,
-                            msg.ChatId,
-                            creator,
-                            msg.IsDeleted,
-                            msg.IsSystemMessage,
-                            msg.FileName,
-                            msg.FileSize,
-                            msg.ContentType
-                        ));
-                    }
-                    else
-                    {
-                        result.Add(new MessageResponseDTO(
-                            msg.MessageId,
-                            msg.MessageText,
-                            msg.MessageCreateDate,
-                            msg.MessageLastUpdateDate,
-                            msg.UserId,
-                            msg.ChatId,
-                            creator,
-                            msg.IsDeleted,
-                            msg.IsSystemMessage
-                        ));
-                    }
+                    result.Add(new MessageResponseDTO(
+                        fileMsg.MessageId,
+                        fileMsg.MessageText,
+                        fileMsg.MessageCreateDate,
+                        fileMsg.MessageLastUpdateDate,
+                        fileMsg.UserId,
+                        fileMsg.ChatId,
+                        creator,
+                        fileMsg.IsDeleted,
+                        fileMsg.IsSystemMessage,
+                        fileMsg.FileName,
+                        fileMsg.FileSize,
+                        fileMsg.ContentType
+                    ));
                 }
 
-                return result;
+                return result.OrderByDescending(m => m.MessageCreateDate).ToList();
             }
             catch (Exception ex)
             {
@@ -260,7 +214,7 @@ namespace Messenger.Services
             try
             {
                 var textCount = await _context.Messages.CountAsync(m => m.ChatId == chatId && !m.IsDeleted);
-                var fileCount = await _context.FileMessages.CountAsync(f => f.ChatId == chatId && !f.IsDeleted);
+                var fileCount = await _context.Set<FileMessage>().CountAsync(f => f.ChatId == chatId && !f.IsDeleted);
                 return textCount + fileCount;
             }
             catch (Exception ex)
@@ -324,6 +278,29 @@ namespace Messenger.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting user profile {UserId}", userId);
+                return null;
+            }
+        }
+
+        public async Task<string?> GetGroupAvatarPathAsync(Guid chatId, Guid currentUserId)
+        {
+            try
+            {
+                var chat = await _context.Chats
+                    .Include(c => c.Users)
+                    .FirstOrDefaultAsync(c => c.Id == chatId && c.MaxUsers > 2);
+
+                if (chat == null)
+                    return null;
+
+                if (!chat.Users.Any(u => u.Id == currentUserId))
+                    return null;
+
+                return string.IsNullOrEmpty(chat.AvatarPath) ? null : chat.AvatarPath;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting group avatar for chat {ChatId}", chatId);
                 return null;
             }
         }

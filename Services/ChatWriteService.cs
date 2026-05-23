@@ -11,11 +11,16 @@ namespace Messenger.Services
     {
         private readonly AppDBContext _context;
         private readonly ILogger<ChatWriteService> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public ChatWriteService(AppDBContext context, ILogger<ChatWriteService> logger)
+        public ChatWriteService(
+            AppDBContext context,
+            ILogger<ChatWriteService> logger,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _logger = logger;
+            _environment = environment;
         }
 
         public async Task<ChatResponseDTO?> CreateChatAsync(CreateChatDTO dto, Guid currentUserId)
@@ -74,7 +79,8 @@ namespace Messenger.Services
                             otherUser != null ? new UserResponseDTO(otherUser.Id, otherUser.Name, otherUser.AvatarPath, otherUser.RegisterDate) : null,
                             existingChat.MaxUsers,
                             existingChat.CreatedAt,
-                            existingChat.LastActivityAt
+                            existingChat.LastActivityAt,
+                            null
                         );
                     }
                 }
@@ -100,7 +106,8 @@ namespace Messenger.Services
                     IsPrivate = true,
                     CreatedById = currentUserId,
                     CreatedAt = DateTime.UtcNow,
-                    LastActivityAt = DateTime.UtcNow
+                    LastActivityAt = DateTime.UtcNow,
+                    AvatarPath = null
                 };
 
                 foreach (var user in users)
@@ -138,7 +145,8 @@ namespace Messenger.Services
                     responseOtherUser != null ? new UserResponseDTO(responseOtherUser.Id, responseOtherUser.Name, responseOtherUser.AvatarPath, responseOtherUser.RegisterDate) : null,
                     chat.MaxUsers,
                     chat.CreatedAt,
-                    chat.LastActivityAt
+                    chat.LastActivityAt,
+                    null
                 );
             }
             catch (Exception ex)
@@ -327,6 +335,108 @@ namespace Messenger.Services
         public async Task<bool> LeaveGroupAsync(Guid chatId, Guid currentUserId)
         {
             return await RemoveUserFromChatAsync(chatId, currentUserId, currentUserId);
+        }
+
+        public async Task<string?> UploadGroupAvatarAsync(Guid chatId, IFormFile file, Guid currentUserId)
+        {
+            try
+            {
+                var chat = await _context.Chats
+                    .Include(c => c.Users)
+                    .FirstOrDefaultAsync(c => c.Id == chatId && c.MaxUsers > 2);
+
+                if (chat == null)
+                {
+                    _logger.LogWarning("Group {ChatId} not found", chatId);
+                    return null;
+                }
+
+                if (!chat.Users.Any(u => u.Id == currentUserId))
+                {
+                    _logger.LogWarning("User {UserId} not in group {ChatId}", currentUserId, chatId);
+                    return null;
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    _logger.LogWarning("Invalid file extension {Extension} for group avatar", extension);
+                    return null;
+                }
+
+                if (file.Length > 5 * 1024 * 1024)
+                {
+                    _logger.LogWarning("File too large {Size} bytes for group avatar", file.Length);
+                    return null;
+                }
+
+                var uploadPath = Path.Combine(_environment.WebRootPath, "group-avatars");
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                if (!string.IsNullOrEmpty(chat.AvatarPath) && !chat.AvatarPath.Contains("default-group"))
+                {
+                    var oldPath = Path.Combine(_environment.WebRootPath, chat.AvatarPath.TrimStart('/'));
+                    if (File.Exists(oldPath))
+                        File.Delete(oldPath);
+                }
+
+                var fileName = $"group_{chatId}_{DateTime.Now.Ticks}{extension}";
+                var filePath = Path.Combine(uploadPath, fileName);
+                var relativePath = $"/group-avatars/{fileName}";
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                chat.AvatarPath = relativePath;
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Group avatar uploaded for chat {ChatId}", chatId);
+                return relativePath;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading group avatar for chat {ChatId}", chatId);
+                return null;
+            }
+        }
+
+        public async Task<bool> DeleteGroupAvatarAsync(Guid chatId, Guid currentUserId)
+        {
+            try
+            {
+                var chat = await _context.Chats
+                    .Include(c => c.Users)
+                    .FirstOrDefaultAsync(c => c.Id == chatId && c.MaxUsers > 2);
+
+                if (chat == null)
+                    return false;
+
+                if (!chat.Users.Any(u => u.Id == currentUserId))
+                    return false;
+
+                if (!string.IsNullOrEmpty(chat.AvatarPath))
+                {
+                    var filePath = Path.Combine(_environment.WebRootPath, chat.AvatarPath.TrimStart('/'));
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
+                }
+
+                chat.AvatarPath = null;
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Group avatar deleted for chat {ChatId}", chatId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting group avatar for chat {ChatId}", chatId);
+                return false;
+            }
         }
     }
 }

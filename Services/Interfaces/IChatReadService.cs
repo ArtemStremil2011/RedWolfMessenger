@@ -12,5 +12,6 @@ namespace Messenger.Services.Interfaces
         Task<bool> UserInChatAsync(Guid chatId, Guid userId);
         Task<UserStatusDTO> GetUserStatusAsync(Guid userId);
         Task<UserResponseDTO?> GetUserProfileForChatAsync(Guid userId, Guid currentUserId);
+        Task<string?> GetGroupAvatarPathAsync(Guid chatId, Guid currentUserId);
     }
 }
