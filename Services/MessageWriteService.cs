@@ -26,18 +26,17 @@ namespace Messenger.Services
                     .FirstOrDefaultAsync(c => c.Id == chatId);
 
                 if (chat == null || !chat.Users.Any(u => u.Id == userId))
-                {
-                    _logger.LogWarning("User {UserId} not in chat {ChatId}", userId, chatId);
                     return null;
-                }
+
+                var now = DateTime.UtcNow;
 
                 var message = new Message
                 {
                     MessageText = text,
                     UserId = userId,
                     ChatId = chatId,
-                    MessageCreateDate = DateTime.UtcNow,
-                    MessageLastUpdateDate = DateTime.UtcNow,
+                    MessageCreateDate = now,
+                    MessageLastUpdateDate = now,
                     IsDeleted = false,
                     IsSystemMessage = false
                 };
@@ -47,6 +46,10 @@ namespace Messenger.Services
 
                 await _context.Entry(message).Reference(m => m.MessageCreator).LoadAsync();
 
+                var creator = message.MessageCreator != null
+                    ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate)
+                    : null;
+
                 return new MessageResponseDTO(
                     message.MessageId,
                     message.MessageText,
@@ -54,9 +57,12 @@ namespace Messenger.Services
                     message.MessageLastUpdateDate,
                     message.UserId,
                     message.ChatId,
-                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
+                    creator,
                     message.IsDeleted,
-                    message.IsSystemMessage
+                    message.IsSystemMessage,
+                    null,  // FileName
+                    null,  // FileSize
+                    null   // ContentType
                 );
             }
             catch (Exception ex)
@@ -98,6 +104,10 @@ namespace Messenger.Services
 
                 await _context.SaveChangesAsync();
 
+                var creator = message.MessageCreator != null
+                    ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate)
+                    : null;
+
                 return new MessageResponseDTO(
                     message.MessageId,
                     message.MessageText,
@@ -105,9 +115,12 @@ namespace Messenger.Services
                     message.MessageLastUpdateDate,
                     message.UserId,
                     message.ChatId,
-                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
+                    creator,
                     message.IsDeleted,
-                    message.IsSystemMessage
+                    message.IsSystemMessage,
+                    null,  // FileName
+                    null,  // FileSize
+                    null   // ContentType
                 );
             }
             catch (Exception ex)
