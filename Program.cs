@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Messenger.Data;
@@ -16,15 +17,15 @@ builder.Logging.SetMinimumLevel(LogLevel.Debug);
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
+// PostgreSQL подключение
 builder.Services.AddDbContext<AppDBContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=messenger.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddSignalR();
 
-// Добавляем HttpContextAccessor (нужен для доступа к HttpContext в сервисах)
 builder.Services.AddHttpContextAccessor();
-// Регистрация сервисов
+
 builder.Services.AddScoped<IUserReadService, UserReadService>();
 builder.Services.AddScoped<IUserWriteService, UserWriteService>();
 builder.Services.AddScoped<IChatReadService, ChatReadService>();

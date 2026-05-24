@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Messenger.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialPostgres : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,16 +15,16 @@ namespace Messenger.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    PasswordHash = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    AvatarPath = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    RegisterDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsPhoneNumberConfirmed = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
-                    PhoneVerificationCode = table.Column<string>(type: "TEXT", nullable: true),
-                    VerificationCodeExpiry = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Role = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 0)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    AvatarPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    RegisterDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    IsPhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    PhoneVerificationCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    VerificationCodeExpiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Role = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
                 },
                 constraints: table =>
                 {
@@ -35,13 +35,14 @@ namespace Messenger.Migrations
                 name: "Chats",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChatName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    MaxUsers = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 2),
-                    IsPrivate = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    LastActivityAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    CreatedById = table.Column<Guid>(type: "TEXT", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChatName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    AvatarPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    MaxUsers = table.Column<int>(type: "integer", nullable: false, defaultValue: 2),
+                    IsPrivate = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    LastActivityAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -58,12 +59,12 @@ namespace Messenger.Migrations
                 name: "ChatUsers",
                 columns: table => new
                 {
-                    ChatId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    UserId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChatId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChatUsers", x => new { x.ChatId, x.UserId });
+                    table.PrimaryKey("PK_ChatUsers", x => new { x.UserId, x.ChatId });
                     table.ForeignKey(
                         name: "FK_ChatUsers_Chats_ChatId",
                         column: x => x.ChatId,
@@ -82,18 +83,18 @@ namespace Messenger.Migrations
                 name: "FileMessages",
                 columns: table => new
                 {
-                    MessageId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MessageText = table.Column<string>(type: "TEXT", maxLength: 5000, nullable: false),
-                    MessageCreateDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    MessageLastUpdateDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
-                    ChatId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    IsSystemMessage = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
-                    FileName = table.Column<string>(type: "TEXT", maxLength: 255, nullable: false),
-                    FilePath = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    FileSize = table.Column<long>(type: "INTEGER", nullable: false),
-                    ContentType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false)
+                    MessageId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: false),
+                    MessageCreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    MessageLastUpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    ChatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsSystemMessage = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -116,14 +117,14 @@ namespace Messenger.Migrations
                 name: "Messages",
                 columns: table => new
                 {
-                    MessageId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MessageText = table.Column<string>(type: "TEXT", maxLength: 5000, nullable: false),
-                    MessageCreateDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    MessageLastUpdateDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
-                    ChatId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    IsSystemMessage = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    MessageId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: false),
+                    MessageCreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    MessageLastUpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    ChatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsSystemMessage = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -143,19 +144,34 @@ namespace Messenger.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Chats_CreatedAt",
+                table: "Chats",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Chats_CreatedById",
                 table: "Chats",
                 column: "CreatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChatUsers_UserId",
+                name: "IX_Chats_LastActivityAt",
+                table: "Chats",
+                column: "LastActivityAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatUsers_ChatId",
                 table: "ChatUsers",
-                column: "UserId");
+                column: "ChatId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FileMessages_ChatId",
                 table: "FileMessages",
                 column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileMessages_IsDeleted",
+                table: "FileMessages",
+                column: "IsDeleted");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FileMessages_MessageCreateDate",
@@ -171,6 +187,11 @@ namespace Messenger.Migrations
                 name: "IX_Messages_ChatId",
                 table: "Messages",
                 column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_IsDeleted",
+                table: "Messages",
+                column: "IsDeleted");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_MessageCreateDate",
