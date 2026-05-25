@@ -887,13 +887,11 @@
         function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
         function showModal(id) { closeModals(); document.getElementById(id).classList.add('active'); }
 
-        // Безопасное получение токена для URL
         function getSafeToken() {
             if (!token) return '';
             return encodeURIComponent(token);
         }
 
-        // API
         async function api(url, opts = {}) {
             const res = await fetch(API_BASE + url, {
                 headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
@@ -901,29 +899,6 @@
             });
             if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
             return res;
-        }
-
-        // ЗАГРУЗКА АВАТАРКИ ГРУППЫ ЧЕРЕЗ FETCH (С ТОКЕНОМ)
-        async function loadGroupAvatar(chatId, imgElement) {
-            if (!token || !chatId) {
-                if (imgElement) imgElement.src = DEFAULT_AVATAR;
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    imgElement.src = url;
-                } else {
-                    imgElement.src = DEFAULT_AVATAR;
-                }
-            } catch (error) {
-                console.error('Error loading group avatar:', error);
-                imgElement.src = DEFAULT_AVATAR;
-            }
         }
 
         // AUTH
@@ -1063,7 +1038,6 @@
                         currentChatInfo.avatarPath = data.avatarPath;
                     }
                     await loadChats();
-                    // Обновляем превью в модалке
                     const avatarUrl = await fetchGroupAvatarAsBlobUrl(currentChat.id);
                     document.getElementById('groupAvatarPreview').src = avatarUrl;
                 } else showToast('Upload failed', true);
@@ -1101,6 +1075,41 @@
             } catch (e) { showToast('Error', true); }
         }
 
+        // CHAT UI
+        async function addChatToSidebar(chat) {
+            const container = document.getElementById('chatsList');
+            const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
+            const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
+            const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
+
+            let avatarUrl = DEFAULT_AVATAR;
+            if (isGroup && chat.avatarPath) {
+                avatarUrl = `${API_BASE}/Chat/${chat.id}/avatar?t=${Date.now()}`;
+            } else if (!isGroup && chat.otherUser?.id) {
+                avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}`;
+            }
+
+            const html = `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div class="chat-avatar-container">
+                        <img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">
+                        ${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}
+                    </div>
+                    <div>
+                        <div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div>
+                        <div class="chat-preview">${isGroup ? (chat.users?.length || 0) + ' members' : ''}</div>
+                    </div>
+                </div>
+            </div>`;
+
+            container.insertAdjacentHTML('beforeend', html);
+
+            const newItem = container.querySelector(`.chat-item[data-id="${chat.id}"]`);
+            if (newItem) {
+                newItem.addEventListener('click', () => selectChat(chat.id, name));
+            }
+        }
+
         // CORE
         async function loadUser() {
             try {
@@ -1123,17 +1132,21 @@
                 const chats = await res.json();
                 const container = document.getElementById('chatsList');
                 if (!chats?.length) { container.innerHTML = '<div class="empty-state">No chats. +New Chat</div>'; return; }
-
-                // Сначала рендерим без аватарок (поставим дефолтные)
+                const safeToken = getSafeToken();
                 container.innerHTML = chats.map(chat => {
                     const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
+                    let avatarUrl = DEFAULT_AVATAR;
+                    if (isGroup && chat.avatarPath) {
+                        avatarUrl = `${API_BASE}/Chat/${chat.id}/avatar?t=${Date.now()}`;
+                    } else if (!isGroup && chat.otherUser?.id) {
+                        avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${safeToken}`;
+                    }
                     const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
                     const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
-                    const avatarId = `avatar-${chat.id}`;
                     return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
                         <div style="display:flex;align-items:center;gap:12px">
                             <div class="chat-avatar-container">
-                                <img id="${avatarId}" style="width:44px;height:44px;border-radius:50%" src="${DEFAULT_AVATAR}">
+                                <img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%" onerror="this.src='${DEFAULT_AVATAR}'">
                                 ${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}
                             </div>
                             <div>
@@ -1143,20 +1156,6 @@
                         </div>
                     </div>`;
                 }).join('');
-
-                // Загружаем аватарки для всех чатов
-                for (const chat of chats) {
-                    const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
-                    const img = document.getElementById(`avatar-${chat.id}`);
-                    if (!img) continue;
-
-                    if (isGroup && chat.avatarPath) {
-                        await loadGroupAvatar(chat.id, img);
-                    } else if (!isGroup && chat.otherUser?.id) {
-                        img.src = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}`;
-                    }
-                }
-
                 document.querySelectorAll('.chat-item').forEach(el => {
                     el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name));
                 });
@@ -1291,13 +1290,14 @@
         async function deleteMessage(id) { if (confirm('Delete message?')) { try { await api('/Message/' + id, { method: 'DELETE' }); await loadMessages(currentChat.id); } catch (e) { showToast('Error', true); } } }
         async function showUserProfile(id) { try { const res = await api('/Chat/user-profile/' + id); const u = await res.json(); document.getElementById('userProfileContent').innerHTML = `<div><img src="${API_BASE}/User/avatar/${id}?access_token=${getSafeToken()}&t=${Date.now()}" style="width:80px;height:80px;border-radius:50%"><h4>${escapeHtml(u.name)}</h4><p>Joined ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); } catch (e) { showToast('Error', true); } }
 
-        async function createPrivateChat(uid, uname) { try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Chat with ${uname} created`); } } catch (e) { showToast('Error', true); } }
+        async function createPrivateChat(uid, uname) { try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) }); if (res.ok) { const chat = await res.json(); closeModals(); await addChatToSidebar(chat); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Chat with ${uname} created`); } } catch (e) { showToast('Error', true); } }
+
         async function searchUsers() { const q = document.getElementById('searchUserInput').value.trim(); const div = document.getElementById('searchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id); if (!filtered.length) { div.innerHTML = '<div class="empty-state">Not found</div>'; return; } div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el => el.addEventListener('click', () => createPrivateChat(el.dataset.id, el.dataset.name))); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
 
         function showCreateGroup() { selectedGroupMembers = []; updateSelected(); document.getElementById('groupName').value = ''; document.getElementById('groupMaxUsers').value = '100'; document.getElementById('groupSearchInput').value = ''; document.getElementById('groupSearchResults').innerHTML = ''; showModal('createGroupModal'); }
         async function searchGroupUsers() { const q = document.getElementById('groupSearchInput').value.trim(); const div = document.getElementById('groupSearchResults'); if (q.length < 2) { div.innerHTML = ''; return; } try { const res = await api('/User/all'); const users = await res.json(); const filtered = users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) && u.id !== currentUser.id && !selectedGroupMembers.some(m => m.id === u.id)); div.innerHTML = filtered.map(u => `<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el => el.addEventListener('click', () => { selectedGroupMembers.push({ id: el.dataset.id, name: el.dataset.name }); updateSelected(); document.getElementById('groupSearchInput').value = ''; div.innerHTML = ''; })); } catch (e) { div.innerHTML = '<div class="empty-state">Error</div>'; } }
         function updateSelected() { const div = document.getElementById('selectedMembers'); if (!selectedGroupMembers.length) { div.innerHTML = '<div class="empty-state">No members</div>'; return; } div.innerHTML = selectedGroupMembers.map(m => `<div class="member-tag">${escapeHtml(m.name)}<button data-id="${m.id}">×</button></div>`).join(''); document.querySelectorAll('#selectedMembers .member-tag button').forEach(btn => btn.addEventListener('click', () => { selectedGroupMembers = selectedGroupMembers.filter(m => m.id !== btn.dataset.id); updateSelected(); })); }
-        async function createGroup() { const name = document.getElementById('groupName').value.trim(); const max = parseInt(document.getElementById('groupMaxUsers').value); if (!name) return showToast('Enter group name', true); if (!selectedGroupMembers.length) return showToast('Select members', true); const ids = [currentUser.id, ...selectedGroupMembers.map(m => m.id)]; try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: ids, maxUsers: max, chatName: name }) }); if (res.ok) { const chat = await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Group "${name}" created`); } } catch (e) { showToast('Error', true); } }
+        async function createGroup() { const name = document.getElementById('groupName').value.trim(); const max = parseInt(document.getElementById('groupMaxUsers').value); if (!name) return showToast('Enter group name', true); if (!selectedGroupMembers.length) return showToast('Select members', true); const ids = [currentUser.id, ...selectedGroupMembers.map(m => m.id)]; try { const res = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: ids, maxUsers: max, chatName: name }) }); if (res.ok) { const chat = await res.json(); closeModals(); await addChatToSidebar(chat); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`Group "${name}" created`); } } catch (e) { showToast('Error', true); } }
 
         async function showEditChatModal() {
             if (!currentChatInfo) return;
@@ -1338,6 +1338,10 @@
             connection.on("UserOnline", (uid, isOnline) => { onlineUsers.set(uid, isOnline); loadChats(); });
             connection.on("UserTyping", (uid, name) => { if (currentChat && uid !== currentUser.id) { const div = document.getElementById('typingIndicator'); div.innerText = `${name} typing...`; div.style.display = 'block'; clearTimeout(typingTimeout); typingTimeout = setTimeout(() => div.style.display = 'none', 2000); } });
             connection.on("UserStoppedTyping", () => { document.getElementById('typingIndicator').style.display = 'none'; });
+            connection.on("NewChatCreated", async (newChat) => {
+                console.log("New chat received via SignalR:", newChat);
+                await addChatToSidebar(newChat);
+            });
             try { await connection.start(); if (currentChat) await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name); } catch (e) { console.error(e); }
         }
 

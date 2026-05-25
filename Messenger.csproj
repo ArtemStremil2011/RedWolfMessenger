@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -13,9 +13,16 @@
     <None Remove="frontend\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\avatars\default-avatar.png" />
+    <Content Remove="wwwroot\group-avatars\default-group.png" />
+  </ItemGroup>
+
 
   <ItemGroup>
-    <None Include="wwwroot\logo.jpeg" />
+    <None Include="wwwroot\avatars\default-avatar.png" />
+    <None Include="wwwroot\group-avatars\default-group.png" />
+    <None Include="wwwroot\logo\logo.png" />
     <None Include="wwwroot\index.html" />
   </ItemGroup>
 

@@ -6,6 +6,8 @@ using Messenger.Data;
 using Microsoft.EntityFrameworkCore;
 using Messenger.Models.ChatModels;
 using Messenger.Models.BaseModels;
+using Microsoft.AspNetCore.SignalR;
+using Messenger.Hubs;
 
 namespace Messenger.Controllers.ChatControllers
 {
@@ -19,19 +21,22 @@ namespace Messenger.Controllers.ChatControllers
         private readonly ILogger<ChatController> _logger;
         private readonly AppDBContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IHubContext<MessengerHub> _hubContext;
 
         public ChatController(
             IChatReadService chatReadService,
             IChatWriteService chatWriteService,
             ILogger<ChatController> logger,
             AppDBContext context,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IHubContext<MessengerHub> hubContext)
         {
             _chatReadService = chatReadService;
             _chatWriteService = chatWriteService;
             _logger = logger;
             _context = context;
             _environment = environment;
+            _hubContext = hubContext;
         }
 
         private Guid GetCurrentUserId()
@@ -84,6 +89,7 @@ namespace Messenger.Controllers.ChatControllers
             return Ok(new { page, pageSize, total, messages });
         }
 
+        // ========== ИСПРАВЛЕННЫЙ CREATE CHAT ==========
         [HttpPost]
         public async Task<IActionResult> CreateChat([FromBody] CreateChatDTO createChatDto)
         {
@@ -95,6 +101,12 @@ namespace Messenger.Controllers.ChatControllers
 
             if (chat == null)
                 return BadRequest(new { message = "Не удалось создать чат" });
+
+            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ВСЕМ УЧАСТНИКАМ ЧАТА
+            foreach (var user in chat.Users)
+            {
+                await _hubContext.Clients.User(user.Id.ToString()).SendAsync("NewChatCreated", chat);
+            }
 
             return Ok(chat);
         }
@@ -177,8 +189,6 @@ namespace Messenger.Controllers.ChatControllers
 
             return Ok(user);
         }
-
-        // ============ АВАТАРКИ ДЛЯ ГРУПП ============
 
         [HttpPost("{chatId}/avatar")]
         public async Task<IActionResult> UploadGroupAvatar(Guid chatId, IFormFile file)

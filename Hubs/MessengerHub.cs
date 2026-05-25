@@ -6,10 +6,7 @@ namespace Messenger.Hubs
 {
     public class MessengerHub : Hub
     {
-        // Хранилище онлайн-пользователей
         private static readonly ConcurrentDictionary<Guid, string> _onlineUsers = new();
-
-        // Хранилище последней активности
         private static readonly ConcurrentDictionary<Guid, DateTime> _lastSeen = new();
 
         public override async Task OnConnectedAsync()
@@ -19,8 +16,6 @@ namespace Messenger.Hubs
             {
                 _onlineUsers[userId.Value] = Context.ConnectionId;
                 _lastSeen[userId.Value] = DateTime.UtcNow;
-
-                // Уведомить всех, что пользователь в сети
                 await Clients.All.SendAsync("UserOnline", userId.Value, true);
             }
             await base.OnConnectedAsync();
@@ -33,8 +28,6 @@ namespace Messenger.Hubs
             {
                 _onlineUsers.TryRemove(userId.Value, out _);
                 _lastSeen[userId.Value] = DateTime.UtcNow;
-
-                // Уведомить всех, что пользователь оффлайн
                 await Clients.All.SendAsync("UserOnline", userId.Value, false);
             }
             await base.OnDisconnectedAsync(exception);
@@ -54,8 +47,6 @@ namespace Messenger.Hubs
         public async Task UserIsTyping(string chatId, string userId, string userName)
         {
             await Clients.Group(chatId).SendAsync("UserTyping", userId, userName);
-
-            // Автоматически остановить через 3 секунды
             _ = Task.Delay(3000).ContinueWith(async _ =>
             {
                 await Clients.Group(chatId).SendAsync("UserStoppedTyping", userId);
@@ -67,12 +58,16 @@ namespace Messenger.Hubs
             await Clients.Group(chatId).SendAsync("UserStoppedTyping", userId);
         }
 
-        // Получить статус пользователя
+        // НОВЫЙ МЕТОД - УВЕДОМЛЕНИЕ О НОВОМ ЧАТЕ
+        public async Task NotifyNewChat(string userId, object chatInfo)
+        {
+            await Clients.User(userId).SendAsync("NewChatCreated", chatInfo);
+        }
+
         public async Task<UserStatusDTO?> GetUserStatus(Guid userId)
         {
             var isOnline = _onlineUsers.ContainsKey(userId);
             var lastSeen = _lastSeen.GetValueOrDefault(userId);
-
             return new UserStatusDTO
             {
                 UserId = userId,
@@ -85,7 +80,6 @@ namespace Messenger.Hubs
         {
             var userIdClaim = Context.User?.FindFirst("sub")?.Value
                 ?? Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
             if (Guid.TryParse(userIdClaim, out var userId))
                 return userId;
             return null;
