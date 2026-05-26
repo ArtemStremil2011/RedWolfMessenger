@@ -35,6 +35,9 @@ namespace Messenger.Models.ChatModels
 
         public bool IsSystemMessage { get; set; } = false;
 
+        // НОВОЕ ПОЛЕ - для отслеживания прочитанных файловых сообщений
+        public bool IsRead { get; set; } = false;
+
         // Поля для файла
         [Required]
         [StringLength(255)]
@@ -53,8 +56,9 @@ namespace Messenger.Models.ChatModels
         public FileMessage()
         {
             MessageId = Guid.NewGuid();
-            MessageCreateDate = DateTime.UtcNow;
-            MessageLastUpdateDate = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            MessageCreateDate = now;
+            MessageLastUpdateDate = now;
         }
     }
 }

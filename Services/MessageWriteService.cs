@@ -38,17 +38,14 @@ namespace Messenger.Services
                     MessageCreateDate = now,
                     MessageLastUpdateDate = now,
                     IsDeleted = false,
-                    IsSystemMessage = false
+                    IsSystemMessage = false,
+                    IsRead = false
                 };
 
                 await _context.Messages.AddAsync(message);
                 await _context.SaveChangesAsync();
 
                 await _context.Entry(message).Reference(m => m.MessageCreator).LoadAsync();
-
-                var creator = message.MessageCreator != null
-                    ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate)
-                    : null;
 
                 return new MessageResponseDTO(
                     message.MessageId,
@@ -57,12 +54,10 @@ namespace Messenger.Services
                     message.MessageLastUpdateDate,
                     message.UserId,
                     message.ChatId,
-                    creator,
+                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
                     message.IsDeleted,
                     message.IsSystemMessage,
-                    null,  // FileName
-                    null,  // FileSize
-                    null   // ContentType
+                    message.IsRead
                 );
             }
             catch (Exception ex)
@@ -104,10 +99,6 @@ namespace Messenger.Services
 
                 await _context.SaveChangesAsync();
 
-                var creator = message.MessageCreator != null
-                    ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate)
-                    : null;
-
                 return new MessageResponseDTO(
                     message.MessageId,
                     message.MessageText,
@@ -115,12 +106,10 @@ namespace Messenger.Services
                     message.MessageLastUpdateDate,
                     message.UserId,
                     message.ChatId,
-                    creator,
+                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
                     message.IsDeleted,
                     message.IsSystemMessage,
-                    null,  // FileName
-                    null,  // FileSize
-                    null   // ContentType
+                    message.IsRead
                 );
             }
             catch (Exception ex)
@@ -228,6 +217,27 @@ namespace Messenger.Services
             {
                 _logger.LogError(ex, "Error restoring message {MessageId}", messageId);
                 return false;
+            }
+        }
+
+        public async Task MarkMessagesAsReadAsync(Guid chatId, Guid userId)
+        {
+            try
+            {
+                var messages = await _context.Messages
+                    .Where(m => m.ChatId == chatId && m.UserId != userId && !m.IsRead)
+                    .ToListAsync();
+
+                foreach (var msg in messages)
+                {
+                    msg.IsRead = true;
+                }
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Messages marked as read in chat {ChatId} for user {UserId}", chatId, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking messages as read in chat {ChatId}", chatId);
             }
         }
     }

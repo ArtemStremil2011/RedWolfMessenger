@@ -10,7 +10,8 @@ namespace Messenger.DTOs
         int MaxUsers,
         DateTime CreatedAt,
         DateTime? LastActivityAt,
-        string? AvatarPath  // ← ЭТОТ ПАРАМЕТР ДОЛЖЕН БЫТЬ
+        string? AvatarPath,
+        int UnreadCount = 0                    // ← НОВОЕ ПОЛЕ (счётчик непрочитанных)
     );
 
     public record CreateChatDTO(

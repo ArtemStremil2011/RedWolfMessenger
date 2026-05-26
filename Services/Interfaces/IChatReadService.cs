@@ -13,5 +13,8 @@ namespace Messenger.Services.Interfaces
         Task<UserStatusDTO> GetUserStatusAsync(Guid userId);
         Task<UserResponseDTO?> GetUserProfileForChatAsync(Guid userId, Guid currentUserId);
         Task<string?> GetGroupAvatarPathAsync(Guid chatId, Guid currentUserId);
+
+        // НОВЫЙ МЕТОД (если хочешь получать чаты сразу со счётчиками)
+        // Task<List<ChatResponseDTO>> GetUserChatsWithUnreadAsync(Guid userId, Guid currentUserId);
     }
 }

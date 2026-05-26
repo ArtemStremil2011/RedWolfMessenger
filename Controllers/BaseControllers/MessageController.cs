@@ -137,5 +137,23 @@ namespace Messenger.Controllers.BaseControllers
 
             return Ok(new { message = "Сообщение успешно восстановлено", id });
         }
+
+        // ============ НОВЫЕ МЕТОДЫ ДЛЯ НЕПРОЧИТАННЫХ СООБЩЕНИЙ ============
+
+        [HttpGet("unread")]
+        public async Task<IActionResult> GetUnreadCounts()
+        {
+            var userId = GetCurrentUserId();
+            var counts = await _messageReadService.GetUnreadCountsAsync(userId);
+            return Ok(counts);
+        }
+
+        [HttpPost("{chatId}/mark-read")]
+        public async Task<IActionResult> MarkAsRead(Guid chatId)
+        {
+            var userId = GetCurrentUserId();
+            await _messageWriteService.MarkMessagesAsReadAsync(chatId, userId);
+            return Ok();
+        }
     }
 }

@@ -28,20 +28,26 @@ namespace Messenger.Services
                     return new List<ChatResponseDTO>();
                 }
 
-                return await _context.Chats
+                var chats = await _context.Chats
                     .Include(c => c.Users)
                     .Include(c => c.CreatedBy)
-                    .Select(c => new ChatResponseDTO(
-                        c.Id,
-                        c.ChatName,
-                        c.Users.Select(u => new UserResponseDTO(u.Id, u.Name, u.AvatarPath, u.RegisterDate)).ToList(),
-                        null,
-                        c.MaxUsers,
-                        c.CreatedAt,
-                        c.LastActivityAt,
-                        c.MaxUsers > 2 ? c.AvatarPath : null
-                    ))
                     .ToListAsync();
+
+                var result = new List<ChatResponseDTO>();
+                foreach (var chat in chats)
+                {
+                    result.Add(new ChatResponseDTO(
+                        chat.Id,
+                        chat.ChatName,
+                        chat.Users.Select(u => new UserResponseDTO(u.Id, u.Name, u.AvatarPath, u.RegisterDate)).ToList(),
+                        null,
+                        chat.MaxUsers,
+                        chat.CreatedAt,
+                        chat.LastActivityAt,
+                        chat.MaxUsers > 2 ? chat.AvatarPath : null
+                    ));
+                }
+                return result;
             }
             catch (Exception ex)
             {
@@ -100,13 +106,14 @@ namespace Messenger.Services
                     .Where(c => c.Users.Any(u => u.Id == userId))
                     .ToListAsync();
 
-                return chats.Select(chat =>
+                var result = new List<ChatResponseDTO>();
+                foreach (var chat in chats)
                 {
                     var otherUser = chat.MaxUsers == 2 && chat.Users.Count == 2
                         ? chat.Users.FirstOrDefault(u => u.Id != userId)
                         : null;
 
-                    return new ChatResponseDTO(
+                    result.Add(new ChatResponseDTO(
                         chat.Id,
                         chat.ChatName,
                         chat.Users.Select(u => new UserResponseDTO(u.Id, u.Name, u.AvatarPath, u.RegisterDate)).ToList(),
@@ -115,8 +122,9 @@ namespace Messenger.Services
                         chat.CreatedAt,
                         chat.LastActivityAt,
                         chat.MaxUsers > 2 ? chat.AvatarPath : null
-                    );
-                }).ToList();
+                    ));
+                }
+                return result;
             }
             catch (Exception ex)
             {
@@ -140,7 +148,7 @@ namespace Messenger.Services
 
                 var result = new List<MessageResponseDTO>();
 
-                var messages = await _context.Messages
+                var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .Where(m => m.ChatId == chatId && !m.IsDeleted)
                     .OrderByDescending(m => m.MessageCreateDate)
@@ -148,12 +156,8 @@ namespace Messenger.Services
                     .Take(pageSize)
                     .ToListAsync();
 
-                foreach (var msg in messages)
+                foreach (var msg in textMessages)
                 {
-                    var creator = msg.MessageCreator != null
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
-                        : null;
-
                     result.Add(new MessageResponseDTO(
                         msg.MessageId,
                         msg.MessageText,
@@ -161,12 +165,10 @@ namespace Messenger.Services
                         msg.MessageLastUpdateDate,
                         msg.UserId,
                         msg.ChatId,
-                        creator,
+                        msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
                         msg.IsDeleted,
                         msg.IsSystemMessage,
-                        null,
-                        null,
-                        null
+                        msg.IsRead
                     ));
                 }
 
@@ -180,10 +182,6 @@ namespace Messenger.Services
 
                 foreach (var fileMsg in fileMessages)
                 {
-                    var creator = fileMsg.MessageCreator != null
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
-                        : null;
-
                     result.Add(new MessageResponseDTO(
                         fileMsg.MessageId,
                         fileMsg.MessageText,
@@ -191,9 +189,10 @@ namespace Messenger.Services
                         fileMsg.MessageLastUpdateDate,
                         fileMsg.UserId,
                         fileMsg.ChatId,
-                        creator,
+                        fileMsg.MessageCreator != null ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate) : null,
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
+                        fileMsg.IsRead,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType

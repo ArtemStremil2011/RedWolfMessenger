@@ -242,6 +242,7 @@
             margin-bottom: 8px;
             background: #141414;
             border: 1px solid #252525;
+            position: relative;
         }
 
             .chat-item:hover {
@@ -276,6 +277,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-wrap: wrap;
         }
 
         .chat-badge {
@@ -283,6 +285,18 @@
             background: #dc2626;
             padding: 2px 6px;
             border-radius: 10px;
+        }
+
+        .unread-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+            min-width: 20px;
+            text-align: center;
         }
 
         .chat-preview {
@@ -838,6 +852,7 @@
         let typingTimeout = null, editingMessageId = null;
         let selectedGroupMembers = [], tempPhoneNumber = null;
         let onlineUsers = new Map();
+        let unreadCounts = new Map();
         const API_BASE = '/api';
         const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
@@ -899,6 +914,76 @@
             });
             if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
             return res;
+        }
+
+        // UNREAD COUNTS
+        async function loadUnreadCounts() {
+            try {
+                const res = await api('/Message/unread');
+                const counts = await res.json();
+                unreadCounts.clear();
+                for (const [chatId, count] of Object.entries(counts)) {
+                    unreadCounts.set(chatId, count);
+                }
+                updateAllUnreadBadges();
+            } catch (e) { console.error('Failed to load unread counts:', e); }
+        }
+
+        function updateAllUnreadBadges() {
+            document.querySelectorAll('.chat-item').forEach(item => {
+                const chatId = item.dataset.id;
+                const count = unreadCounts.get(chatId) || 0;
+                const nameDiv = item.querySelector('.chat-name');
+                const existingBadge = nameDiv?.querySelector('.unread-badge');
+
+                if (count > 0) {
+                    if (existingBadge) {
+                        existingBadge.textContent = count > 99 ? '99+' : count;
+                    } else if (nameDiv) {
+                        const badge = document.createElement('span');
+                        badge.className = 'unread-badge';
+                        badge.textContent = count > 99 ? '99+' : count;
+                        nameDiv.appendChild(badge);
+                    }
+                } else if (existingBadge) {
+                    existingBadge.remove();
+                }
+            });
+        }
+
+        function updateUnreadBadge(chatId, count) {
+            if (count > 0) {
+                unreadCounts.set(chatId, count);
+            } else {
+                unreadCounts.delete(chatId);
+            }
+
+            const chatItem = document.querySelector(`.chat-item[data-id="${chatId}"]`);
+            if (chatItem) {
+                const nameDiv = chatItem.querySelector('.chat-name');
+                const existingBadge = nameDiv?.querySelector('.unread-badge');
+
+                if (count > 0) {
+                    if (existingBadge) {
+                        existingBadge.textContent = count > 99 ? '99+' : count;
+                    } else if (nameDiv) {
+                        const badge = document.createElement('span');
+                        badge.className = 'unread-badge';
+                        badge.textContent = count > 99 ? '99+' : count;
+                        nameDiv.appendChild(badge);
+                    }
+                } else if (existingBadge) {
+                    existingBadge.remove();
+                }
+            }
+        }
+
+        async function markChatAsRead(chatId) {
+            try {
+                await api(`/Message/${chatId}/mark-read`, { method: 'POST' });
+                unreadCounts.delete(chatId);
+                updateUnreadBadge(chatId, 0);
+            } catch (e) { console.error('Failed to mark as read:', e); }
         }
 
         // AUTH
@@ -1081,6 +1166,7 @@
             const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
             const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
             const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
+            const unreadCount = unreadCounts.get(chat.id) || 0;
 
             let avatarUrl = DEFAULT_AVATAR;
             if (isGroup && chat.avatarPath) {
@@ -1103,6 +1189,7 @@
             </div>`;
 
             container.insertAdjacentHTML('beforeend', html);
+            updateUnreadBadge(chat.id, unreadCount);
 
             const newItem = container.querySelector(`.chat-item[data-id="${chat.id}"]`);
             if (newItem) {
@@ -1128,8 +1215,9 @@
                     console.error('No token in loadChats');
                     return;
                 }
-                const res = await api(`/Chat/user-chats/${currentUser.id}`);
-                const chats = await res.json();
+                const chatsRes = await api(`/Chat/user-chats/${currentUser.id}`);
+                const chats = await chatsRes.json();
+
                 const container = document.getElementById('chatsList');
                 if (!chats?.length) { container.innerHTML = '<div class="empty-state">No chats. +New Chat</div>'; return; }
                 const safeToken = getSafeToken();
@@ -1143,6 +1231,8 @@
                     }
                     const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
                     const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
+                    const unreadCount = unreadCounts.get(chat.id) || 0;
+
                     return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
                         <div style="display:flex;align-items:center;gap:12px">
                             <div class="chat-avatar-container">
@@ -1156,6 +1246,11 @@
                         </div>
                     </div>`;
                 }).join('');
+
+                for (const chat of chats) {
+                    updateUnreadBadge(chat.id, unreadCounts.get(chat.id) || 0);
+                }
+
                 document.querySelectorAll('.chat-item').forEach(el => {
                     el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name));
                 });
@@ -1173,6 +1268,9 @@
             document.getElementById('editChatBtn')?.addEventListener('click', showEditChatModal);
             document.getElementById('messageInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
+
+            await markChatAsRead(chatId);
+
             await loadMessages(chatId);
             if (connection) await connection.invoke('JoinChat', chatId, currentUser.id, currentUser.name);
             if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
@@ -1261,6 +1359,8 @@
                 await api('/Message', { method: 'POST', body: JSON.stringify({ messageText: text, userId: currentUser.id, chatId: currentChat.id }) });
                 input.value = '';
                 await loadMessages(currentChat.id);
+                unreadCounts.set(currentChat.id, 0);
+                updateUnreadBadge(currentChat.id, 0);
                 if (connection) await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, text);
             } catch (e) { showToast('Send failed', true); }
         }
@@ -1334,7 +1434,14 @@
 
         async function initSignalR() {
             connection = new signalR.HubConnectionBuilder().withUrl("/messengerHub", { accessTokenFactory: () => token }).withAutomaticReconnect().build();
-            connection.on("ReceiveMessage", () => { if (currentChat) loadMessages(currentChat.id); });
+            connection.on("ReceiveMessage", (userId, userName, messageText, chatId) => {
+                if (currentChat && currentChat.id === chatId) {
+                    loadMessages(currentChat.id);
+                } else {
+                    const currentCount = unreadCounts.get(chatId) || 0;
+                    updateUnreadBadge(chatId, currentCount + 1);
+                }
+            });
             connection.on("UserOnline", (uid, isOnline) => { onlineUsers.set(uid, isOnline); loadChats(); });
             connection.on("UserTyping", (uid, name) => { if (currentChat && uid !== currentUser.id) { const div = document.getElementById('typingIndicator'); div.innerText = `${name} typing...`; div.style.display = 'block'; clearTimeout(typingTimeout); typingTimeout = setTimeout(() => div.style.display = 'none', 2000); } });
             connection.on("UserStoppedTyping", () => { document.getElementById('typingIndicator').style.display = 'none'; });
@@ -1352,6 +1459,7 @@
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').classList.add('active');
             await loadUser();
+            await loadUnreadCounts();
             await loadChats();
             await initSignalR();
             setTimeout(() => { if (typeof window.initEmojiPicker === 'function') window.initEmojiPicker(); }, 500);

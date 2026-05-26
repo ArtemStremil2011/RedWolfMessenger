@@ -12,6 +12,7 @@ namespace Messenger.DTOs
         UserResponseDTO? MessageCreator,
         bool IsDeleted,
         bool IsSystemMessage,
+        bool IsRead = false,                    // ← НЕОБЯЗАТЕЛЬНЫЙ (со значением по умолчанию)
         string? FileName = null,
         long? FileSize = null,
         string? ContentType = null

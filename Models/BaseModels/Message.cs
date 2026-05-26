@@ -1,4 +1,5 @@
 ﻿using Messenger.Models.ChatModels;
+using Messenger.Models.BaseModels;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -34,6 +35,9 @@ namespace Messenger.Models.BaseModels
         public virtual Chat? Chat { get; set; }
 
         public bool IsSystemMessage { get; set; } = false;
+
+        // НОВОЕ ПОЛЕ - для отслеживания прочитанных сообщений
+        public bool IsRead { get; set; } = false;
 
         public Message()
         {

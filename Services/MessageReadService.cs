@@ -22,7 +22,6 @@ namespace Messenger.Services
         {
             try
             {
-                // Проверяем в текстовых сообщениях
                 var textMessage = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .FirstOrDefaultAsync(m => m.MessageId == messageId);
@@ -43,18 +42,13 @@ namespace Messenger.Services
                         textMessage.MessageLastUpdateDate,
                         textMessage.UserId,
                         textMessage.ChatId,
-                        textMessage.MessageCreator != null ? new UserResponseDTO(
-                            textMessage.MessageCreator.Id,
-                            textMessage.MessageCreator.Name,
-                            textMessage.MessageCreator.AvatarPath,
-                            textMessage.MessageCreator.RegisterDate
-                        ) : null,
+                        textMessage.MessageCreator != null ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name, textMessage.MessageCreator.AvatarPath, textMessage.MessageCreator.RegisterDate) : null,
                         textMessage.IsDeleted,
-                        textMessage.IsSystemMessage
+                        textMessage.IsSystemMessage,
+                        textMessage.IsRead
                     );
                 }
 
-                // Проверяем в файловых сообщениях
                 var fileMessage = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .FirstOrDefaultAsync(f => f.MessageId == messageId);
@@ -75,14 +69,10 @@ namespace Messenger.Services
                         fileMessage.MessageLastUpdateDate,
                         fileMessage.UserId,
                         fileMessage.ChatId,
-                        fileMessage.MessageCreator != null ? new UserResponseDTO(
-                            fileMessage.MessageCreator.Id,
-                            fileMessage.MessageCreator.Name,
-                            fileMessage.MessageCreator.AvatarPath,
-                            fileMessage.MessageCreator.RegisterDate
-                        ) : null,
+                        fileMessage.MessageCreator != null ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name, fileMessage.MessageCreator.AvatarPath, fileMessage.MessageCreator.RegisterDate) : null,
                         fileMessage.IsDeleted,
                         fileMessage.IsSystemMessage,
+                        fileMessage.IsRead,
                         fileMessage.FileName,
                         fileMessage.FileSize,
                         fileMessage.ContentType
@@ -105,7 +95,6 @@ namespace Messenger.Services
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser?.Role != UserRole.Admin && currentUser?.Role != UserRole.SuperAdmin)
                 {
-                    _logger.LogWarning("User {UserId} attempted to get all messages without permission", currentUserId);
                     return new List<MessageResponseDTO>();
                 }
 
@@ -125,14 +114,10 @@ namespace Messenger.Services
                         msg.MessageLastUpdateDate,
                         msg.UserId,
                         msg.ChatId,
-                        msg.MessageCreator != null ? new UserResponseDTO(
-                            msg.MessageCreator.Id,
-                            msg.MessageCreator.Name,
-                            msg.MessageCreator.AvatarPath,
-                            msg.MessageCreator.RegisterDate
-                        ) : null,
+                        msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
                         msg.IsDeleted,
-                        msg.IsSystemMessage
+                        msg.IsSystemMessage,
+                        msg.IsRead
                     ));
                 }
 
@@ -150,14 +135,10 @@ namespace Messenger.Services
                         fileMsg.MessageLastUpdateDate,
                         fileMsg.UserId,
                         fileMsg.ChatId,
-                        fileMsg.MessageCreator != null ? new UserResponseDTO(
-                            fileMsg.MessageCreator.Id,
-                            fileMsg.MessageCreator.Name,
-                            fileMsg.MessageCreator.AvatarPath,
-                            fileMsg.MessageCreator.RegisterDate
-                        ) : null,
+                        fileMsg.MessageCreator != null ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate) : null,
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
+                        fileMsg.IsRead,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType
@@ -183,7 +164,6 @@ namespace Messenger.Services
 
                 if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                 {
-                    _logger.LogWarning("User {UserId} not in chat {ChatId}", currentUserId, chatId);
                     return new List<MessageResponseDTO>();
                 }
 
@@ -206,14 +186,10 @@ namespace Messenger.Services
                         msg.MessageLastUpdateDate,
                         msg.UserId,
                         msg.ChatId,
-                        msg.MessageCreator != null ? new UserResponseDTO(
-                            msg.MessageCreator.Id,
-                            msg.MessageCreator.Name,
-                            msg.MessageCreator.AvatarPath,
-                            msg.MessageCreator.RegisterDate
-                        ) : null,
+                        msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
                         msg.IsDeleted,
-                        msg.IsSystemMessage
+                        msg.IsSystemMessage,
+                        msg.IsRead
                     ));
                 }
 
@@ -234,14 +210,10 @@ namespace Messenger.Services
                         fileMsg.MessageLastUpdateDate,
                         fileMsg.UserId,
                         fileMsg.ChatId,
-                        fileMsg.MessageCreator != null ? new UserResponseDTO(
-                            fileMsg.MessageCreator.Id,
-                            fileMsg.MessageCreator.Name,
-                            fileMsg.MessageCreator.AvatarPath,
-                            fileMsg.MessageCreator.RegisterDate
-                        ) : null,
+                        fileMsg.MessageCreator != null ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate) : null,
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
+                        fileMsg.IsRead,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType
@@ -254,6 +226,31 @@ namespace Messenger.Services
             {
                 _logger.LogError(ex, "Error getting messages for chat {ChatId}", chatId);
                 return new List<MessageResponseDTO>();
+            }
+        }
+
+        public async Task<Dictionary<Guid, int>> GetUnreadCountsAsync(Guid userId)
+        {
+            try
+            {
+                var chats = await _context.Chats
+                    .Where(c => c.Users.Any(u => u.Id == userId))
+                    .Select(c => c.Id)
+                    .ToListAsync();
+
+                var counts = new Dictionary<Guid, int>();
+                foreach (var chatId in chats)
+                {
+                    var count = await _context.Messages
+                        .CountAsync(m => m.ChatId == chatId && m.UserId != userId && !m.IsRead);
+                    counts[chatId] = count;
+                }
+                return counts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting unread counts for user {UserId}", userId);
+                return new Dictionary<Guid, int>();
             }
         }
     }
