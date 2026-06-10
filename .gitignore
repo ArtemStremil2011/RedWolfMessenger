@@ -26,6 +26,7 @@ logs/
 # User secrets
 secrets.json
 appsettings.Development.json
+appsettings.json
 
 # IDE
 .idea/
