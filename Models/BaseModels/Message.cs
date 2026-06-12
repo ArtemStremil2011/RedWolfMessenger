@@ -1,8 +1,7 @@
-﻿using Messenger.Models.ChatModels;
-using Messenger.Models.BaseModels;
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Messenger.Models.ChatModels;
 
 namespace Messenger.Models.BaseModels
 {
@@ -11,9 +10,17 @@ namespace Messenger.Models.BaseModels
         [Key]
         public Guid MessageId { get; set; }
 
-        [Required]
+        // ============ СТАРОЕ ПОЛЕ (ВРЕМЕННО) ============
+        // MessageText пока оставляем, потом удалим
         [StringLength(5000)]
-        public string MessageText { get; set; } = string.Empty;
+        public string? MessageText { get; set; } = string.Empty;
+
+        // ============ НОВЫЕ ПОЛЯ ДЛЯ ШИФРОВАНИЯ ============
+        [StringLength(5000)]
+        public string? EncryptedData { get; set; }  // Зашифрованное сообщение (base64)
+
+        [StringLength(50)]
+        public string? Iv { get; set; }  // Вектор инициализации (base64)
 
         [Required]
         public DateTime MessageCreateDate { get; set; }
@@ -36,7 +43,6 @@ namespace Messenger.Models.BaseModels
 
         public bool IsSystemMessage { get; set; } = false;
 
-        // НОВОЕ ПОЛЕ - для отслеживания прочитанных сообщений
         public bool IsRead { get; set; } = false;
 
         public Message()

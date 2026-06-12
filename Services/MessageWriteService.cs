@@ -17,6 +17,7 @@ namespace Messenger.Services
             _logger = logger;
         }
 
+        // Старый метод для обычных сообщений (без шифрования)
         public async Task<MessageResponseDTO?> CreateMessageAsync(Guid userId, Guid chatId, string text)
         {
             try
@@ -29,10 +30,12 @@ namespace Messenger.Services
                     return null;
 
                 var now = DateTime.UtcNow;
-
+                
                 var message = new Message
                 {
                     MessageText = text,
+                    EncryptedData = null,
+                    Iv = null,
                     UserId = userId,
                     ChatId = chatId,
                     MessageCreateDate = now,
@@ -57,12 +60,69 @@ namespace Messenger.Services
                     message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
                     message.IsDeleted,
                     message.IsSystemMessage,
-                    message.IsRead
+                    message.IsRead,
+                    message.EncryptedData,
+                    message.Iv
                 );
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating message");
+                return null;
+            }
+        }
+
+        // НОВЫЙ метод для зашифрованных сообщений
+        public async Task<MessageResponseDTO?> CreateEncryptedMessageAsync(Guid userId, Guid chatId, string encryptedData, string iv)
+        {
+            try
+            {
+                var chat = await _context.Chats
+                    .Include(c => c.Users)
+                    .FirstOrDefaultAsync(c => c.Id == chatId);
+
+                if (chat == null || !chat.Users.Any(u => u.Id == userId))
+                    return null;
+
+                var now = DateTime.UtcNow;
+                
+                var message = new Message
+                {
+                    MessageText = null,
+                    EncryptedData = encryptedData,
+                    Iv = iv,
+                    UserId = userId,
+                    ChatId = chatId,
+                    MessageCreateDate = now,
+                    MessageLastUpdateDate = now,
+                    IsDeleted = false,
+                    IsSystemMessage = false,
+                    IsRead = false
+                };
+
+                await _context.Messages.AddAsync(message);
+                await _context.SaveChangesAsync();
+
+                await _context.Entry(message).Reference(m => m.MessageCreator).LoadAsync();
+
+                return new MessageResponseDTO(
+                    message.MessageId,
+                    null,
+                    message.MessageCreateDate,
+                    message.MessageLastUpdateDate,
+                    message.UserId,
+                    message.ChatId,
+                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
+                    message.IsDeleted,
+                    message.IsSystemMessage,
+                    message.IsRead,
+                    message.EncryptedData,
+                    message.Iv
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating encrypted message");
                 return null;
             }
         }
@@ -94,6 +154,7 @@ namespace Messenger.Services
                     return null;
                 }
 
+                // При редактировании обычного сообщения — оно остаётся обычным
                 message.MessageText = newText;
                 message.MessageLastUpdateDate = DateTime.UtcNow;
 
@@ -109,7 +170,9 @@ namespace Messenger.Services
                     message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
                     message.IsDeleted,
                     message.IsSystemMessage,
-                    message.IsRead
+                    message.IsRead,
+                    message.EncryptedData,
+                    message.Iv
                 );
             }
             catch (Exception ex)
@@ -227,7 +290,7 @@ namespace Messenger.Services
                 var messages = await _context.Messages
                     .Where(m => m.ChatId == chatId && m.UserId != userId && !m.IsRead)
                     .ToListAsync();
-
+                
                 foreach (var msg in messages)
                 {
                     msg.IsRead = true;

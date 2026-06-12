@@ -168,7 +168,9 @@ namespace Messenger.Services
                         msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
                         msg.IsDeleted,
                         msg.IsSystemMessage,
-                        msg.IsRead
+                        msg.IsRead,
+                        msg.EncryptedData,
+                        msg.Iv
                     ));
                 }
 
@@ -193,6 +195,8 @@ namespace Messenger.Services
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
                         fileMsg.IsRead,
+                        fileMsg.EncryptedData,
+                        fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType
@@ -302,6 +306,14 @@ namespace Messenger.Services
                 _logger.LogError(ex, "Error getting group avatar for chat {ChatId}", chatId);
                 return null;
             }
+        }
+
+        public async Task<string?> GetSessionKeyAsync(Guid chatId, Guid userId)
+        {
+            var sessionKey = await _context.ChatSessionKeys
+                .FirstOrDefaultAsync(k => k.ChatId == chatId && k.UserId == userId);
+            
+            return sessionKey?.EncryptedSessionKey;
         }
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Messenger.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialPostgres : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,13 +18,14 @@ namespace Messenger.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     PasswordHash = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     AvatarPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     RegisterDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     IsPhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    PhoneVerificationCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    PhoneVerificationCode = table.Column<string>(type: "text", nullable: true),
                     VerificationCodeExpiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Role = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    Role = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    PublicKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -56,6 +57,33 @@ namespace Messenger.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChatSessionKeys",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EncryptedSessionKey = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatSessionKeys", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatSessionKeys_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChatSessionKeys_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ChatUsers",
                 columns: table => new
                 {
@@ -84,13 +112,16 @@ namespace Messenger.Migrations
                 columns: table => new
                 {
                     MessageId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: false),
+                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
+                    EncryptedData = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
+                    Iv = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     MessageCreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     MessageLastUpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ChatId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsSystemMessage = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     FileSize = table.Column<long>(type: "bigint", nullable: false),
@@ -118,13 +149,16 @@ namespace Messenger.Migrations
                 columns: table => new
                 {
                     MessageId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: false),
+                    MessageText = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
+                    EncryptedData = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
+                    Iv = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     MessageCreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     MessageLastUpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ChatId = table.Column<Guid>(type: "uuid", nullable: false),
-                    IsSystemMessage = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    IsSystemMessage = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -157,6 +191,17 @@ namespace Messenger.Migrations
                 name: "IX_Chats_LastActivityAt",
                 table: "Chats",
                 column: "LastActivityAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatSessionKeys_ChatId_UserId",
+                table: "ChatSessionKeys",
+                columns: new[] { "ChatId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatSessionKeys_UserId",
+                table: "ChatSessionKeys",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChatUsers_ChatId",
@@ -219,6 +264,9 @@ namespace Messenger.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ChatSessionKeys");
+
             migrationBuilder.DropTable(
                 name: "ChatUsers");
 

@@ -1,4 +1,4 @@
-﻿using Messenger.Models.BaseModels;
+using Messenger.DTOs;
 
 namespace Messenger.Services.Interfaces
 {

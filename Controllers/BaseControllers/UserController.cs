@@ -2,6 +2,8 @@
 using Messenger.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Messenger.Hubs;
 using System.Security.Claims;
 
 namespace Messenger.Controllers.BaseControllers
@@ -13,15 +15,18 @@ namespace Messenger.Controllers.BaseControllers
         private readonly IUserReadService _userReadService;
         private readonly IUserWriteService _userWriteService;
         private readonly ILogger<UserController> _logger;
+        private readonly IHubContext<MessengerHub> _hubContext;
 
         public UserController(
             IUserReadService userReadService,
             IUserWriteService userWriteService,
-            ILogger<UserController> logger)
+            ILogger<UserController> logger,
+            IHubContext<MessengerHub> hubContext)
         {
             _userReadService = userReadService;
             _userWriteService = userWriteService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         private Guid GetCurrentUserId()
@@ -52,14 +57,14 @@ namespace Messenger.Controllers.BaseControllers
 
         [AllowAnonymous]
         [HttpPost("verify-and-register")]
-        public async Task<IActionResult> VerifyAndRegister([FromBody] VerifyPhoneDTO verifyDto)  // ← VerifyPhoneDTO
+        public async Task<IActionResult> VerifyAndRegister([FromBody] VerifyPhoneDTO verifyDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var (success, token, userId) = await _userWriteService.VerifyAndRegisterAsync(
                 verifyDto.PhoneNumber,
-                verifyDto.Code);  // ← Code, а не VerifyDto.Code
+                verifyDto.Code);
 
             if (!success)
                 return BadRequest(new { message = "Неверный код или время истекло" });
@@ -121,12 +126,17 @@ namespace Messenger.Controllers.BaseControllers
         public async Task<IActionResult> UpdateProfile([FromBody] UserUpdateDTO updateDto)
         {
             var userId = GetCurrentUserId();
-            var result = await _userWriteService.UpdateProfileAsync(userId, updateDto);
+            var updatedUser = await _userWriteService.UpdateProfileAsync(userId, updateDto);
 
-            if (!result)
+            if (updatedUser == null)
                 return NotFound(new { message = "Пользователь не найден" });
 
-            return Ok(new { message = "Профиль успешно обновлён" });
+            if (!string.IsNullOrEmpty(updateDto.Name))
+            {
+                await _hubContext.Clients.All.SendAsync("UserProfileUpdated", userId, updatedUser.Name);
+            }
+
+            return Ok(updatedUser);
         }
 
         [Authorize]
@@ -162,13 +172,11 @@ namespace Messenger.Controllers.BaseControllers
         [HttpGet("avatar/{userId}")]
         public async Task<IActionResult> GetAvatar(Guid userId)
         {
-            // Этот метод лучше оставить отдельно, так как он возвращает файл
-            // Можно перенести в отдельный сервис, но пока оставим
             var user = await _userReadService.GetProfileAsync(userId);
 
             if (user == null || string.IsNullOrEmpty(user.AvatarPath))
             {
-                var defaultAvatarPath = Path.Combine("wwwroot", "avatars", "default-avatar.png");
+                var defaultAvatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars", "default-avatar.png");
                 if (System.IO.File.Exists(defaultAvatarPath))
                 {
                     var imageBytes = await System.IO.File.ReadAllBytesAsync(defaultAvatarPath);
@@ -177,10 +185,10 @@ namespace Messenger.Controllers.BaseControllers
                 return NotFound();
             }
 
-            var avatarPath = Path.Combine("wwwroot", user.AvatarPath.TrimStart('/'));
+            var avatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarPath.TrimStart('/'));
             if (!System.IO.File.Exists(avatarPath))
             {
-                var defaultAvatarPath = Path.Combine("wwwroot", "avatars", "default-avatar.png");
+                var defaultAvatarPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars", "default-avatar.png");
                 if (System.IO.File.Exists(defaultAvatarPath))
                 {
                     var imageBytes = await System.IO.File.ReadAllBytesAsync(defaultAvatarPath);
@@ -217,6 +225,29 @@ namespace Messenger.Controllers.BaseControllers
                 return NotFound(new { message = "Пользователь не найден или недостаточно прав" });
 
             return Ok(new { message = "Пользователь успешно удалён", id = userId });
+        }
+
+        [HttpGet("public-key/{userId}")]
+        public async Task<IActionResult> GetPublicKey(Guid userId)
+        {
+            var publicKey = await _userReadService.GetPublicKeyAsync(userId);
+            
+            if (string.IsNullOrEmpty(publicKey))
+                return NotFound(new { message = "Публичный ключ не найден" });
+            
+            return Ok(new { publicKey });
+        }
+
+        [HttpPost("public-key")]
+        public async Task<IActionResult> SavePublicKey([FromBody] SavePublicKeyDTO dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _userWriteService.SavePublicKeyAsync(userId, dto.PublicKey);
+            
+            if (!result)
+                return BadRequest(new { message = "Не удалось сохранить публичный ключ" });
+            
+            return Ok(new { message = "Публичный ключ сохранён" });
         }
     }
 }

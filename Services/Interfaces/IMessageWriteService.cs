@@ -10,5 +10,6 @@ namespace Messenger.Services.Interfaces
         Task<bool> PermanentDeleteMessageAsync(Guid messageId, Guid currentUserId);
         Task<bool> RestoreMessageAsync(Guid messageId, Guid currentUserId);
         Task MarkMessagesAsReadAsync(Guid chatId, Guid userId);
+        Task<MessageResponseDTO?> CreateEncryptedMessageAsync(Guid userId, Guid chatId, string encryptedData, string iv);
     }
 }

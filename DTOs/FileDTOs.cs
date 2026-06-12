@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Messenger.DTOs;
 
-namespace Messenger.Models.BaseModels
+namespace Messenger.DTOs
 {
-    // DTO для создания файлового сообщения
     public class FileMessageCreateDTO
     {
         [Required]
@@ -15,7 +13,6 @@ namespace Messenger.Models.BaseModels
         public string? Caption { get; set; }
     }
 
-    // DTO для ответа
     public record FileMessageResponseDTO(
         Guid MessageId,
         string? Caption,
@@ -28,13 +25,5 @@ namespace Messenger.Models.BaseModels
         string FilePath,
         long FileSize,
         string ContentType
-    );
-
-    // DTO для скачивания файла
-    public record FileDownloadDTO(
-        Guid FileId,
-        string FileName,
-        string ContentType,
-        byte[] Content
     );
 }

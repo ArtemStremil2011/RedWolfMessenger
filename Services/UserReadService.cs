@@ -26,7 +26,13 @@ namespace Messenger.Services
 
                 if (user == null) return null;
 
-                return new UserResponseDTO(user.Id, user.Name, user.AvatarPath, user.RegisterDate);
+                return new UserResponseDTO(
+                    user.Id,
+                    user.Name ?? "",
+                    user.AvatarPath ?? "",
+                    user.RegisterDate,
+                    user.PublicKey
+                );
             }
             catch (Exception ex)
             {
@@ -45,7 +51,13 @@ namespace Messenger.Services
 
                 if (user == null) return null;
 
-                return new UserResponseDTO(user.Id, user.Name, user.AvatarPath, user.RegisterDate);
+                return new UserResponseDTO(
+                    user.Id,
+                    user.Name ?? "",
+                    user.AvatarPath ?? "",
+                    user.RegisterDate,
+                    user.PublicKey
+                );
             }
             catch (Exception ex)
             {
@@ -58,10 +70,22 @@ namespace Messenger.Services
         {
             try
             {
-                return await _context.Users
+                var users = await _context.Users
                     .AsNoTracking()
-                    .Select(u => new UserResponseDTO(u.Id, u.Name, u.AvatarPath, u.RegisterDate))
                     .ToListAsync();
+
+                var result = new List<UserResponseDTO>();
+                foreach (var user in users)
+                {
+                    result.Add(new UserResponseDTO(
+                        user.Id,
+                        user.Name ?? "",
+                        user.AvatarPath ?? "",
+                        user.RegisterDate,
+                        user.PublicKey
+                    ));
+                }
+                return result;
             }
             catch (Exception ex)
             {
@@ -80,7 +104,13 @@ namespace Messenger.Services
 
                 if (user == null) return null;
 
-                return new UserResponseDTO(user.Id, user.Name, user.AvatarPath, user.RegisterDate);
+                return new UserResponseDTO(
+                    user.Id,
+                    user.Name ?? "",
+                    user.AvatarPath ?? "",
+                    user.RegisterDate,
+                    user.PublicKey
+                );
             }
             catch (Exception ex)
             {
@@ -101,6 +131,23 @@ namespace Messenger.Services
             {
                 _logger.LogError(ex, "Error checking user exists {UserId}", userId);
                 return false;
+            }
+        }
+
+        public async Task<string?> GetPublicKeyAsync(Guid userId)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                return user?.PublicKey;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting public key for user {UserId}", userId);
+                return null;
             }
         }
     }

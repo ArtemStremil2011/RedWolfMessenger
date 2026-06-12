@@ -10,9 +10,15 @@ namespace Messenger.Models.ChatModels
         [Key]
         public Guid MessageId { get; set; }
 
-        [Required]
         [StringLength(5000)]
-        public string MessageText { get; set; } = string.Empty;
+        public string? MessageText { get; set; }
+
+        // ============ НОВЫЕ ПОЛЯ ДЛЯ ШИФРОВАНИЯ ============
+        [StringLength(5000)]
+        public string? EncryptedData { get; set; }
+
+        [StringLength(50)]
+        public string? Iv { get; set; }
 
         [Required]
         public DateTime MessageCreateDate { get; set; }
@@ -35,7 +41,6 @@ namespace Messenger.Models.ChatModels
 
         public bool IsSystemMessage { get; set; } = false;
 
-        // НОВОЕ ПОЛЕ - для отслеживания прочитанных файловых сообщений
         public bool IsRead { get; set; } = false;
 
         // Поля для файла

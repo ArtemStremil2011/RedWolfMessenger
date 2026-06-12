@@ -1,9 +1,8 @@
-﻿using Messenger.Data;
+using Messenger.Data;
 using Messenger.DTOs;
-using Messenger.Models.BaseModels;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Messenger.Models.ChatModels;  // ← FileMessage находится здесь
+using Messenger.Models.ChatModels;
 
 namespace Messenger.Services
 {
@@ -31,6 +30,16 @@ namespace Messenger.Services
                 var hasAccess = await UserHasAccessToFileAsync(messageId, currentUserId);
                 if (!hasAccess) return null;
 
+                var creator = fileMessage.MessageCreator != null
+                    ? new UserResponseDTO(
+                        fileMessage.MessageCreator.Id,
+                        fileMessage.MessageCreator.Name ?? "",
+                        fileMessage.MessageCreator.AvatarPath ?? "",
+                        fileMessage.MessageCreator.RegisterDate,
+                        fileMessage.MessageCreator.PublicKey
+                    )
+                    : null;
+
                 return new FileMessageResponseDTO(
                     fileMessage.MessageId,
                     fileMessage.MessageText,
@@ -38,16 +47,11 @@ namespace Messenger.Services
                     fileMessage.MessageLastUpdateDate,
                     fileMessage.UserId,
                     fileMessage.ChatId,
-                    fileMessage.MessageCreator != null ? new UserResponseDTO(
-                        fileMessage.MessageCreator.Id,
-                        fileMessage.MessageCreator.Name,
-                        fileMessage.MessageCreator.AvatarPath,
-                        fileMessage.MessageCreator.RegisterDate
-                    ) : null,
-                    fileMessage.FileName,
-                    fileMessage.FilePath,
+                    creator,
+                    fileMessage.FileName ?? "",
+                    fileMessage.FilePath ?? "",
                     fileMessage.FileSize,
-                    fileMessage.ContentType
+                    fileMessage.ContentType ?? ""
                 );
             }
             catch (Exception ex)
@@ -71,29 +75,41 @@ namespace Messenger.Services
                     return new List<FileMessageResponseDTO>();
                 }
 
-                return await _context.Set<FileMessage>()
+                var files = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .Where(f => f.ChatId == chatId && !f.IsDeleted)
                     .OrderBy(f => f.MessageCreateDate)
-                    .Select(f => new FileMessageResponseDTO(
-                        f.MessageId,
-                        f.MessageText,
-                        f.MessageCreateDate,
-                        f.MessageLastUpdateDate,
-                        f.UserId,
-                        f.ChatId,
-                        f.MessageCreator != null ? new UserResponseDTO(
-                            f.MessageCreator.Id,
-                            f.MessageCreator.Name,
-                            f.MessageCreator.AvatarPath,
-                            f.MessageCreator.RegisterDate
-                        ) : null,
-                        f.FileName,
-                        f.FilePath,
-                        f.FileSize,
-                        f.ContentType
-                    ))
                     .ToListAsync();
+
+                var result = new List<FileMessageResponseDTO>();
+                foreach (var fileMsg in files)
+                {
+                    var creator = fileMsg.MessageCreator != null
+                        ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name ?? "",
+                            fileMsg.MessageCreator.AvatarPath ?? "",
+                            fileMsg.MessageCreator.RegisterDate,
+                            fileMsg.MessageCreator.PublicKey
+                        )
+                        : null;
+
+                    result.Add(new FileMessageResponseDTO(
+                        fileMsg.MessageId,
+                        fileMsg.MessageText,
+                        fileMsg.MessageCreateDate,
+                        fileMsg.MessageLastUpdateDate,
+                        fileMsg.UserId,
+                        fileMsg.ChatId,
+                        creator,
+                        fileMsg.FileName ?? "",
+                        fileMsg.FilePath ?? "",
+                        fileMsg.FileSize,
+                        fileMsg.ContentType ?? ""
+                    ));
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

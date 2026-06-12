@@ -11,7 +11,7 @@ namespace Messenger.DTOs
         DateTime CreatedAt,
         DateTime? LastActivityAt,
         string? AvatarPath,
-        int UnreadCount = 0                    // ← НОВОЕ ПОЛЕ (счётчик непрочитанных)
+        int UnreadCount = 0
     );
 
     public record CreateChatDTO(
@@ -31,5 +31,10 @@ namespace Messenger.DTOs
     public record AddUserToChatDTO(
         [Required] Guid ChatId,
         [Required] Guid UserId
+    );
+
+    public record CreateSessionKeyDTO(
+        [Required] Guid ChatId,
+        [Required] Dictionary<Guid, string> EncryptedKeys
     );
 }

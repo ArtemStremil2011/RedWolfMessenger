@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Eve - Interceptor</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        .intercepted {
+            border-left: 3px solid #ef4444;
+            margin: 10px 0;
+            padding: 10px;
+            background: #1a1a1a;
+            font-size: 12px;
+        }
+        .timestamp {
+            color: #6b7280;
+            font-size: 10px;
+        }
+        .raw {
+            color: #22c55e;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        h2 { color: #ef4444; }
+        .type-plain { color: #fbbf24; }
+        .type-encrypted { color: #22c55e; }
+        .type-event { color: #8b5cf6; }
+        input, button {
+            background: #1f1f1f;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #e0e0e0;
+            margin: 5px;
+        }
+        button {
+            background: #dc2626;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        .status {
+            color: #22c55e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Eve - Message Interceptor</h2>
+    <p>Connected to server, but has NO keys for decryption</p>
+    <p><span class="type-plain">Plain message</span> | <span class="type-encrypted">Encrypted (cannot read)</span> | <span class="type-event">Event</span></p>
+    <hr>
+    <div>
+        <input type="text" id="serverUrl" placeholder="ws://192.168.1.78:5000/messengerHub" value="ws://192.168.1.78:5000/messengerHub">
+        <button id="connectBtn">Connect</button>
+        <button id="clearBtn">Clear</button>
+    </div>
+    <hr>
+    <div id="output"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        let connection = null;
+        let token = null;
+
+        function addLog(type, data, rawType = "event") {
+            const div = document.createElement('div');
+            div.className = 'intercepted';
+            let typeClass = '';
+            if (rawType === 'plain') typeClass = 'type-plain';
+            else if (rawType === 'encrypted') typeClass = 'type-encrypted';
+            else typeClass = 'type-event';
+            
+            div.innerHTML = `
+                <div><span class="${typeClass}">[${type}]</span> <span class="timestamp">${new Date().toLocaleTimeString()}</span></div>
+                <div class="raw">${JSON.stringify(data, null, 2).substring(0, 500)}</div>
+            `;
+            document.getElementById('output').prepend(div);
+            
+            while (document.getElementById('output').children.length > 100) {
+                document.getElementById('output').removeChild(document.getElementById('output').lastChild);
+            }
+        }
+
+        async function connect() {
+            const login = prompt("Enter login:", "T3mny_PrInce");
+            const password = prompt("Enter password:");
+            
+            if (!login || !password) return;
+            
+            addLog("INIT", { login: login, action: "Login" }, "event");
+            
+            try {
+                const serverUrl = document.getElementById('serverUrl').value;
+                const baseUrl = serverUrl.replace("/messengerHub", "");
+                
+                const res = await fetch(baseUrl + '/api/User/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })
+                });
+                
+                if (!res.ok) {
+                    const error = await res.text();
+                    addLog("LOGIN ERROR", { error: error }, "event");
+                    alert("Login error: " + error);
+                    return;
+                }
+                
+                const data = await res.json();
+                token = data.token;
+                addLog("LOGIN SUCCESS", { userId: data.userId }, "event");
+                
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl(serverUrl, { accessTokenFactory: () => token })
+                    .withAutomaticReconnect()
+                    .build();
+                
+                connection.on("ReceiveMessage", (userId, userName, messageText, chatId) => {
+                    addLog("PLAIN TEXT", { userId, userName, messageText: messageText?.substring(0, 100), chatId }, "plain");
+                });
+                
+                connection.on("ReceiveEncryptedMessage", (userId, userName, encryptedData, iv, chatId) => {
+                    addLog("ENCRYPTED", { userId, userName, encryptedData: encryptedData?.substring(0, 50) + "...", iv: iv?.substring(0, 30) + "...", chatId }, "encrypted");
+                });
+                
+                connection.on("NewChatCreated", (chat) => {
+                    addLog("NEW CHAT", { chatId: chat.id, chatName: chat.chatName }, "event");
+                });
+                
+                connection.on("UserOnline", (userId, isOnline) => {
+                    addLog("USER ONLINE", { userId, isOnline }, "event");
+                });
+                
+                connection.on("UserTyping", (userId, userName) => {
+                    addLog("USER TYPING", { userId, userName }, "event");
+                });
+                
+                connection.on("UserJoined", (userId, userName) => {
+                    addLog("USER JOINED CHAT", { userId, userName }, "event");
+                });
+                
+                await connection.start();
+                addLog("SIGNALR CONNECTED", { connectionId: connection.connectionId }, "event");
+                
+                const chatsRes = await fetch(baseUrl + '/api/Chat/user-chats/' + data.userId, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    addLog("CHATS LOADED", { count: chats.length }, "event");
+                    
+                    for (const chat of chats) {
+                        await connection.invoke('JoinChat', chat.id, data.userId, "Eve");
+                        addLog("JOINED CHAT", { chatId: chat.id, chatName: chat.chatName }, "event");
+                    }
+                }
+                
+                addLog("EVE READY", { status: "listening", keys: "none", decryption: "impossible" }, "event");
+                
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('connectBtn').textContent = "Connected";
+                
+            } catch(e) {
+                addLog("ERROR", { error: e.message }, "event");
+                console.error(e);
+            }
+        }
+        
+        document.getElementById('connectBtn').onclick = connect;
+        document.getElementById('clearBtn').onclick = () => {
+            document.getElementById('output').innerHTML = '';
+        };
+    </script>
+</body>
+</html>

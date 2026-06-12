@@ -6,10 +6,15 @@ namespace Messenger.DTOs
         Guid Id,
         string Name,
         string? AvatarPath,
-        DateTime RegisterDate
+        DateTime RegisterDate,
+        string? PublicKey = null
     );
 
-    public record UserCreateDTO(
+    public record UserRegisterDTO(
+        [Required]
+        [StringLength(20, MinimumLength = 10)]
+        string PhoneNumber,
+
         [Required]
         [StringLength(50, MinimumLength = 2)]
         string Name,
@@ -19,14 +24,12 @@ namespace Messenger.DTOs
         string Password
     );
 
-    public record UserUpdateDTO(
-        [StringLength(50, MinimumLength = 2)]
-        string? Name,
+    public record VerifyPhoneDTO(
+        [Required]
+        string PhoneNumber,
 
-        string? AvatarPath,
-
-        [StringLength(100, MinimumLength = 6)]
-        string? NewPassword
+        [Required]
+        string Code
     );
 
     public record UserLoginDTO(
@@ -37,19 +40,27 @@ namespace Messenger.DTOs
         string Password
     );
 
-    public record UserSearchDTO(
-        Guid Id,
-        string Name,
-        string? AvatarPath
+    public record UserUpdateDTO(
+        [StringLength(50, MinimumLength = 2)]
+        string? Name,
+
+        [StringLength(100, MinimumLength = 6)]
+        string? NewPassword
     );
 
-    public class VerifyCodeDTO
-    {
+    public record SavePublicKeyDTO(
         [Required]
-        public string PhoneNumber { get; set; } = string.Empty;
+        string PublicKey
+    );
+
+    public record SaveEncryptedPrivateKeyDTO(
+        [Required]
+        string Data,
 
         [Required]
-        [StringLength(6, MinimumLength = 6)]
-        public string Code { get; set; } = string.Empty;
-    }
+        string Salt,
+
+        [Required]
+        string Iv
+    );
 }

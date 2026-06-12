@@ -1,7 +1,7 @@
-﻿using Messenger.Models.ChatModels;
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
-// using System.Threading.Channels; ← УДАЛИТЕ ЭТУ СТРОКУ
+using System.ComponentModel.DataAnnotations.Schema;
+using Messenger.Models.ChatModels;
 
 namespace Messenger.Models.BaseModels
 {
@@ -39,7 +39,19 @@ namespace Messenger.Models.BaseModels
 
         public UserRole Role { get; set; } = UserRole.User;
 
-        // Теперь Channel однозначно указывает на Messenger.Models.ChatModels.Channel
+        // ============ КРИПТОГРАФИЯ ============
+        [StringLength(500)]
+        public string? PublicKey { get; set; }
+
+        [StringLength(1000)]
+        public string? EncryptedPrivateKey { get; set; }
+
+        [StringLength(100)]
+        public string? KeySalt { get; set; }
+
+        [StringLength(100)]
+        public string? KeyIv { get; set; }
+
         public virtual ICollection<Message>? Messages { get; set; }
         public virtual ICollection<Chat>? Chats { get; set; }
 

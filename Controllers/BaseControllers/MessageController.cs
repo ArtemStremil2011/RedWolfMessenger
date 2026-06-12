@@ -2,6 +2,8 @@
 using Messenger.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Messenger.Hubs;
 
 namespace Messenger.Controllers.BaseControllers
 {
@@ -13,18 +15,24 @@ namespace Messenger.Controllers.BaseControllers
         private readonly IMessageReadService _messageReadService;
         private readonly IMessageWriteService _messageWriteService;
         private readonly IChatReadService _chatReadService;
+        private readonly IUserReadService _userReadService;
         private readonly ILogger<MessageController> _logger;
+        private readonly IHubContext<MessengerHub> _hubContext;
 
         public MessageController(
             IMessageReadService messageReadService,
             IMessageWriteService messageWriteService,
             IChatReadService chatReadService,
-            ILogger<MessageController> logger)
+            IUserReadService userReadService,
+            ILogger<MessageController> logger,
+            IHubContext<MessengerHub> hubContext)
         {
             _messageReadService = messageReadService;
             _messageWriteService = messageWriteService;
             _chatReadService = chatReadService;
+            _userReadService = userReadService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         private Guid GetCurrentUserId()
@@ -80,6 +88,15 @@ namespace Messenger.Controllers.BaseControllers
 
             if (message == null)
                 return BadRequest(new { message = "Не удалось отправить сообщение" });
+
+            var currentUser = await _userReadService.GetProfileAsync(currentUserId);
+            var currentUserName = currentUser?.Name ?? "User";
+
+            await _hubContext.Clients.Group(messageCreateDto.ChatId.ToString()).SendAsync("ReceiveMessage",
+                currentUserId.ToString(),
+                currentUserName,
+                messageCreateDto.MessageText,
+                messageCreateDto.ChatId.ToString());
 
             return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
@@ -138,8 +155,6 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(new { message = "Сообщение успешно восстановлено", id });
         }
 
-        // ============ НОВЫЕ МЕТОДЫ ДЛЯ НЕПРОЧИТАННЫХ СООБЩЕНИЙ ============
-
         [HttpGet("unread")]
         public async Task<IActionResult> GetUnreadCounts()
         {
@@ -154,6 +169,43 @@ namespace Messenger.Controllers.BaseControllers
             var userId = GetCurrentUserId();
             await _messageWriteService.MarkMessagesAsReadAsync(chatId, userId);
             return Ok();
+        }
+
+        [HttpPost("encrypted")]
+        public async Task<IActionResult> CreateEncrypted([FromBody] EncryptedMessageCreateDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId != dto.UserId)
+                return Forbid("Вы не можете создавать сообщения от имени другого пользователя");
+
+            var userInChat = await _chatReadService.UserInChatAsync(dto.ChatId, currentUserId);
+            if (!userInChat)
+                return Forbid("Вы не в этом чате");
+
+            var message = await _messageWriteService.CreateEncryptedMessageAsync(
+                dto.UserId,
+                dto.ChatId,
+                dto.EncryptedData,
+                dto.Iv);
+
+            if (message == null)
+                return BadRequest(new { message = "Не удалось отправить сообщение" });
+
+            var currentUser = await _userReadService.GetProfileAsync(currentUserId);
+            var currentUserName = currentUser?.Name ?? "User";
+
+            await _hubContext.Clients.Group(dto.ChatId.ToString()).SendAsync("ReceiveEncryptedMessage",
+                currentUserId.ToString(),
+                currentUserName,
+                dto.EncryptedData,
+                dto.Iv,
+                dto.ChatId.ToString());
+
+            return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
     }
 }

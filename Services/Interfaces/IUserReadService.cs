@@ -9,5 +9,6 @@ namespace Messenger.Services.Interfaces
         Task<List<UserResponseDTO>> GetAllUsersAsync();
         Task<UserResponseDTO?> GetUserByNameAsync(string name);
         Task<bool> UserExistsAsync(Guid userId);
+        Task<string?> GetPublicKeyAsync(Guid userId);
     }
 }

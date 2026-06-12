@@ -1,9 +1,8 @@
-﻿using Messenger.Data;
+using Messenger.Data;
 using Messenger.DTOs;
-using Messenger.Models.BaseModels;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Messenger.Models.ChatModels;  // ← FileMessage находится здесь
+using Messenger.Models.ChatModels;
 
 namespace Messenger.Services
 {
@@ -27,18 +26,13 @@ namespace Messenger.Services
         {
             try
             {
-                // Проверка размера (50 MB)
                 if (file.Length > 50 * 1024 * 1024)
                 {
                     _logger.LogWarning("File too large: {Size} bytes", file.Length);
                     return null;
                 }
 
-                // Разрешённые расширения
-                var allowedExtensions = new[] {
-                    ".jpg", ".jpeg", ".png", ".gif", ".webp",
-                    ".txt", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"
-                };
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".txt", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar", ".7z", ".json", ".xml", ".csv" };
                 var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
                 if (!allowedExtensions.Contains(extension))
@@ -47,7 +41,6 @@ namespace Messenger.Services
                     return null;
                 }
 
-                // Проверяем, что пользователь в чате
                 var chat = await _context.Chats
                     .Include(c => c.Users)
                     .FirstOrDefaultAsync(c => c.Id == chatId);
@@ -58,23 +51,19 @@ namespace Messenger.Services
                     return null;
                 }
 
-                // Создаём папку для загрузок
                 var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
-                // Генерируем уникальное имя файла
                 var fileName = $"{DateTime.Now.Ticks}_{Guid.NewGuid()}{extension}";
                 var filePath = Path.Combine(uploadPath, fileName);
                 var relativePath = $"/uploads/{fileName}";
 
-                // Сохраняем файл
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                // Создаём сообщение
                 var fileMessage = new FileMessage
                 {
                     MessageId = Guid.NewGuid(),
@@ -88,7 +77,8 @@ namespace Messenger.Services
                     MessageCreateDate = DateTime.UtcNow,
                     MessageLastUpdateDate = DateTime.UtcNow,
                     IsDeleted = false,
-                    IsSystemMessage = false
+                    IsSystemMessage = false,
+                    IsRead = false
                 };
 
                 await _context.Set<FileMessage>().AddAsync(fileMessage);
@@ -139,7 +129,6 @@ namespace Messenger.Services
                     return false;
                 }
 
-                // Удаляем физический файл
                 await DeletePhysicalFileAsync(fileMessage.FilePath);
 
                 _context.Set<FileMessage>().Remove(fileMessage);

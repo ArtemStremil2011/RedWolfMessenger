@@ -35,6 +35,10 @@ namespace Messenger.Services
                     if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                         return null;
 
+                    var creator = textMessage.MessageCreator != null 
+                        ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name, textMessage.MessageCreator.AvatarPath, textMessage.MessageCreator.RegisterDate)
+                        : null;
+
                     return new MessageResponseDTO(
                         textMessage.MessageId,
                         textMessage.MessageText,
@@ -42,10 +46,15 @@ namespace Messenger.Services
                         textMessage.MessageLastUpdateDate,
                         textMessage.UserId,
                         textMessage.ChatId,
-                        textMessage.MessageCreator != null ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name, textMessage.MessageCreator.AvatarPath, textMessage.MessageCreator.RegisterDate) : null,
+                        creator,
                         textMessage.IsDeleted,
                         textMessage.IsSystemMessage,
-                        textMessage.IsRead
+                        textMessage.IsRead,
+                        textMessage.EncryptedData,
+                        textMessage.Iv,
+                        null,
+                        null,
+                        null
                     );
                 }
 
@@ -62,6 +71,10 @@ namespace Messenger.Services
                     if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                         return null;
 
+                    var creator = fileMessage.MessageCreator != null 
+                        ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name, fileMessage.MessageCreator.AvatarPath, fileMessage.MessageCreator.RegisterDate)
+                        : null;
+
                     return new MessageResponseDTO(
                         fileMessage.MessageId,
                         fileMessage.MessageText,
@@ -69,10 +82,12 @@ namespace Messenger.Services
                         fileMessage.MessageLastUpdateDate,
                         fileMessage.UserId,
                         fileMessage.ChatId,
-                        fileMessage.MessageCreator != null ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name, fileMessage.MessageCreator.AvatarPath, fileMessage.MessageCreator.RegisterDate) : null,
+                        creator,
                         fileMessage.IsDeleted,
                         fileMessage.IsSystemMessage,
                         fileMessage.IsRead,
+                        fileMessage.EncryptedData,
+                        fileMessage.Iv,
                         fileMessage.FileName,
                         fileMessage.FileSize,
                         fileMessage.ContentType
@@ -107,6 +122,10 @@ namespace Messenger.Services
 
                 foreach (var msg in textMessages)
                 {
+                    var creator = msg.MessageCreator != null 
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
+                        : null;
+
                     result.Add(new MessageResponseDTO(
                         msg.MessageId,
                         msg.MessageText,
@@ -114,10 +133,15 @@ namespace Messenger.Services
                         msg.MessageLastUpdateDate,
                         msg.UserId,
                         msg.ChatId,
-                        msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
+                        creator,
                         msg.IsDeleted,
                         msg.IsSystemMessage,
-                        msg.IsRead
+                        msg.IsRead,
+                        msg.EncryptedData,
+                        msg.Iv,
+                        null,
+                        null,
+                        null
                     ));
                 }
 
@@ -128,6 +152,10 @@ namespace Messenger.Services
 
                 foreach (var fileMsg in fileMessages)
                 {
+                    var creator = fileMsg.MessageCreator != null 
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
+                        : null;
+
                     result.Add(new MessageResponseDTO(
                         fileMsg.MessageId,
                         fileMsg.MessageText,
@@ -135,10 +163,12 @@ namespace Messenger.Services
                         fileMsg.MessageLastUpdateDate,
                         fileMsg.UserId,
                         fileMsg.ChatId,
-                        fileMsg.MessageCreator != null ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate) : null,
+                        creator,
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
                         fileMsg.IsRead,
+                        fileMsg.EncryptedData,
+                        fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType
@@ -179,6 +209,10 @@ namespace Messenger.Services
 
                 foreach (var msg in textMessages)
                 {
+                    var creator = msg.MessageCreator != null 
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
+                        : null;
+
                     result.Add(new MessageResponseDTO(
                         msg.MessageId,
                         msg.MessageText,
@@ -186,10 +220,15 @@ namespace Messenger.Services
                         msg.MessageLastUpdateDate,
                         msg.UserId,
                         msg.ChatId,
-                        msg.MessageCreator != null ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate) : null,
+                        creator,
                         msg.IsDeleted,
                         msg.IsSystemMessage,
-                        msg.IsRead
+                        msg.IsRead,
+                        msg.EncryptedData,
+                        msg.Iv,
+                        null,
+                        null,
+                        null
                     ));
                 }
 
@@ -203,6 +242,10 @@ namespace Messenger.Services
 
                 foreach (var fileMsg in fileMessages)
                 {
+                    var creator = fileMsg.MessageCreator != null 
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
+                        : null;
+
                     result.Add(new MessageResponseDTO(
                         fileMsg.MessageId,
                         fileMsg.MessageText,
@@ -210,10 +253,12 @@ namespace Messenger.Services
                         fileMsg.MessageLastUpdateDate,
                         fileMsg.UserId,
                         fileMsg.ChatId,
-                        fileMsg.MessageCreator != null ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate) : null,
+                        creator,
                         fileMsg.IsDeleted,
                         fileMsg.IsSystemMessage,
                         fileMsg.IsRead,
+                        fileMsg.EncryptedData,
+                        fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
                         fileMsg.ContentType

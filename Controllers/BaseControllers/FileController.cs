@@ -1,8 +1,9 @@
-﻿using Messenger.Models.BaseModels;
+using Messenger.DTOs;
 using Messenger.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Messenger.Models.ChatModels;
+using Microsoft.AspNetCore.SignalR;
+using Messenger.Hubs;
 
 namespace Messenger.Controllers.BaseControllers
 {
@@ -14,15 +15,18 @@ namespace Messenger.Controllers.BaseControllers
         private readonly IFileReadService _fileReadService;
         private readonly IFileWriteService _fileWriteService;
         private readonly ILogger<FileController> _logger;
+        private readonly IHubContext<MessengerHub> _hubContext;
 
         public FileController(
             IFileReadService fileReadService,
             IFileWriteService fileWriteService,
-            ILogger<FileController> logger)
+            ILogger<FileController> logger,
+            IHubContext<MessengerHub> hubContext)
         {
             _fileReadService = fileReadService;
             _fileWriteService = fileWriteService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         private Guid GetCurrentUserId()
@@ -74,9 +78,7 @@ namespace Messenger.Controllers.BaseControllers
                 if (fileMessage == null)
                     return NotFound(new { message = "Файл не найден" });
 
-                // Здесь нужно получить физический файл
-                // Это можно вынести в отдельный сервис или оставить здесь
-                var filePath = Path.Combine("wwwroot", fileMessage.FilePath.TrimStart('/'));
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", fileMessage.FilePath.TrimStart('/'));
                 if (!System.IO.File.Exists(filePath))
                     return NotFound(new { message = "Файл не найден на сервере" });
 

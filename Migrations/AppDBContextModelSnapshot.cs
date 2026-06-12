@@ -34,7 +34,7 @@ namespace Messenger.Migrations
 
                     b.HasIndex("ChatId");
 
-                    b.ToTable("ChatUsers", (string)null);
+                    b.ToTable("ChatUsers");
                 });
 
             modelBuilder.Entity("Messenger.Models.BaseModels.Message", b =>
@@ -46,18 +46,28 @@ namespace Messenger.Migrations
                     b.Property<Guid>("ChatId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("EncryptedData")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsSystemMessage")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<string>("Iv")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("MessageCreateDate")
                         .ValueGeneratedOnAdd()
@@ -70,7 +80,6 @@ namespace Messenger.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("MessageText")
-                        .IsRequired()
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
 
@@ -87,7 +96,7 @@ namespace Messenger.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Models.BaseModels.User", b =>
@@ -100,10 +109,22 @@ namespace Messenger.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("EncryptedPrivateKey")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("IsPhoneNumberConfirmed")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<string>("KeyIv")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("KeySalt")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -116,12 +137,16 @@ namespace Messenger.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("PhoneNumber")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("PhoneVerificationCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasColumnType("text");
+
+                    b.Property<string>("PublicKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("RegisterDate")
                         .ValueGeneratedOnAdd()
@@ -144,7 +169,7 @@ namespace Messenger.Migrations
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Models.ChatModels.Chat", b =>
@@ -191,7 +216,39 @@ namespace Messenger.Migrations
 
                     b.HasIndex("LastActivityAt");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
+                });
+
+            modelBuilder.Entity("Messenger.Models.ChatModels.ChatSessionKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("EncryptedSessionKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ChatId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ChatSessionKeys", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Models.ChatModels.FileMessage", b =>
@@ -207,6 +264,10 @@ namespace Messenger.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EncryptedData")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -227,12 +288,18 @@ namespace Messenger.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsSystemMessage")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<string>("Iv")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("MessageCreateDate")
                         .ValueGeneratedOnAdd()
@@ -245,7 +312,6 @@ namespace Messenger.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("MessageText")
-                        .IsRequired()
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
 
@@ -262,7 +328,7 @@ namespace Messenger.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("FileMessages");
+                    b.ToTable("FileMessages", (string)null);
                 });
 
             modelBuilder.Entity("ChatUsers", b =>
@@ -307,6 +373,25 @@ namespace Messenger.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("Messenger.Models.ChatModels.ChatSessionKey", b =>
+                {
+                    b.HasOne("Messenger.Models.ChatModels.Chat", "Chat")
+                        .WithMany()
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Messenger.Models.BaseModels.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Messenger.Models.ChatModels.FileMessage", b =>

@@ -1,14 +1,14 @@
 ﻿using Messenger.Data;
 using Messenger.DTOs;
-using Messenger.Models.BaseModels;
 using Messenger.Services.Interfaces;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using Messenger.Models.BaseModels;
+using Messenger.Models.ChatModels;
+using Microsoft.AspNetCore.Identity;
 using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Messenger.Services
 {
@@ -86,7 +86,7 @@ namespace Messenger.Services
                     return (false, string.Empty, Guid.Empty);
                 }
 
-                var hashedPassword = _passwordHasher.HashPassword(null, registerDto.Password);
+                var hashedPassword = _passwordHasher.HashPassword(new User(), registerDto.Password);
 
                 var user = new User
                 {
@@ -111,18 +111,26 @@ namespace Messenger.Services
             }
         }
 
-        public async Task<bool> UpdateProfileAsync(Guid userId, UserUpdateDTO updateDto)
+        public async Task<UserResponseDTO?> UpdateProfileAsync(Guid userId, UserUpdateDTO updateDto)
         {
             try
             {
                 var user = await _context.Users.FindAsync(userId);
-                if (user == null) return false;
+                if (user == null) return null;
 
                 if (!string.IsNullOrEmpty(updateDto.Name))
+                {
+                    var existingUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Name == updateDto.Name && u.Id != userId);
+                    
+                    if (existingUser != null)
+                    {
+                        _logger.LogWarning("Username {Name} already taken", updateDto.Name);
+                        return null;
+                    }
+                    
                     user.Name = updateDto.Name;
-
-                if (!string.IsNullOrEmpty(updateDto.AvatarPath))
-                    user.AvatarPath = updateDto.AvatarPath;
+                }
 
                 if (!string.IsNullOrEmpty(updateDto.NewPassword))
                 {
@@ -131,12 +139,19 @@ namespace Messenger.Services
 
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Profile updated for user {UserId}", userId);
-                return true;
+                
+                return new UserResponseDTO(
+                    user.Id,
+                    user.Name,
+                    user.AvatarPath,
+                    user.RegisterDate,
+                    user.PublicKey
+                );
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
-                return false;
+                return null;
             }
         }
 
@@ -163,17 +178,16 @@ namespace Messenger.Services
                 }
 
                 var fileName = $"{userId}_{DateTime.Now.Ticks}{extension}";
-                var uploadPath = Path.Combine("wwwroot", "avatars");
+                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
                 var filePath = Path.Combine(uploadPath, fileName);
                 var relativePath = $"/avatars/{fileName}";
 
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
-                // Удаляем старую аватарку
                 if (!string.IsNullOrEmpty(user.AvatarPath) && !user.AvatarPath.Contains("default-avatar"))
                 {
-                    var oldPath = Path.Combine("wwwroot", user.AvatarPath.TrimStart('/'));
+                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarPath.TrimStart('/'));
                     if (File.Exists(oldPath))
                         File.Delete(oldPath);
                 }
@@ -204,7 +218,7 @@ namespace Messenger.Services
 
                 if (!string.IsNullOrEmpty(user.AvatarPath) && !user.AvatarPath.Contains("default-avatar"))
                 {
-                    var oldPath = Path.Combine("wwwroot", user.AvatarPath.TrimStart('/'));
+                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarPath.TrimStart('/'));
                     if (File.Exists(oldPath))
                         File.Delete(oldPath);
                 }
@@ -231,7 +245,7 @@ namespace Messenger.Services
                 if (existingUser != null) return null;
 
                 var code = new Random().Next(100000, 999999).ToString();
-                var hashedPassword = _passwordHasher.HashPassword(null, registerDto.Password);
+                var hashedPassword = _passwordHasher.HashPassword(new User(), registerDto.Password);
 
                 _tempRegistrations[registerDto.PhoneNumber] = new TempRegistration
                 {
@@ -333,6 +347,65 @@ namespace Messenger.Services
             {
                 _logger.LogError(ex, "Error deleting user {UserId}", userId);
                 return false;
+            }
+        }
+
+        public async Task<bool> SavePublicKeyAsync(Guid userId, string publicKey)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return false;
+                
+                user.PublicKey = publicKey;
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Public key saved for user {UserId}", userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving public key for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SaveEncryptedPrivateKeyAsync(Guid userId, string encryptedData, string salt, string iv)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return false;
+                
+                user.EncryptedPrivateKey = encryptedData;
+                user.KeySalt = salt;
+                user.KeyIv = iv;
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Encrypted private key saved for user {UserId}", userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving encrypted private key for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<(string? EncryptedData, string? Salt, string? Iv)> GetEncryptedPrivateKeyAsync(Guid userId)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+                
+                if (user == null) return (null, null, null);
+                
+                return (user.EncryptedPrivateKey, user.KeySalt, user.KeyIv);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting encrypted private key for user {UserId}", userId);
+                return (null, null, null);
             }
         }
 

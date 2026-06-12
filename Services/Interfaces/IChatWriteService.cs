@@ -12,5 +12,6 @@ namespace Messenger.Services.Interfaces
         Task<bool> LeaveGroupAsync(Guid chatId, Guid currentUserId);
         Task<string?> UploadGroupAvatarAsync(Guid chatId, IFormFile file, Guid currentUserId);
         Task<bool> DeleteGroupAvatarAsync(Guid chatId, Guid currentUserId);
+        Task<bool> SaveSessionKeysAsync(Guid chatId, Dictionary<Guid, string> encryptedKeys, Guid currentUserId);
     }
 }

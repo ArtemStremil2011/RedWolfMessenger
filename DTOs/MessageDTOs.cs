@@ -12,7 +12,9 @@ namespace Messenger.DTOs
         UserResponseDTO? MessageCreator,
         bool IsDeleted,
         bool IsSystemMessage,
-        bool IsRead = false,                    // ← НЕОБЯЗАТЕЛЬНЫЙ (со значением по умолчанию)
+        bool IsRead,
+        string? EncryptedData = null,
+        string? Iv = null,
         string? FileName = null,
         long? FileSize = null,
         string? ContentType = null
@@ -37,5 +39,19 @@ namespace Messenger.DTOs
         [Required]
         [StringLength(5000)]
         string MessageText
+    );
+
+    public record EncryptedMessageCreateDTO(
+        [Required]
+        Guid UserId,
+
+        [Required]
+        Guid ChatId,
+
+        [Required]
+        string EncryptedData,
+
+        [Required]
+        string Iv
     );
 }
