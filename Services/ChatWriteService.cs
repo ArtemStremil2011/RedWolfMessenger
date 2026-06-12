@@ -443,21 +443,17 @@ namespace Messenger.Services
         {
             try
             {
-                var chat = await _context.Chats
-                    .FirstOrDefaultAsync(c => c.Id == chatId);
+                Console.WriteLine($"[SaveSessionKeys] Saving for chat {chatId}, keys count: {encryptedKeys.Count}");
                 
-                if (chat == null) return false;
-        
-                // Удаляем старые ключи для этого чата
                 var existingKeys = await _context.ChatSessionKeys
                     .Where(k => k.ChatId == chatId)
                     .ToListAsync();
                 
                 _context.ChatSessionKeys.RemoveRange(existingKeys);
-        
-                // Сохраняем новые
+                
                 foreach (var kvp in encryptedKeys)
                 {
+                    Console.WriteLine($"[SaveSessionKeys] User: {kvp.Key}, Key length: {kvp.Value?.Length}");
                     var sessionKey = new ChatSessionKey
                     {
                         ChatId = chatId,
@@ -466,14 +462,14 @@ namespace Messenger.Services
                     };
                     await _context.ChatSessionKeys.AddAsync(sessionKey);
                 }
-        
+                
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Session keys saved for chat {ChatId}", chatId);
+                Console.WriteLine($"[SaveSessionKeys] Saved successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving session keys for chat {ChatId}", chatId);
+                Console.WriteLine($"[SaveSessionKeys] ERROR: {ex.Message}");
                 return false;
             }
         }

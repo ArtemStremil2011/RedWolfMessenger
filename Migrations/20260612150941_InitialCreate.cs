@@ -25,7 +25,10 @@ namespace Messenger.Migrations
                     PhoneVerificationCode = table.Column<string>(type: "text", nullable: true),
                     VerificationCodeExpiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Role = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    PublicKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    PublicKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    EncryptedPrivateKey = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    KeySalt = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    KeyIv = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {

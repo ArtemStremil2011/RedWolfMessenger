@@ -249,5 +249,34 @@ namespace Messenger.Controllers.BaseControllers
             
             return Ok(new { message = "Публичный ключ сохранён" });
         }
+
+        [HttpPost("encrypted-private-key")]
+        public async Task<IActionResult> SaveEncryptedPrivateKey([FromBody] SaveEncryptedPrivateKeyDTO dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _userWriteService.SaveEncryptedPrivateKeyAsync(
+                userId, dto.Data, dto.Salt, dto.Iv);
+            
+            if (!result)
+                return BadRequest(new { message = "Failed to save encrypted private key" });
+            
+            return Ok(new { message = "Encrypted private key saved" });
+        }
+
+        [HttpGet("encrypted-private-key")]
+        public async Task<IActionResult> GetEncryptedPrivateKey()
+        {
+            var userId = GetCurrentUserId();
+            var (encryptedData, salt, iv) = await _userWriteService.GetEncryptedPrivateKeyAsync(userId);
+            
+            if (string.IsNullOrEmpty(encryptedData))
+                return NotFound(new { message = "Encrypted private key not found" });
+            
+            return Ok(new { 
+                encryptedPrivateKey = encryptedData,
+                salt = salt,
+                iv = iv
+            });
+        }
     }
 }

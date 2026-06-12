@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Messenger.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20260610224728_InitialCreate")]
+    [Migration("20260612150941_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -112,10 +112,22 @@ namespace Messenger.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("EncryptedPrivateKey")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("IsPhoneNumberConfirmed")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<string>("KeyIv")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("KeySalt")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
