@@ -207,5 +207,13 @@ namespace Messenger.Controllers.BaseControllers
 
             return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
+
+        [HttpGet("deleted/{chatId}")]
+        public async Task<IActionResult> GetDeletedMessages(Guid chatId)
+        {
+            var userId = GetCurrentUserId();
+            var messages = await _messageReadService.GetDeletedMessagesAsync(chatId, userId);
+            return Ok(messages);
+        }
     }
 }

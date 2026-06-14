@@ -97,3 +97,5 @@ app.MapHub<MessengerHub>("/messengerHub");
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+

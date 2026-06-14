@@ -35,8 +35,8 @@ namespace Messenger.Services
                     if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                         return null;
 
-                    var creator = textMessage.MessageCreator != null 
-                        ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name, textMessage.MessageCreator.AvatarPath, textMessage.MessageCreator.RegisterDate)
+                    var creator = textMessage.MessageCreator != null
+                        ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name ?? "", textMessage.MessageCreator.AvatarPath ?? "", textMessage.MessageCreator.RegisterDate, textMessage.MessageCreator.PublicKey)
                         : null;
 
                     return new MessageResponseDTO(
@@ -51,10 +51,7 @@ namespace Messenger.Services
                         textMessage.IsSystemMessage,
                         textMessage.IsRead,
                         textMessage.EncryptedData,
-                        textMessage.Iv,
-                        null,
-                        null,
-                        null
+                        textMessage.Iv
                     );
                 }
 
@@ -71,8 +68,8 @@ namespace Messenger.Services
                     if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                         return null;
 
-                    var creator = fileMessage.MessageCreator != null 
-                        ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name, fileMessage.MessageCreator.AvatarPath, fileMessage.MessageCreator.RegisterDate)
+                    var creator = fileMessage.MessageCreator != null
+                        ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name ?? "", fileMessage.MessageCreator.AvatarPath ?? "", fileMessage.MessageCreator.RegisterDate, fileMessage.MessageCreator.PublicKey)
                         : null;
 
                     return new MessageResponseDTO(
@@ -122,8 +119,8 @@ namespace Messenger.Services
 
                 foreach (var msg in textMessages)
                 {
-                    var creator = msg.MessageCreator != null 
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
+                    var creator = msg.MessageCreator != null
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -138,10 +135,7 @@ namespace Messenger.Services
                         msg.IsSystemMessage,
                         msg.IsRead,
                         msg.EncryptedData,
-                        msg.Iv,
-                        null,
-                        null,
-                        null
+                        msg.Iv
                     ));
                 }
 
@@ -152,8 +146,8 @@ namespace Messenger.Services
 
                 foreach (var fileMsg in fileMessages)
                 {
-                    var creator = fileMsg.MessageCreator != null 
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
+                    var creator = fileMsg.MessageCreator != null
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -209,8 +203,8 @@ namespace Messenger.Services
 
                 foreach (var msg in textMessages)
                 {
-                    var creator = msg.MessageCreator != null 
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name, msg.MessageCreator.AvatarPath, msg.MessageCreator.RegisterDate)
+                    var creator = msg.MessageCreator != null
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -225,10 +219,7 @@ namespace Messenger.Services
                         msg.IsSystemMessage,
                         msg.IsRead,
                         msg.EncryptedData,
-                        msg.Iv,
-                        null,
-                        null,
-                        null
+                        msg.Iv
                     ));
                 }
 
@@ -242,8 +233,8 @@ namespace Messenger.Services
 
                 foreach (var fileMsg in fileMessages)
                 {
-                    var creator = fileMsg.MessageCreator != null 
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name, fileMsg.MessageCreator.AvatarPath, fileMsg.MessageCreator.RegisterDate)
+                    var creator = fileMsg.MessageCreator != null
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -296,6 +287,94 @@ namespace Messenger.Services
             {
                 _logger.LogError(ex, "Error getting unread counts for user {UserId}", userId);
                 return new Dictionary<Guid, int>();
+            }
+        }
+
+        // НОВЫЙ МЕТОД ДЛЯ КОРЗИНЫ
+        public async Task<List<MessageResponseDTO>> GetDeletedMessagesAsync(Guid chatId, Guid userId)
+        {
+            try
+            {
+                // Проверяем, что пользователь в чате
+                var chat = await _context.Chats
+                    .Include(c => c.Users)
+                    .FirstOrDefaultAsync(c => c.Id == chatId);
+
+                if (chat == null || !chat.Users.Any(u => u.Id == userId))
+                {
+                    _logger.LogWarning("User {UserId} not in chat {ChatId}", userId, chatId);
+                    return new List<MessageResponseDTO>();
+                }
+
+                var result = new List<MessageResponseDTO>();
+
+                // Текстовые сообщения, удалённые пользователем (не админом)
+                var textMessages = await _context.Messages
+                    .Include(m => m.MessageCreator)
+                    .Where(m => m.ChatId == chatId && m.UserId == userId && m.IsDeleted)
+                    .OrderByDescending(m => m.MessageCreateDate)
+                    .ToListAsync();
+
+                foreach (var msg in textMessages)
+                {
+                    var creator = msg.MessageCreator != null
+                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
+                        : null;
+
+                    result.Add(new MessageResponseDTO(
+                        msg.MessageId,
+                        msg.MessageText,
+                        msg.MessageCreateDate,
+                        msg.MessageLastUpdateDate,
+                        msg.UserId,
+                        msg.ChatId,
+                        creator,
+                        msg.IsDeleted,
+                        msg.IsSystemMessage,
+                        msg.IsRead,
+                        msg.EncryptedData,
+                        msg.Iv
+                    ));
+                }
+
+                // Файловые сообщения, удалённые пользователем
+                var fileMessages = await _context.Set<FileMessage>()
+                    .Include(f => f.MessageCreator)
+                    .Where(f => f.ChatId == chatId && f.UserId == userId && f.IsDeleted)
+                    .OrderByDescending(f => f.MessageCreateDate)
+                    .ToListAsync();
+
+                foreach (var fileMsg in fileMessages)
+                {
+                    var creator = fileMsg.MessageCreator != null
+                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
+                        : null;
+
+                    result.Add(new MessageResponseDTO(
+                        fileMsg.MessageId,
+                        fileMsg.MessageText,
+                        fileMsg.MessageCreateDate,
+                        fileMsg.MessageLastUpdateDate,
+                        fileMsg.UserId,
+                        fileMsg.ChatId,
+                        creator,
+                        fileMsg.IsDeleted,
+                        fileMsg.IsSystemMessage,
+                        fileMsg.IsRead,
+                        fileMsg.EncryptedData,
+                        fileMsg.Iv,
+                        fileMsg.FileName,
+                        fileMsg.FileSize,
+                        fileMsg.ContentType
+                    ));
+                }
+
+                return result.OrderByDescending(m => m.MessageCreateDate).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting deleted messages for chat {ChatId}", chatId);
+                return new List<MessageResponseDTO>();
             }
         }
     }
