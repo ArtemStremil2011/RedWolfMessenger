@@ -26,6 +26,7 @@
         .btn-secondary { background: #2a2a2a; color: #e0e0e0; }
         .btn-secondary:hover { background: #3a3a3a; }
         .btn-danger { background: #7f1d1d; color: white; }
+        .btn-warning { background: #92400e; color: white; }
         .app-container { display: none; height: 100vh; overflow: hidden; }
         .app-container.active { display: flex; }
         .menu-btn { display: none; position: fixed; top: 16px; left: 16px; z-index: 1001; background: #dc2626; border: none; border-radius: 12px; padding: 12px 16px; color: white; cursor: pointer; font-size: 20px; }
@@ -35,9 +36,11 @@
         .sidebar-header h3 { flex: 1; font-size: 16px; font-weight: 600; cursor: pointer; color: #e0e0e0; }
         .logout-btn { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 22px; padding: 8px; border-radius: 10px; }
         .logout-btn:hover { background: #1f1f1f; color: #ef4444; }
-        .btn-new-chat, .btn-create-group { margin: 12px; padding: 12px; border-radius: 14px; font-weight: 600; cursor: pointer; }
+        .btn-new-chat, .btn-create-group, .btn-trash { margin: 8px 12px; padding: 10px; border-radius: 14px; font-weight: 600; cursor: pointer; }
         .btn-new-chat { background: linear-gradient(135deg, #dc2626, #b91c1c); border: none; color: white; }
         .btn-create-group { background: #1a1a1a; border: 1px solid #dc2626; color: #e0e0e0; }
+        .btn-trash { background: #1f1f1f; border: 1px solid #6b7280; color: #9ca3af; }
+        .btn-trash:hover { background: #7f1d1d; border-color: #dc2626; color: white; }
         .chats-list { flex: 1; overflow-y: auto; padding: 12px; }
         .chat-item { padding: 14px; border-radius: 16px; cursor: pointer; margin-bottom: 8px; background: #141414; border: 1px solid #1f1f1f; transition: all 0.2s ease; }
         .chat-item:hover { background: #1a1a1a; border-color: #dc2626; }
@@ -54,7 +57,9 @@
         .chat-header { padding: 16px 24px; border-bottom: 1px solid #1f1f1f; background: rgba(15, 15, 15, 0.95); }
         .chat-header-top { display: flex; justify-content: space-between; align-items: center; }
         .chat-header h2 { font-size: 20px; font-weight: 600; color: #ef4444; }
-        .edit-chat-btn { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 10px; padding: 6px 14px; cursor: pointer; font-size: 12px; color: #e0e0e0; }
+        .chat-actions { display: flex; gap: 8px; }
+        .edit-chat-btn, .trash-chat-btn { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 10px; padding: 6px 14px; cursor: pointer; font-size: 12px; color: #e0e0e0; }
+        .trash-chat-btn:hover { background: #7f1d1d; border-color: #dc2626; }
         .edit-chat-btn:hover { background: #dc2626; border-color: #dc2626; }
         .messages-container { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
         .messages-container::-webkit-scrollbar { width: 6px; }
@@ -64,6 +69,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .message.own { align-self: flex-end; }
         .message.system { align-self: center; max-width: 90%; }
+        .message.deleted-message { opacity: 0.7; background: #1a1a1a; border-left: 3px solid #6b7280; }
         .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
         .message-header img { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
         .message-sender { font-size: 12px; color: #9ca3af; cursor: pointer; }
@@ -108,6 +114,16 @@
         .member-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #2a2a2a; }
         .member-item img { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; }
         .remove-member { background: #dc2626; border: none; border-radius: 8px; padding: 4px 12px; color: white; cursor: pointer; font-size: 12px; }
+        .deleted-message-item { padding: 12px; border-radius: 12px; background: #1a1a1a; margin-bottom: 8px; cursor: pointer; border: 1px solid #2a2a2a; }
+        .deleted-message-item:hover { border-color: #dc2626; background: #1f1f1f; }
+        .deleted-message-text { font-size: 13px; margin-bottom: 8px; word-break: break-all; }
+        .deleted-message-meta { font-size: 11px; color: #6b7280; display: flex; gap: 12px; flex-wrap: wrap; }
+        .restore-btn, .permanent-delete-btn { background: none; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 11px; }
+        .restore-btn { background: #22c55e; color: white; }
+        .permanent-delete-btn { background: #dc2626; color: white; }
+        .trash-modal-content { max-width: 600px; width: 90%; }
+        .trash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .trash-actions { display: flex; gap: 10px; }
         @media (max-width: 768px) { .menu-btn { display: block; } .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; width: 300px; z-index: 1000; } .sidebar.open { left: 0; } .message { max-width: 85%; } .chat-header { padding-left: 70px; } }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #22c55e; color: white; padding: 12px 24px; border-radius: 40px; z-index: 9999; font-size: 14px; font-weight: 500; animation: slideUp 0.3s ease, fadeOut 2.5s ease 2s forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
@@ -149,6 +165,7 @@
         </div>
         <button class="btn-new-chat" id="newChatBtn">+ New Private Chat</button>
         <button class="btn-create-group" id="createGroupBtn">👥 Create Group</button>
+        <button class="btn-trash" id="trashBtn">🗑️ Trash Bin</button>
         <div class="chats-list" id="chatsList"><div class="empty-state">💬 No chats yet<br>Start a new conversation</div></div>
     </div>
     <div class="chat-area">
@@ -161,6 +178,24 @@
             <div class="emoji-picker-container"><button class="emoji-btn" id="emojiBtn" title="Emoji">😊</button></div>
             <input type="text" id="messageInput" placeholder="Type a message..." disabled>
             <button class="send-btn" id="sendBtn" disabled title="Send">➤</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="trashModal">
+    <div class="modal-content trash-modal-content">
+        <div class="trash-header">
+            <h3>🗑️ Trash Bin - <span id="trashChatName"></span></h3>
+            <div class="trash-actions">
+                <button class="btn-secondary" id="refreshTrashBtn">🔄 Refresh</button>
+                <button class="btn-secondary close-modal">✖️ Close</button>
+            </div>
+        </div>
+        <div id="deletedMessagesList" style="max-height: 60vh; overflow-y: auto;">
+            <div class="empty-state">📭 No deleted messages</div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-warning" id="closeTrashBtn">Close</button>
         </div>
     </div>
 </div>
@@ -275,7 +310,7 @@
         return res;
     }
 
-    // ============ CRYPTO ============
+    // ============ CRYPTO (same as before) ============
     async function generateRSAKeys() {
         const keyPair = await crypto.subtle.generateKey(
             { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
@@ -430,7 +465,104 @@
         });
     }
 
-    // ============ AUTH ============
+    // ============ TRASH BIN METHODS ============
+    async function showTrashBin() {
+        if (!currentChat) {
+            showToast("Please select a chat first", true);
+            return;
+        }
+        
+        const chatName = currentChatInfo?.chatName || currentChat.name || "Chat";
+        document.getElementById('trashChatName').innerText = chatName;
+        showModal('trashModal');
+        await loadDeletedMessages();
+    }
+    
+    async function loadDeletedMessages() {
+        if (!currentChat) return;
+        
+        const container = document.getElementById('deletedMessagesList');
+        container.innerHTML = '<div class="empty-state">⏳ Loading...</div>';
+        
+        try {
+            const res = await api(`/Message/deleted/${currentChat.id}`);
+            const messages = await res.json();
+            
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 No deleted messages in this chat</div>';
+                return;
+            }
+            
+            container.innerHTML = messages.map(msg => {
+                const isFile = msg.fileName;
+                const content = isFile ? `📎 ${escapeHtml(msg.fileName)}` : (msg.messageText || (msg.encryptedData ? '🔒 [Encrypted]' : ''));
+                const time = formatMessageDate(msg.messageCreateDate);
+                const sender = msg.messageCreator?.name || msg.user?.name || 'Unknown';
+                
+                return `
+                    <div class="deleted-message-item" data-mid="${msg.messageId}">
+                        <div class="deleted-message-text">
+                            <strong>${escapeHtml(sender)}</strong>: ${escapeHtml(content)}
+                        </div>
+                        <div class="deleted-message-meta">
+                            <span>🕐 ${time}</span>
+                            <button class="restore-btn" data-id="${msg.messageId}">↩️ Restore</button>
+                            <button class="permanent-delete-btn" data-id="${msg.messageId}">💀 Permanent Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.querySelectorAll('.restore-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    restoreMessage(btn.dataset.id);
+                });
+            });
+            
+            document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    permanentDeleteMessage(btn.dataset.id);
+                });
+            });
+            
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = '<div class="empty-state">❌ Error loading deleted messages</div>';
+        }
+    }
+    
+    async function restoreMessage(messageId) {
+        try {
+            const res = await api(`/Message/restore/${messageId}`, { method: 'PATCH' });
+            if (res.ok) {
+                showToast('✅ Message restored!');
+                await loadMessages(currentChat.id);
+                await loadChats();
+                await loadDeletedMessages();
+            }
+        } catch(e) {
+            showToast('Failed to restore: ' + e.message, true);
+        }
+    }
+    
+    async function permanentDeleteMessage(messageId) {
+        if (!confirm('⚠️ This will permanently delete the message. Are you sure?')) return;
+        
+        try {
+            const res = await api(`/Message/permanent/${messageId}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('💀 Message permanently deleted');
+                await loadDeletedMessages();
+                await loadChats();
+            }
+        } catch(e) {
+            showToast('Failed to delete: ' + e.message, true);
+        }
+    }
+
+    // ============ AUTH (same as before) ============
     async function handleLogin() {
         const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
         if(!login||!pwd) return showToast('Fill all fields', true);
@@ -894,8 +1026,15 @@
         currentChatInfo = await getChatInfo(chatId);
         const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2));
         const title = isGroup ? currentChatInfo.chatName : (currentChatInfo?.otherUser?.name || chatName);
-        document.getElementById('chatHeader').innerHTML = `<div class="chat-header-top"><h2>${escapeHtml(title)}</h2><button class="edit-chat-btn" id="editChatBtn">✏️ Edit</button></div>`;
+        document.getElementById('chatHeader').innerHTML = `<div class="chat-header-top">
+            <h2>${escapeHtml(title)}</h2>
+            <div class="chat-actions">
+                <button class="trash-chat-btn" id="trashChatBtn">🗑️ Trash</button>
+                <button class="edit-chat-btn" id="editChatBtn">✏️ Edit</button>
+            </div>
+        </div>`;
         document.getElementById('editChatBtn')?.addEventListener('click', showEditChatModal);
+        document.getElementById('trashChatBtn')?.addEventListener('click', showTrashBin);
         document.getElementById('messageInput').disabled = false;
         document.getElementById('sendBtn').disabled = false;
         
@@ -955,37 +1094,39 @@
             const edited = isMessageEdited(msg);
             const avatar = API_BASE+'/User/avatar/'+msg.userId+'?access_token='+safeToken;
             const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
+            const isDeleted = msg.isDeleted === true;
+            const deletedClass = isDeleted ? 'deleted-message' : '';
+            
             if(msg.fileName) {
-                return `<div class="message ${isOwn?'own':''}" data-mid="${msg.messageId}">
+                return `<div class="message ${isOwn?'own':''} ${deletedClass}" data-mid="${msg.messageId}">
                     <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
                     <div class="message-file">
                         <div class="file-icon">${getFileIcon(msg.fileName)}</div>
                         <div class="file-info"><div class="file-name">📁 ${escapeHtml(msg.fileName)}</div><div class="file-size">${formatFileSize(msg.fileSize)}</div></div>
-                        <button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ DOWNLOAD</button>
+                        ${!isDeleted ? `<button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ DOWNLOAD</button>` : '<span style="color:#6b7280; font-size:12px;">🗑️ Deleted</span>'}
                     </div>
                     ${msg.messageText && !msg.messageText.startsWith('📎') ? `<div class="message-caption">${escapeHtml(msg.messageText)}${edited ? ' ✏️' : ''}</div>` : ''}
                     <div class="message-time">🕐 ${formatMessageDate(msg.messageCreateDate)}</div>
-                    <div class="message-actions">${isOwn ? `<button class="del-file-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}</div>
+                    ${!isDeleted ? `<div class="message-actions">${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}</div>` : ''}
                 </div>`;
             }
-            if(msg.isSystemMessage) return `<div class="message system"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
+            if(msg.isSystemMessage) return `<div class="message system ${deletedClass}"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
             const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
-            return `<div class="message ${isOwn?'own':''}">
+            return `<div class="message ${isOwn?'own':''} ${deletedClass}">
                 <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
                 <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size:10px; opacity:0.6;">✏️ edited</span>' : ''}</div>
                 <div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div>
-                <div class="message-actions">
+                ${!isDeleted ? `<div class="message-actions">
                     <button class="copy-btn" data-text="${textEsc}">📋 Copy</button>
                     ${isOwn ? `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}">✏️ Edit</button>` : ''}
                     ${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}
-                </div>
+                </div>` : ''}
             </div>`;
         }).join('');
         document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
-        document.querySelectorAll('.del-file-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
+        document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
         document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
         document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => editMessage(btn.dataset.id, btn.dataset.text)));
-        document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', () => deleteMessage(btn.dataset.id)));
         container.scrollTop = container.scrollHeight;
     }
 
@@ -1070,7 +1211,7 @@
 
     async function editMessage(id, txt) { editingMessageId=id; document.getElementById('editMessageText').value=txt; showModal('editMessageModal'); }
     async function saveEditedMsg() { const newText=document.getElementById('editMessageText').value.trim(); if(!newText||!editingMessageId) return; try{ await api('/Message/'+editingMessageId,{method:'PUT',body:JSON.stringify({messageId:editingMessageId,messageText:newText})}); closeModals(); await loadMessages(currentChat.id); await loadChats(); showToast('✅ Edited'); }catch(e){ showToast('Error',true); } }
-    async function deleteMessage(id) { if(confirm('Delete message?')){ try{ await api('/Message/'+id,{method:'DELETE'}); await loadMessages(currentChat.id); await loadChats(); showToast('✅ Deleted'); }catch(e){ showToast('Error',true); } } }
+    async function deleteMessage(id) { if(confirm('Delete message? It will go to trash bin and can be restored.')){ try{ await api('/Message/'+id,{method:'DELETE'}); await loadMessages(currentChat.id); await loadChats(); showToast('✅ Message moved to trash'); }catch(e){ showToast('Error',true); } } }
     async function showUserProfile(id) { try{ const res=await api('/Chat/user-profile/'+id); const u=await res.json(); document.getElementById('userProfileContent').innerHTML=`<div style="text-align:center"><img src="${API_BASE}/User/avatar/${id}?access_token=${getSafeToken()}&t=${Date.now()}" style="width:100px;height:100px;border-radius:50%;margin-bottom:16px"><h3>${escapeHtml(u.name)}</h3><p>Joined: ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); }catch(e){ showToast('Error',true); } }
     
     async function searchUsers() { const q=document.getElementById('searchUserInput').value.trim(); const div=document.getElementById('searchResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id); if(!filtered.length){ div.innerHTML='<div class="empty-state">👤 No users found</div>'; return; } div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div><strong>${escapeHtml(u.name)}</strong></div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el=>el.addEventListener('click',()=>createPrivateChat(el.dataset.id,el.dataset.name))); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
@@ -1226,6 +1367,9 @@
     document.getElementById('menuBtn')?.addEventListener('click', ()=>document.getElementById('sidebar').classList.toggle('open'));
     document.getElementById('newChatBtn')?.addEventListener('click', ()=>{ document.getElementById('searchUserInput').value=''; document.getElementById('searchResults').innerHTML=''; showModal('newChatModal'); });
     document.getElementById('createGroupBtn')?.addEventListener('click', showCreateGroup);
+    document.getElementById('trashBtn')?.addEventListener('click', showTrashBin);
+    document.getElementById('refreshTrashBtn')?.addEventListener('click', loadDeletedMessages);
+    document.getElementById('closeTrashBtn')?.addEventListener('click', closeModals);
     document.getElementById('attachBtn')?.addEventListener('click', ()=>document.getElementById('fileInput').click());
     document.getElementById('fileInput')?.addEventListener('change', uploadFile);
     document.getElementById('sendBtn')?.addEventListener('click', sendMessage);
