@@ -36,9 +36,14 @@ namespace Messenger.DTOs
         [Required]
         Guid MessageId,
 
-        [Required]
         [StringLength(5000)]
-        string MessageText
+        string? MessageText = null,
+        
+        [StringLength(5000)]
+        string? EncryptedData = null,
+        
+        [StringLength(50)]
+        string? Iv = null
     );
 
     public record EncryptedMessageCreateDTO(

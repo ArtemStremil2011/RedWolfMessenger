@@ -56,7 +56,8 @@
         .chat-area { flex: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, #121212 0%, #0a0a0a 100%); }
         .chat-header { padding: 16px 24px; border-bottom: 1px solid #1f1f1f; background: rgba(15, 15, 15, 0.95); }
         .chat-header-top { display: flex; justify-content: space-between; align-items: center; }
-        .chat-header h2 { font-size: 20px; font-weight: 600; color: #ef4444; }
+        .chat-header h2 { font-size: 20px; font-weight: 600; color: #ef4444; cursor: pointer; }
+        .chat-header h2:hover { text-decoration: underline; }
         .chat-actions { display: flex; gap: 8px; }
         .edit-chat-btn, .trash-chat-btn { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 10px; padding: 6px 14px; cursor: pointer; font-size: 12px; color: #e0e0e0; }
         .trash-chat-btn:hover { background: #7f1d1d; border-color: #dc2626; }
@@ -71,9 +72,9 @@
         .message.system { align-self: center; max-width: 90%; }
         .message.deleted-message { opacity: 0.7; background: #1a1a1a; border-left: 3px solid #6b7280; }
         .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .message-header img { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+        .message-header img { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; object-fit: cover; }
         .message-sender { font-size: 12px; color: #9ca3af; cursor: pointer; }
-        .message-sender:hover { color: #dc2626; }
+        .message-sender:hover { color: #dc2626; text-decoration: underline; }
         .message-content { padding: 12px 16px; border-radius: 20px; background: #1f1f1f; word-wrap: break-word; line-height: 1.4; font-size: 14px; }
         .message.own .message-content { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
         .message-time { font-size: 10px; color: #6b7280; margin-top: 6px; margin-left: 6px; }
@@ -104,7 +105,7 @@
         .modal-buttons { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
         .user-search-result { padding: 12px; border-radius: 14px; background: #1f1f1f; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s ease; }
         .user-search-result:hover { background: #2a2a2a; border-left: 3px solid #dc2626; }
-        .user-search-result img { width: 44px; height: 44px; border-radius: 50%; }
+        .user-search-result img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
         .selected-members { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
         .member-tag { background: linear-gradient(135deg, #dc2626, #b91c1c); padding: 6px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; color: white; }
         .member-tag button { background: none; border: none; color: white; cursor: pointer; font-size: 16px; font-weight: bold; }
@@ -112,7 +113,7 @@
         .group-avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; cursor: pointer; margin-bottom: 20px; border: 2px solid #dc2626; }
         .empty-state { text-align: center; color: #6b7280; padding: 48px 24px; }
         .member-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #2a2a2a; }
-        .member-item img { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; }
+        .member-item img { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
         .remove-member { background: #dc2626; border: none; border-radius: 8px; padding: 4px 12px; color: white; cursor: pointer; font-size: 12px; }
         .deleted-message-item { padding: 12px; border-radius: 12px; background: #1a1a1a; margin-bottom: 8px; cursor: pointer; border: 1px solid #2a2a2a; }
         .deleted-message-item:hover { border-color: #dc2626; background: #1f1f1f; }
@@ -124,6 +125,10 @@
         .trash-modal-content { max-width: 600px; width: 90%; }
         .trash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .trash-actions { display: flex; gap: 10px; }
+        .profile-view { text-align: center; }
+        .profile-view img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; border: 3px solid #dc2626; }
+        .profile-view h3 { color: #ef4444; margin-bottom: 8px; }
+        .profile-view p { color: #9ca3af; margin-bottom: 8px; }
         @media (max-width: 768px) { .menu-btn { display: block; } .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; width: 300px; z-index: 1000; } .sidebar.open { left: 0; } .message { max-width: 85%; } .chat-header { padding-left: 70px; } }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #22c55e; color: white; padding: 12px 24px; border-radius: 40px; z-index: 9999; font-size: 14px; font-weight: 500; animation: slideUp 0.3s ease, fadeOut 2.5s ease 2s forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
@@ -243,13 +248,14 @@
 
     // ============ STATE ============
     let currentUser = null, currentChat = null, currentChatInfo = null, token = null, connection = null;
-    let typingTimeout = null, editingMessageId = null;
+    let typingTimeout = null, editingMessageId = null, editingMessageIsEncrypted = false;
     let selectedGroupMembers = [], tempPhoneNumber = null;
     let onlineUsers = new Map();
     let unreadCounts = new Map();
     let lastMessagesCache = new Map();
     let privateKey = null;
     let sessionKeys = new Map();
+    let groupAvatarCache = new Map();
     const API_BASE = '/api';
     const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
@@ -310,7 +316,28 @@
         return res;
     }
 
-    // ============ CRYPTO (same as before) ============
+    // ============ PROFILE VIEW ============
+    async function showUserProfile(userId, userName) {
+        try {
+            const res = await api(`/User/${userId}`);
+            const user = await res.json();
+            const avatarUrl = `${API_BASE}/User/avatar/${userId}?access_token=${getSafeToken()}&t=${Date.now()}`;
+            document.getElementById('userProfileContent').innerHTML = `
+                <div class="profile-view">
+                    <img src="${avatarUrl}" onerror="this.src='${DEFAULT_AVATAR}'">
+                    <h3>${escapeHtml(user.name)}</h3>
+                    <p>📅 Joined: ${new Date(user.registerDate).toLocaleDateString()}</p>
+                    ${user.publicKey ? '<p>🔐 E2EE Enabled</p>' : '<p>⚠️ No encryption key</p>'}
+                </div>
+            `;
+            showModal('userProfileModal');
+        } catch(e) {
+            console.error(e);
+            showToast('Failed to load profile', true);
+        }
+    }
+
+    // ============ CRYPTO ============
     async function generateRSAKeys() {
         const keyPair = await crypto.subtle.generateKey(
             { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
@@ -344,12 +371,6 @@
     async function encryptWithPublicKey(data, publicKey) {
         const encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, data);
         return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-    }
-    
-    async function decryptWithPrivateKey(encryptedBase64, privateKey) {
-        const encrypted = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
-        const decrypted = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encrypted);
-        return decrypted;
     }
     
     async function generateSessionKey() {
@@ -465,6 +486,34 @@
         });
     }
 
+    // ============ GROUP AVATAR HELPERS ============
+    async function getGroupAvatarUrl(chatId) {
+        if (!token || !chatId) return DEFAULT_AVATAR;
+        
+        if (groupAvatarCache.has(chatId)) {
+            const cached = groupAvatarCache.get(chatId);
+            if (cached.url && cached.expiry > Date.now()) {
+                return cached.url;
+            }
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                groupAvatarCache.set(chatId, { url: url, expiry: Date.now() + 5 * 60 * 1000 });
+                return url;
+            }
+            return DEFAULT_AVATAR;
+        } catch(e) {
+            console.error('Error loading group avatar:', e);
+            return DEFAULT_AVATAR;
+        }
+    }
+
     // ============ TRASH BIN METHODS ============
     async function showTrashBin() {
         if (!currentChat) {
@@ -493,11 +542,34 @@
                 return;
             }
             
-            container.innerHTML = messages.map(msg => {
-                const isFile = msg.fileName;
-                const content = isFile ? `📎 ${escapeHtml(msg.fileName)}` : (msg.messageText || (msg.encryptedData ? '🔒 [Encrypted]' : ''));
+            let sessionKey = sessionKeys.get(currentChat.id);
+            if (!sessionKey) {
+                sessionKey = await getSessionKeyForChat(currentChat.id);
+            }
+            
+            const decryptedMessages = [];
+            for (const msg of messages) {
+                let displayText = msg.messageText || (msg.fileName ? `📎 ${msg.fileName}` : '');
+                
+                if (msg.encryptedData && msg.iv && sessionKey) {
+                    try {
+                        const decryptedText = await decryptMessage(msg.encryptedData, msg.iv, sessionKey);
+                        displayText = decryptedText;
+                    } catch(e) {
+                        console.error('Failed to decrypt deleted message:', e);
+                        displayText = '🔒 [Cannot decrypt]';
+                    }
+                } else if (msg.encryptedData && !sessionKey) {
+                    displayText = '🔒 [Encrypted - need key]';
+                }
+                
+                decryptedMessages.push({ ...msg, displayText });
+            }
+            
+            container.innerHTML = decryptedMessages.map(msg => {
                 const time = formatMessageDate(msg.messageCreateDate);
                 const sender = msg.messageCreator?.name || msg.user?.name || 'Unknown';
+                const content = msg.displayText || (msg.fileName ? `📎 ${msg.fileName}` : '');
                 
                 return `
                     <div class="deleted-message-item" data-mid="${msg.messageId}">
@@ -562,7 +634,7 @@
         }
     }
 
-    // ============ AUTH (same as before) ============
+    // ============ AUTH ============
     async function handleLogin() {
         const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
         if(!login||!pwd) return showToast('Fill all fields', true);
@@ -723,23 +795,12 @@
                 const data = await res.json();
                 showToast('✅ Group avatar updated!');
                 if (currentChatInfo) currentChatInfo.avatarPath = data.avatarPath;
+                groupAvatarCache.delete(currentChat.id);
                 await loadChats();
-                const avatarUrl = await fetchGroupAvatarAsBlobUrl(currentChat.id);
-                document.getElementById('groupAvatarPreview').src = avatarUrl;
+                const newAvatarUrl = await getGroupAvatarUrl(currentChat.id);
+                document.getElementById('groupAvatarPreview').src = newAvatarUrl;
             } else showToast('Upload failed', true);
         } catch(e) { showToast('Error', true); }
-    }
-
-    async function fetchGroupAvatarAsBlobUrl(chatId) {
-        if (!token || !chatId) return '';
-        try {
-            const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.ok) {
-                const blob = await response.blob();
-                return URL.createObjectURL(blob);
-            }
-            return '';
-        } catch(e) { return ''; }
     }
 
     async function deleteGroupAvatar() {
@@ -749,7 +810,8 @@
             if(res.ok) {
                 showToast('✅ Group avatar removed');
                 if (currentChatInfo) currentChatInfo.avatarPath = null;
-                document.getElementById('groupAvatarPreview').src = '';
+                groupAvatarCache.delete(currentChat.id);
+                document.getElementById('groupAvatarPreview').src = DEFAULT_AVATAR;
                 await loadChats();
             } else showToast('Delete failed', true);
         } catch(e) { showToast('Error', true); }
@@ -819,17 +881,24 @@
         const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
         const unreadCount = unreadCounts.get(chat.id) || 0;
         const lastMessage = lastMessagesCache.get(chat.id);
+        
         let avatarUrl = DEFAULT_AVATAR;
-        if (isGroup && chat.avatarPath) avatarUrl = `${API_BASE}/Chat/${chat.id}/avatar?t=${Date.now()}`;
-        else if (!isGroup && chat.otherUser?.id) avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}`;
+        if (isGroup) {
+            avatarUrl = await getGroupAvatarUrl(chat.id);
+        } else if (chat.otherUser?.id) {
+            avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
+        }
+        
         let previewHtml = '';
         if (lastMessage) {
             const isOwn = lastMessage.userId === currentUser?.id;
             const senderName = isOwn ? 'You' : (lastMessage.user?.name || lastMessage.messageCreator?.name || 'Unknown');
             let previewText = lastMessage.messageText || (lastMessage.fileName ? '📎 File' : '');
+            if (!previewText && lastMessage.encryptedData) previewText = '🔒 Encrypted';
             previewText = previewText?.length > 50 ? previewText.substring(0, 47) + '...' : previewText;
             previewHtml = `<div class="chat-preview"><strong>${escapeHtml(senderName)}:</strong> ${escapeHtml(previewText || '')}</div>`;
         }
+        
         const html = `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
             <div style="display:flex;align-items:center;gap:12px">
                 <div class="chat-avatar-container">
@@ -842,6 +911,7 @@
                 </div>
             </div>
         </div>`;
+        
         const existingItem = container.querySelector(`.chat-item[data-id="${chat.id}"]`);
         if (existingItem) existingItem.outerHTML = html;
         else container.insertAdjacentHTML('beforeend', html);
@@ -897,40 +967,12 @@
             
             const container = document.getElementById('chatsList');
             if(!chats?.length) { container.innerHTML='<div class="empty-state">💬 No chats yet<br>✨ Start a new conversation</div>'; return; }
-            const safeToken = getSafeToken();
-            container.innerHTML = chats.map(chat => {
-                const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
-                let avatarUrl = DEFAULT_AVATAR;
-                if (isGroup && chat.avatarPath) avatarUrl = `${API_BASE}/Chat/${chat.id}/avatar?t=${Date.now()}`;
-                else if (!isGroup && chat.otherUser?.id) avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${safeToken}`;
-                const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
-                const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
-                const unreadCount = unreadCounts.get(chat.id) || 0;
-                const lastMessage = lastMessagesCache.get(chat.id);
-                let previewHtml = '';
-                if (lastMessage) {
-                    const isOwn = lastMessage.userId === currentUser?.id;
-                    const senderName = isOwn ? 'You' : (lastMessage.user?.name || lastMessage.messageCreator?.name || 'Unknown');
-                    let previewText = lastMessage.messageText || (lastMessage.fileName ? '📎 File' : '');
-                    if (!previewText && lastMessage.encryptedData) previewText = '🔒 Encrypted';
-                    previewText = previewText?.length > 50 ? previewText.substring(0, 47) + '...' : previewText;
-                    previewHtml = `<div class="chat-preview"><strong>${escapeHtml(senderName)}:</strong> ${escapeHtml(previewText || '')}</div>`;
-                }
-                return `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
-                    <div style="display:flex;align-items:center;gap:12px">
-                        <div class="chat-avatar-container">
-                            <img src="${avatarUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover" onerror="this.src='${DEFAULT_AVATAR}'">
-                            ${!isGroup?`<div class="online-dot ${online?'online':'offline'}"></div>`:''}
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">${escapeHtml(name)}${isGroup?'<span class="chat-badge">GROUP</span>':''}</div>
-                            ${previewHtml}
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-            for (const chat of chats) updateUnreadBadge(chat.id, unreadCounts.get(chat.id) || 0);
-            document.querySelectorAll('.chat-item').forEach(el => { el.addEventListener('click', () => selectChat(el.dataset.id, el.dataset.name)); });
+            
+            container.innerHTML = '';
+            for (const chat of chats) {
+                await addChatToSidebar(chat);
+            }
+            
         } catch(e) { console.error(e); }
     }
 
@@ -1026,13 +1068,24 @@
         currentChatInfo = await getChatInfo(chatId);
         const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2));
         const title = isGroup ? currentChatInfo.chatName : (currentChatInfo?.otherUser?.name || chatName);
+        const otherUserId = !isGroup && currentChatInfo?.otherUser?.id;
+        
+        const titleHtml = otherUserId 
+            ? `<h2 style="cursor:pointer" id="chatTitleBtn">${escapeHtml(title)}</h2>`
+            : `<h2>${escapeHtml(title)}</h2>`;
+        
         document.getElementById('chatHeader').innerHTML = `<div class="chat-header-top">
-            <h2>${escapeHtml(title)}</h2>
+            ${titleHtml}
             <div class="chat-actions">
                 <button class="trash-chat-btn" id="trashChatBtn">🗑️ Trash</button>
                 <button class="edit-chat-btn" id="editChatBtn">✏️ Edit</button>
             </div>
         </div>`;
+        
+        if (otherUserId) {
+            document.getElementById('chatTitleBtn')?.addEventListener('click', () => showUserProfile(otherUserId, title));
+        }
+        
         document.getElementById('editChatBtn')?.addEventListener('click', showEditChatModal);
         document.getElementById('trashChatBtn')?.addEventListener('click', showTrashBin);
         document.getElementById('messageInput').disabled = false;
@@ -1096,10 +1149,14 @@
             const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
             const isDeleted = msg.isDeleted === true;
             const deletedClass = isDeleted ? 'deleted-message' : '';
+            const isEncrypted = !!msg.encryptedData;
             
             if(msg.fileName) {
                 return `<div class="message ${isOwn?'own':''} ${deletedClass}" data-mid="${msg.messageId}">
-                    <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
+                    <div class="message-header">
+                        <img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'>
+                        <span class="message-sender" data-userid="${msg.userId}" data-username="${escapeHtml(sender)}">${escapeHtml(sender)}</span>
+                    </div>
                     <div class="message-file">
                         <div class="file-icon">${getFileIcon(msg.fileName)}</div>
                         <div class="file-info"><div class="file-name">📁 ${escapeHtml(msg.fileName)}</div><div class="file-size">${formatFileSize(msg.fileSize)}</div></div>
@@ -1112,22 +1169,116 @@
             }
             if(msg.isSystemMessage) return `<div class="message system ${deletedClass}"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
             const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
+            const editBtn = `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}" data-encrypted="${isEncrypted}">✏️ Edit</button>`;
             return `<div class="message ${isOwn?'own':''} ${deletedClass}">
-                <div class="message-header"><img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'"><span class="message-sender">${escapeHtml(sender)}</span></div>
+                <div class="message-header">
+                    <img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'>
+                    <span class="message-sender" data-userid="${msg.userId}" data-username="${escapeHtml(sender)}">${escapeHtml(sender)}</span>
+                </div>
                 <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size:10px; opacity:0.6;">✏️ edited</span>' : ''}</div>
                 <div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div>
                 ${!isDeleted ? `<div class="message-actions">
                     <button class="copy-btn" data-text="${textEsc}">📋 Copy</button>
-                    ${isOwn ? `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}">✏️ Edit</button>` : ''}
+                    ${isOwn ? editBtn : ''}
                     ${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}
                 </div>` : ''}
             </div>`;
         }).join('');
+        
         document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
         document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
         document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
-        document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => editMessage(btn.dataset.id, btn.dataset.text)));
+        document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => {
+            editMessage(btn.dataset.id, btn.dataset.text, btn.dataset.encrypted === 'true');
+        }));
+        document.querySelectorAll('.message-sender').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const userId = el.dataset.userid;
+                const userName = el.dataset.username;
+                if (userId && userId !== currentUser.id) {
+                    showUserProfile(userId, userName);
+                }
+            });
+        });
+        
         container.scrollTop = container.scrollHeight;
+    }
+
+    // ============ EDIT MESSAGE ============
+    async function editMessage(messageId, currentText, isEncrypted) {
+        editingMessageId = messageId;
+        editingMessageIsEncrypted = isEncrypted;
+        document.getElementById('editMessageText').value = currentText;
+        showModal('editMessageModal');
+    }
+
+    async function saveEditedMsg() {
+        const newText = document.getElementById('editMessageText').value.trim();
+        if (!newText || !editingMessageId) {
+            closeModals();
+            return;
+        }
+        
+        try {
+            if (editingMessageIsEncrypted) {
+                let sessionKey = sessionKeys.get(currentChat.id);
+                if (!sessionKey) {
+                    sessionKey = await getSessionKeyForChat(currentChat.id);
+                }
+                if (!sessionKey) {
+                    showToast("🔒 No encryption key for this chat", true);
+                    return;
+                }
+                
+                const { encryptedData, iv } = await encryptMessage(newText, sessionKey);
+                
+                const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        messageId: editingMessageId,
+                        encryptedData: encryptedData,
+                        iv: iv
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Edit failed');
+                }
+            } else {
+                const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        messageId: editingMessageId,
+                        messageText: newText
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Edit failed');
+                }
+            }
+            
+            closeModals();
+            editingMessageId = null;
+            await loadMessages(currentChat.id);
+            await loadChats();
+            showToast('✅ Message edited');
+            
+        } catch (error) {
+            console.error('Edit error:', error);
+            showToast('Failed to edit: ' + error.message, true);
+        }
     }
 
     async function sendMessage() {
@@ -1141,16 +1292,12 @@
         if (!sessionKey) { showToast("🔒 No encryption key for this chat", true); return; }
         
         try {
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const encoded = new TextEncoder().encode(text);
-            const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, sessionKey, encoded);
-            const encryptedData = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-            const ivBase64 = btoa(String.fromCharCode(...iv));
+            const { encryptedData, iv } = await encryptMessage(text, sessionKey);
             
             const res = await fetch(`${API_BASE}/Message/encrypted`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ encryptedData, iv: ivBase64, userId: currentUser.id, chatId: currentChat.id })
+                body: JSON.stringify({ encryptedData, iv, userId: currentUser.id, chatId: currentChat.id })
             });
             
             if (!res.ok) throw new Error(await res.text());
@@ -1162,7 +1309,7 @@
             updateUnreadBadge(currentChat.id, 0);
             
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                await connection.invoke('SendEncryptedMessage', currentChat.id, currentUser.id, currentUser.name, encryptedData, ivBase64);
+                await connection.invoke('SendEncryptedMessage', currentChat.id, currentUser.id, currentUser.name, encryptedData, iv);
             }
         } catch(e) { showToast('Failed to send: ' + e.message, true); }
     }
@@ -1209,17 +1356,29 @@
         } catch(e) { showToast('Upload error', true); }
     }
 
-    async function editMessage(id, txt) { editingMessageId=id; document.getElementById('editMessageText').value=txt; showModal('editMessageModal'); }
-    async function saveEditedMsg() { const newText=document.getElementById('editMessageText').value.trim(); if(!newText||!editingMessageId) return; try{ await api('/Message/'+editingMessageId,{method:'PUT',body:JSON.stringify({messageId:editingMessageId,messageText:newText})}); closeModals(); await loadMessages(currentChat.id); await loadChats(); showToast('✅ Edited'); }catch(e){ showToast('Error',true); } }
-    async function deleteMessage(id) { if(confirm('Delete message? It will go to trash bin and can be restored.')){ try{ await api('/Message/'+id,{method:'DELETE'}); await loadMessages(currentChat.id); await loadChats(); showToast('✅ Message moved to trash'); }catch(e){ showToast('Error',true); } } }
-    async function showUserProfile(id) { try{ const res=await api('/Chat/user-profile/'+id); const u=await res.json(); document.getElementById('userProfileContent').innerHTML=`<div style="text-align:center"><img src="${API_BASE}/User/avatar/${id}?access_token=${getSafeToken()}&t=${Date.now()}" style="width:100px;height:100px;border-radius:50%;margin-bottom:16px"><h3>${escapeHtml(u.name)}</h3><p>Joined: ${new Date(u.registerDate).toLocaleDateString()}</p></div>`; showModal('userProfileModal'); }catch(e){ showToast('Error',true); } }
-    
+    async function deleteMessage(messageId) {
+        if (!confirm('Delete this message? It will go to trash bin and can be restored.')) return;
+        try {
+            const res = await api('/Message/' + messageId, { method: 'DELETE' });
+            if (res.ok) {
+                await loadMessages(currentChat.id);
+                await loadChats();
+                showToast('✅ Message moved to trash');
+            } else {
+                showToast('Failed to delete', true);
+            }
+        } catch(e) {
+            console.error('Delete error:', e);
+            showToast('Failed to delete: ' + e.message, true);
+        }
+    }
+
     async function searchUsers() { const q=document.getElementById('searchUserInput').value.trim(); const div=document.getElementById('searchResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id); if(!filtered.length){ div.innerHTML='<div class="empty-state">👤 No users found</div>'; return; } div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div><strong>${escapeHtml(u.name)}</strong></div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el=>el.addEventListener('click',()=>createPrivateChat(el.dataset.id,el.dataset.name))); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
 
     function showCreateGroup() { selectedGroupMembers=[]; updateSelected(); document.getElementById('groupName').value=''; document.getElementById('groupMaxUsers').value='100'; document.getElementById('groupSearchInput').value=''; document.getElementById('groupSearchResults').innerHTML=''; showModal('createGroupModal'); }
     async function searchGroupUsers() { const q=document.getElementById('groupSearchInput').value.trim(); const div=document.getElementById('groupSearchResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id&&!selectedGroupMembers.some(m=>m.id===u.id)); div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el=>el.addEventListener('click',()=>{ selectedGroupMembers.push({id:el.dataset.id,name:el.dataset.name}); updateSelected(); document.getElementById('groupSearchInput').value=''; div.innerHTML=''; })); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
     function updateSelected() { const div=document.getElementById('selectedMembers'); if(!selectedGroupMembers.length){ div.innerHTML='<div class="empty-state">👥 No members selected</div>'; return; } div.innerHTML=selectedGroupMembers.map(m=>`<div class="member-tag">${escapeHtml(m.name)}<button data-id="${m.id}">×</button></div>`).join(''); document.querySelectorAll('#selectedMembers .member-tag button').forEach(btn=>btn.addEventListener('click',()=>{ selectedGroupMembers=selectedGroupMembers.filter(m=>m.id!==btn.dataset.id); updateSelected(); })); }
-    async function createGroup() { const name=document.getElementById('groupName').value.trim(); const max=parseInt(document.getElementById('groupMaxUsers').value); if(!name) return showToast('Enter group name',true); if(!selectedGroupMembers.length) return showToast('Select at least one member',true); const ids=[currentUser.id,...selectedGroupMembers.map(m=>m.id)]; try{ const res=await api('/Chat',{method:'POST',body:JSON.stringify({memberIds:ids,maxUsers:max,chatName:name})}); if(res.ok){ const chat=await res.json(); closeModals(); await addChatToSidebar(chat); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`✨ Group "${name}" created`); } }catch(e){ showToast('Error creating group',true); } }
+    async function createGroup() { const name=document.getElementById('groupName').value.trim(); const max=parseInt(document.getElementById('groupMaxUsers').value); if(!name) return showToast('Enter group name',true); if(!selectedGroupMembers.length) return showToast('Select at least one member',true); const ids=[currentUser.id,...selectedGroupMembers.map(m=>m.id)]; try{ const res=await api('/Chat',{method:'POST',body:JSON.stringify({memberIds:ids,maxUsers:max,chatName:name})}); if(res.ok){ const chat=await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`✨ Group "${name}" created`); } }catch(e){ showToast('Error creating group',true); } }
 
     async function showEditChatModal() {
         if(!currentChatInfo) return;
@@ -1230,10 +1389,8 @@
         if (isGroup) {
             document.getElementById('groupAvatarSection').style.display = 'block';
             document.getElementById('groupMembersSection').style.display = 'block';
-            if (currentChatInfo.avatarPath) {
-                const avatarUrl = await fetchGroupAvatarAsBlobUrl(currentChat.id);
-                document.getElementById('groupAvatarPreview').src = avatarUrl;
-            } else document.getElementById('groupAvatarPreview').src = '';
+            const avatarUrl = await getGroupAvatarUrl(currentChat.id);
+            document.getElementById('groupAvatarPreview').src = avatarUrl;
             await renderMembers();
         } else {
             document.getElementById('groupAvatarSection').style.display = 'none';
@@ -1242,7 +1399,7 @@
         showModal('editChatModal');
     }
     
-    async function renderMembers() { const members=currentChatInfo.users||[]; const container=document.getElementById('membersList'); container.innerHTML=members.map(m=>`<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}?access_token=${getSafeToken()}" style="width:32px;height:32px;border-radius:50%"> <strong>${escapeHtml(m.name)}</strong>${m.id===currentChatInfo.createdById?' 👑':''}</div>${m.id!==currentUser.id&&currentChatInfo.createdById===currentUser.id?`<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>`:''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn=>btn.addEventListener('click',()=>removeMember(btn.dataset.id,btn.dataset.name))); }
+    async function renderMembers() { const members=currentChatInfo.users||[]; const container=document.getElementById('membersList'); container.innerHTML=members.map(m=>`<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}?access_token=${getSafeToken()}" style="width:32px;height:32px;border-radius:50%;object-fit:cover"> <strong>${escapeHtml(m.name)}</strong>${m.id===currentChatInfo.createdById?' 👑':''}</div>${m.id!==currentUser.id&&currentChatInfo.createdById===currentUser.id?`<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>`:''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn=>btn.addEventListener('click',()=>removeMember(btn.dataset.id,btn.dataset.name))); }
     async function searchAddMember() { const q=document.getElementById('addMemberSearch').value.trim(); const div=document.getElementById('addMemberResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const existing=currentChatInfo.users.map(u=>u.id); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id&&!existing.includes(u.id)); div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#addMemberResults .user-search-result').forEach(el=>el.addEventListener('click',()=>addMemberToGroup(el.dataset.id,el.dataset.name))); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
     async function addMemberToGroup(uid,uname) { try{ await api('/Chat/add-user',{method:'POST',body:JSON.stringify({chatId:currentChat.id,userId:uid})}); currentChatInfo=await getChatInfo(currentChat.id); await renderMembers(); document.getElementById('addMemberSearch').value=''; document.getElementById('addMemberResults').innerHTML=''; showToast(`✅ ${uname} added`); }catch(e){ showToast('Error',true); } }
     async function removeMember(uid,uname) { if(!confirm(`Remove ${uname}?`)) return; try{ await api('/Chat/remove-user',{method:'POST',body:JSON.stringify({chatId:currentChat.id,userId:uid})}); currentChatInfo=await getChatInfo(currentChat.id); if(currentChatInfo) { await renderMembers(); showToast(`✅ ${uname} removed`); } else { closeModals(); currentChat=null; currentChatInfo=null; document.getElementById('messageInput').disabled=true; document.getElementById('sendBtn').disabled=true; await loadChats(); } }catch(e){ showToast('Error',true); } }
@@ -1352,6 +1509,7 @@
         currentChat = null; 
         privateKey = null; 
         sessionKeys.clear(); 
+        groupAvatarCache.clear();
         if(connection) connection.stop(); 
         document.getElementById('authContainer').style.display = 'flex'; 
         document.getElementById('appContainer').classList.remove('active'); 

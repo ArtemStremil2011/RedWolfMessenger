@@ -111,10 +111,32 @@ namespace Messenger.Controllers.BaseControllers
                 return BadRequest("ID mismatch");
 
             var currentUserId = GetCurrentUserId();
-            var updatedMessage = await _messageWriteService.UpdateMessageAsync(id, messageUpdateDto.MessageText, currentUserId);
+            MessageResponseDTO? updatedMessage = null;
+            
+            // Если есть зашифрованные данные - обновляем как зашифрованное
+            if (!string.IsNullOrEmpty(messageUpdateDto.EncryptedData) && !string.IsNullOrEmpty(messageUpdateDto.Iv))
+            {
+                updatedMessage = await _messageWriteService.UpdateEncryptedMessageAsync(
+                    id, 
+                    messageUpdateDto.EncryptedData, 
+                    messageUpdateDto.Iv, 
+                    currentUserId);
+            }
+            // Иначе обновляем как обычное сообщение
+            else if (!string.IsNullOrEmpty(messageUpdateDto.MessageText))
+            {
+                updatedMessage = await _messageWriteService.UpdateMessageAsync(
+                    id, 
+                    messageUpdateDto.MessageText, 
+                    currentUserId);
+            }
+            else
+            {
+                return BadRequest(new { message = "No content to update" });
+            }
 
             if (updatedMessage == null)
-                return NotFound(new { message = $"Сообщение с Id {id} не найдено или нет прав" });
+                return NotFound(new { message = $"Message with Id {id} not found or no permission" });
 
             return Ok(updatedMessage);
         }

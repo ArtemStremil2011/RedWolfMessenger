@@ -72,7 +72,7 @@ namespace Messenger.Services
             }
         }
 
-        // НОВЫЙ метод для зашифрованных сообщений
+        // Метод для зашифрованных сообщений
         public async Task<MessageResponseDTO?> CreateEncryptedMessageAsync(Guid userId, Guid chatId, string encryptedData, string iv)
         {
             try
@@ -127,6 +127,7 @@ namespace Messenger.Services
             }
         }
 
+        // Обновление обычного сообщения
         public async Task<MessageResponseDTO?> UpdateMessageAsync(Guid messageId, string newText, Guid currentUserId)
         {
             try
@@ -154,7 +155,7 @@ namespace Messenger.Services
                     return null;
                 }
 
-                // При редактировании обычного сообщения — оно остаётся обычным
+                // Обновляем обычный текст
                 message.MessageText = newText;
                 message.MessageLastUpdateDate = DateTime.UtcNow;
 
@@ -182,6 +183,67 @@ namespace Messenger.Services
             }
         }
 
+        // НОВЫЙ МЕТОД - обновление зашифрованного сообщения
+        public async Task<MessageResponseDTO?> UpdateEncryptedMessageAsync(Guid messageId, string encryptedData, string iv, Guid currentUserId)
+        {
+            try
+            {
+                var message = await _context.Messages
+                    .Include(m => m.MessageCreator)
+                    .FirstOrDefaultAsync(m => m.MessageId == messageId);
+
+                if (message == null)
+                {
+                    _logger.LogWarning("Encrypted message {MessageId} not found", messageId);
+                    return null;
+                }
+
+                if (message.IsDeleted)
+                {
+                    _logger.LogWarning("Encrypted message {MessageId} is deleted", messageId);
+                    return null;
+                }
+
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (message.UserId != currentUserId && currentUser?.Role != UserRole.Admin && currentUser?.Role != UserRole.SuperAdmin)
+                {
+                    _logger.LogWarning("User {UserId} cannot edit encrypted message {MessageId}", currentUserId, messageId);
+                    return null;
+                }
+
+                // Обновляем зашифрованные данные
+                message.EncryptedData = encryptedData;
+                message.Iv = iv;
+                message.MessageText = null; // Очищаем обычный текст
+                message.MessageLastUpdateDate = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Encrypted message {MessageId} updated by user {UserId}", messageId, currentUserId);
+
+                return new MessageResponseDTO(
+                    message.MessageId,
+                    null,
+                    message.MessageCreateDate,
+                    message.MessageLastUpdateDate,
+                    message.UserId,
+                    message.ChatId,
+                    message.MessageCreator != null ? new UserResponseDTO(message.MessageCreator.Id, message.MessageCreator.Name, message.MessageCreator.AvatarPath, message.MessageCreator.RegisterDate) : null,
+                    message.IsDeleted,
+                    message.IsSystemMessage,
+                    message.IsRead,
+                    message.EncryptedData,
+                    message.Iv
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating encrypted message {MessageId}", messageId);
+                return null;
+            }
+        }
+
+        // Мягкое удаление
         public async Task<bool> DeleteMessageAsync(Guid messageId, Guid currentUserId)
         {
             try
@@ -218,6 +280,7 @@ namespace Messenger.Services
             }
         }
 
+        // Полное удаление (только для админов)
         public async Task<bool> PermanentDeleteMessageAsync(Guid messageId, Guid currentUserId)
         {
             try
@@ -247,6 +310,7 @@ namespace Messenger.Services
             }
         }
 
+        // Восстановление из корзины
         public async Task<bool> RestoreMessageAsync(Guid messageId, Guid currentUserId)
         {
             try
@@ -283,6 +347,7 @@ namespace Messenger.Services
             }
         }
 
+        // Отметить сообщения как прочитанные
         public async Task MarkMessagesAsReadAsync(Guid chatId, Guid userId)
         {
             try
