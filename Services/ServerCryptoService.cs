@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Messenger.Services.Interfaces;
 
 namespace Messenger.Services.Crypto
@@ -49,6 +50,10 @@ namespace Messenger.Services.Crypto
             }
         }
 
+        /// <summary>
+        /// Расшифровывает сообщение, которое клиент зашифровал публичным ключом сервера
+        /// Формат encryptedData: [RSA-зашифрованный AES-ключ] + [AES-зашифрованное сообщение]
+        /// </summary>
         public async Task<string> DecryptMessageAsync(string encryptedDataBase64, string ivBase64)
         {
             if (!_isConfigured)
@@ -60,35 +65,55 @@ namespace Messenger.Services.Crypto
             {
                 try
                 {
-                    // 1. Расшифровываем AES ключ (который зашифрован публичным ключом сервера)
-                    var encryptedAesKey = Convert.FromBase64String(encryptedDataBase64);
-                    var aesKey = _serverRsa.Decrypt(encryptedAesKey, RSAEncryptionPadding.OaepSHA256);
-                    
-                    // 2. Расшифровываем само сообщение
+                    // 1. Декодируем входящие данные
+                    var combinedData = Convert.FromBase64String(encryptedDataBase64);
                     var iv = Convert.FromBase64String(ivBase64);
                     
+                    // 2. Извлекаем зашифрованный AES-ключ (первые 256 байт для RSA-2048)
+                    const int rsaKeySizeInBytes = 256; // RSA 2048 бит = 256 байт
+                    if (combinedData.Length < rsaKeySizeInBytes)
+                    {
+                        throw new ArgumentException($"Data too short: {combinedData.Length} bytes. Expected at least {rsaKeySizeInBytes} bytes.");
+                    }
+                    
+                    var encryptedAesKey = new byte[rsaKeySizeInBytes];
+                    var encryptedMessage = new byte[combinedData.Length - rsaKeySizeInBytes];
+                    
+                    Buffer.BlockCopy(combinedData, 0, encryptedAesKey, 0, rsaKeySizeInBytes);
+                    Buffer.BlockCopy(combinedData, rsaKeySizeInBytes, encryptedMessage, 0, encryptedMessage.Length);
+                    
+                    // 3. Расшифровываем AES-ключ приватным ключом сервера
+                    var aesKey = _serverRsa.Decrypt(encryptedAesKey, RSAEncryptionPadding.OaepSHA256);
+                    
+                    // 4. Расшифровываем само сообщение (используем CBC режим вместо GCM)
                     using var aes = Aes.Create();
                     aes.Key = aesKey;
                     aes.IV = iv;
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
                     
                     using var decryptor = aes.CreateDecryptor();
-                    // Здесь нужно получить зашифрованное сообщение - оно должно передаваться отдельно
-                    // Для упрощения сейчас вернем заглушку
+                    var decryptedBytes = decryptor.TransformFinalBlock(encryptedMessage, 0, encryptedMessage.Length);
+                    var plainText = Encoding.UTF8.GetString(decryptedBytes);
                     
-                    _logger.LogInformation("Message decrypted by server");
-                    return "Message decrypted successfully";
+                    _logger.LogInformation($"Message decrypted by server. Length: {plainText.Length} chars");
+                    return plainText;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to decrypt message on server");
-                    throw;
+                    throw new CryptographicException("Failed to decrypt message", ex);
                 }
             });
         }
 
+        /// <summary>
+        /// Зашифровывает сообщение для пользователя его публичным ключом
+        /// Формат результата: [RSA-зашифрованный AES-ключ] + [AES-зашифрованное сообщение]
+        /// </summary>
         public async Task<(string encryptedData, string iv)> EncryptForUserAsync(string plainText, string userPublicKeyBase64)
         {
-            return await Task.Run(async () =>
+            return await Task.Run(() =>
             {
                 try
                 {
@@ -97,20 +122,23 @@ namespace Messenger.Services.Crypto
                     using var userRsa = RSA.Create();
                     userRsa.ImportSubjectPublicKeyInfo(userPublicKeyBytes, out _);
                     
-                    // 2. Генерируем случайный AES ключ для этого сообщения
+                    // 2. Генерируем случайный AES-256 ключ и IV
                     using var aes = Aes.Create();
+                    aes.KeySize = 256;
                     aes.GenerateKey();
                     aes.GenerateIV();
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
                     
-                    // 3. Шифруем AES ключ публичным ключом пользователя
+                    // 3. Шифруем AES-ключ публичным ключом пользователя
                     var encryptedAesKey = userRsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA256);
                     
-                    // 4. Шифруем сообщение AES ключом
-                    var plainBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+                    // 4. Шифруем сообщение AES-ключом
+                    var plainBytes = Encoding.UTF8.GetBytes(plainText);
                     using var encryptor = aes.CreateEncryptor();
                     var encryptedMessage = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
                     
-                    // 5. Объединяем зашифрованный ключ и зашифрованное сообщение
+                    // 5. Объединяем зашифрованный ключ и сообщение
                     var combined = new byte[encryptedAesKey.Length + encryptedMessage.Length];
                     Buffer.BlockCopy(encryptedAesKey, 0, combined, 0, encryptedAesKey.Length);
                     Buffer.BlockCopy(encryptedMessage, 0, combined, encryptedAesKey.Length, encryptedMessage.Length);

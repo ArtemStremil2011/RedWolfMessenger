@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Messenger.Services.Interfaces
 {
     public interface IServerCryptoService
