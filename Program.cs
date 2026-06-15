@@ -7,6 +7,7 @@ using Messenger.Data;
 using Messenger.Hubs;
 using Messenger.Services;
 using Messenger.Services.Interfaces;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,7 @@ builder.Services.AddScoped<IMessageReadService, MessageReadService>();
 builder.Services.AddScoped<IMessageWriteService, MessageWriteService>();
 builder.Services.AddScoped<IFileReadService, FileReadService>();
 builder.Services.AddScoped<IFileWriteService, FileWriteService>();
+builder.Services.AddScoped<IServerCryptoService, ServerCryptoService>();
 
 // Настройка JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -73,6 +75,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Генерация ключей при первом запуске
+var serverPublicKey = builder.Configuration["ServerCrypto:PublicKey"];
+if (string.IsNullOrEmpty(serverPublicKey))
+{
+    using var rsa = RSA.Create(2048);
+    var publicKey = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
+    var privateKey = Convert.ToBase64String(rsa.ExportPkcs8PrivateKey());
+    
+    Console.WriteLine("=== SAVE THESE KEYS TO APPSETTINGS.JSON ===");
+    Console.WriteLine($"PublicKey: {publicKey}");
+    Console.WriteLine($"PrivateKey: {privateKey}");
+    Console.WriteLine("===========================================");
+}
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -97,5 +113,3 @@ app.MapHub<MessengerHub>("/messengerHub");
 app.MapFallbackToFile("index.html");
 
 app.Run();
-
-

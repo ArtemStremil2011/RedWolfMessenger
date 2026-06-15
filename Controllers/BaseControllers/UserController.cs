@@ -16,17 +16,20 @@ namespace Messenger.Controllers.BaseControllers
         private readonly IUserWriteService _userWriteService;
         private readonly ILogger<UserController> _logger;
         private readonly IHubContext<MessengerHub> _hubContext;
+        private readonly IServerCryptoService _serverCryptoService;
 
         public UserController(
             IUserReadService userReadService,
             IUserWriteService userWriteService,
             ILogger<UserController> logger,
-            IHubContext<MessengerHub> hubContext)
+            IHubContext<MessengerHub> hubContext,
+            IServerCryptoService serverCryptoService)
         {
             _userReadService = userReadService;
             _userWriteService = userWriteService;
             _logger = logger;
             _hubContext = hubContext;
+            _serverCryptoService = serverCryptoService;
         }
 
         private Guid GetCurrentUserId()
@@ -39,6 +42,8 @@ namespace Messenger.Controllers.BaseControllers
 
             return Guid.Parse(userIdClaim);
         }
+
+        // ============ АВТЕНТИФИКАЦИЯ И РЕГИСТРАЦИЯ ============
 
         [AllowAnonymous]
         [HttpPost("request-verification")]
@@ -86,6 +91,29 @@ namespace Messenger.Controllers.BaseControllers
 
             return Ok(new { message = "Вход выполнен успешно", userId, token });
         }
+
+        // ============ СЕРВЕРНАЯ КРИПТОГРАФИЯ ============
+
+        [AllowAnonymous]
+        [HttpGet("server-public-key")]
+        public IActionResult GetServerPublicKey()
+        {
+            try
+            {
+                var publicKey = _serverCryptoService.GetServerPublicKey();
+                if (string.IsNullOrEmpty(publicKey))
+                    return NotFound(new { message = "Server public key not configured" });
+                
+                return Ok(new { publicKey });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting server public key");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        // ============ ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ============
 
         [Authorize]
         [HttpGet("profile")]
@@ -139,6 +167,8 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(updatedUser);
         }
 
+        // ============ АВАТАРКИ ============
+
         [Authorize]
         [HttpPost("upload-avatar")]
         public async Task<IActionResult> UploadAvatar(IFormFile file)
@@ -152,6 +182,7 @@ namespace Messenger.Controllers.BaseControllers
             if (!result)
                 return BadRequest(new { message = "Не удалось загрузить аватарку" });
 
+            await _hubContext.Clients.All.SendAsync("UserAvatarUpdated", userId);
             return Ok(new { message = "Аватарка успешно загружена" });
         }
 
@@ -165,6 +196,7 @@ namespace Messenger.Controllers.BaseControllers
             if (!result)
                 return NotFound(new { message = "Пользователь не найден" });
 
+            await _hubContext.Clients.All.SendAsync("UserAvatarUpdated", userId);
             return Ok(new { message = "Аватарка удалена" });
         }
 
@@ -214,6 +246,8 @@ namespace Messenger.Controllers.BaseControllers
             };
         }
 
+        // ============ УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ============
+
         [Authorize]
         [HttpDelete("delete-user/{userId}")]
         public async Task<IActionResult> DeleteUser(Guid userId)
@@ -227,6 +261,8 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(new { message = "Пользователь успешно удалён", id = userId });
         }
 
+        // ============ КРИПТОГРАФИЯ ПОЛЬЗОВАТЕЛЕЙ ============
+
         [HttpGet("public-key/{userId}")]
         public async Task<IActionResult> GetPublicKey(Guid userId)
         {
@@ -238,6 +274,7 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(new { publicKey });
         }
 
+        [Authorize]
         [HttpPost("public-key")]
         public async Task<IActionResult> SavePublicKey([FromBody] SavePublicKeyDTO dto)
         {
@@ -250,6 +287,7 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(new { message = "Публичный ключ сохранён" });
         }
 
+        [Authorize]
         [HttpPost("encrypted-private-key")]
         public async Task<IActionResult> SaveEncryptedPrivateKey([FromBody] SaveEncryptedPrivateKeyDTO dto)
         {
@@ -263,6 +301,7 @@ namespace Messenger.Controllers.BaseControllers
             return Ok(new { message = "Encrypted private key saved" });
         }
 
+        [Authorize]
         [HttpGet("encrypted-private-key")]
         public async Task<IActionResult> GetEncryptedPrivateKey()
         {
