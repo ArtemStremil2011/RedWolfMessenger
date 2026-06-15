@@ -7,6 +7,7 @@ using Messenger.Data;
 using Messenger.Hubs;
 using Messenger.Services;
 using Messenger.Services.Interfaces;
+using Messenger.Services.Crypto; // ← ДОБАВИТЬ ЭТУ СТРОКУ
 using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +36,7 @@ builder.Services.AddScoped<IMessageReadService, MessageReadService>();
 builder.Services.AddScoped<IMessageWriteService, MessageWriteService>();
 builder.Services.AddScoped<IFileReadService, FileReadService>();
 builder.Services.AddScoped<IFileWriteService, FileWriteService>();
-builder.Services.AddScoped<IServerCryptoService, ServerCryptoService>();
+builder.Services.AddScoped<IServerCryptoService, ServerCryptoService>(); // ← ТЕПЕРЬ РАБОТАЕТ
 
 // Настройка JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -83,10 +84,20 @@ if (string.IsNullOrEmpty(serverPublicKey))
     var publicKey = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
     var privateKey = Convert.ToBase64String(rsa.ExportPkcs8PrivateKey());
     
-    Console.WriteLine("=== SAVE THESE KEYS TO APPSETTINGS.JSON ===");
-    Console.WriteLine($"PublicKey: {publicKey}");
-    Console.WriteLine($"PrivateKey: {privateKey}");
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("\n⚠️  SERVER CRYPTO KEYS NOT FOUND! GENERATING... ⚠️\n");
+    Console.ResetColor();
+    
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("=== COPY THESE KEYS TO appsettings.json ===\n");
+    Console.WriteLine($"\"PublicKey\": \"{publicKey}\",");
+    Console.WriteLine($"\"PrivateKey\": \"{privateKey}\"\n");
     Console.WriteLine("===========================================");
+    Console.ResetColor();
+    
+    // Временно сохраняем для текущей сессии
+    builder.Configuration["ServerCrypto:PublicKey"] = publicKey;
+    builder.Configuration["ServerCrypto:PrivateKey"] = privateKey;
 }
 
 var app = builder.Build();

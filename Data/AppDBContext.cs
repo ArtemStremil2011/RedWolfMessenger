@@ -13,7 +13,8 @@ namespace Messenger.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<FileMessage> FileMessages { get; set; }
         public DbSet<Chat> Chats { get; set; }
-        public DbSet<ChatSessionKey> ChatSessionKeys { get; set; }  // ← ЭТО ДОЛЖНО БЫТЬ
+        public DbSet<ChatSessionKey> ChatSessionKeys { get; set; }
+        public DbSet<ModeratedMessage> ModeratedMessages { get; set; } // ← добавить
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,6 +23,7 @@ namespace Messenger.Data
             modelBuilder.ApplyConfiguration(new MessageConfiguration());
             modelBuilder.ApplyConfiguration(new FileMessageConfiguration());
             modelBuilder.ApplyConfiguration(new ChatSessionKeyConfiguration());
+            modelBuilder.ApplyConfiguration(new ModeratedMessageConfiguration()); // ← добавить
             
             base.OnModelCreating(modelBuilder);
         }
