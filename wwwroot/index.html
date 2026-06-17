@@ -256,6 +256,7 @@
     let privateKey = null;
     let sessionKeys = new Map();
     let groupAvatarCache = new Map();
+    let serverPublicKey = null; // ← ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ ВНУТРИ МОДУЛЯ
     const API_BASE = '/api';
     const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
@@ -387,12 +388,50 @@
         return await crypto.subtle.importKey("raw", binary, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
     }
     
-    async function encryptMessage(message, sessionKey) {
+    // ШИФРОВАНИЕ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ (AES-GCM с сессионным ключом)
+    async function encryptForUsers(message, sessionKey) {
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const encoded = new TextEncoder().encode(message);
-        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, sessionKey, encoded);
+        const encrypted = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            sessionKey,
+            encoded
+        );
         return {
             encryptedData: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+            iv: btoa(String.fromCharCode(...iv))
+        };
+    }
+    
+    // ШИФРОВАНИЕ ДЛЯ СЕРВЕРА (ГИБРИДНОЕ: RSA + AES-GCM)
+    async function encryptForServer(message, serverPublicKey) {
+        const aesKey = await crypto.subtle.generateKey(
+            { name: "AES-GCM", length: 256 },
+            true,
+            ["encrypt", "decrypt"]
+        );
+        
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encoded = new TextEncoder().encode(message);
+        const encryptedMessage = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            aesKey,
+            encoded
+        );
+        
+        const aesKeyRaw = await crypto.subtle.exportKey("raw", aesKey);
+        const encryptedAesKey = await crypto.subtle.encrypt(
+            { name: "RSA-OAEP" },
+            serverPublicKey,
+            aesKeyRaw
+        );
+        
+        const combined = new Uint8Array(encryptedAesKey.byteLength + encryptedMessage.byteLength);
+        combined.set(new Uint8Array(encryptedAesKey), 0);
+        combined.set(new Uint8Array(encryptedMessage), encryptedAesKey.byteLength);
+        
+        return {
+            encryptedData: btoa(String.fromCharCode(...combined)),
             iv: btoa(String.fromCharCode(...iv))
         };
     }
@@ -402,6 +441,31 @@
         const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, sessionKey, encrypted);
         return new TextDecoder().decode(decrypted);
+    }
+    
+    // ============ SERVER PUBLIC KEY ============
+    async function loadServerPublicKey() {
+        try {
+            console.log("🔄 Loading server public key...");
+            const res = await fetch(`${API_BASE}/User/server-public-key`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.publicKey) {
+                    const cleanKey = data.publicKey.trim().replace(/\s/g, '');
+                    serverPublicKey = await importPublicKey(cleanKey);
+                    console.log("✅ Server public key loaded successfully!");
+                    return true;
+                } else {
+                    console.warn("⚠️ No publicKey in response");
+                }
+            } else {
+                console.warn("⚠️ Server returned:", res.status);
+            }
+            return false;
+        } catch(e) {
+            console.error("❌ Failed to load server public key:", e);
+            return false;
+        }
     }
     
     // ============ INDEXEDDB ============
@@ -979,24 +1043,19 @@
     async function getChatInfo(chatId) { try { const res = await api('/Chat/'+chatId); return await res.json(); } catch(e){ return null; } }
 
     async function getSessionKeyForChat(chatId) {
-        console.log(`[getSessionKeyForChat] Getting key for ${chatId}`);
-        
         if (sessionKeys.has(chatId)) {
-            console.log(`[getSessionKeyForChat] Found in memory`);
             return sessionKeys.get(chatId);
         }
         
         try {
             const dbKey = await getSessionKeyFromDB(chatId);
             if (dbKey) {
-                console.log(`[getSessionKeyForChat] Found in IndexedDB`);
                 sessionKeys.set(chatId, dbKey);
                 return dbKey;
             }
         } catch(e) { console.error(`DB error:`, e); }
         
         if (!privateKey) {
-            console.error(`[getSessionKeyForChat] No private key!`);
             showToast("❌ Private key not loaded. Please re-login.", true);
             return null;
         }
@@ -1006,16 +1065,10 @@
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
-            if (!res.ok) {
-                console.error(`[getSessionKeyForChat] Server error: ${res.status}`);
-                return null;
-            }
+            if (!res.ok) return null;
             
             const data = await res.json();
-            if (!data.encryptedKey) {
-                console.error(`[getSessionKeyForChat] No encryptedKey in response`);
-                return null;
-            }
+            if (!data.encryptedKey) return null;
             
             const encryptedBytes = Uint8Array.from(atob(data.encryptedKey), c => c.charCodeAt(0));
             const decryptedKeyBuffer = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedBytes);
@@ -1026,7 +1079,6 @@
             const exportedKey = btoa(String.fromCharCode(...new Uint8Array(decryptedKeyBuffer)));
             await saveSessionKeyToDB(chatId, exportedKey);
             
-            console.log(`[getSessionKeyForChat] Success for ${chatId}`);
             return sessionKey;
         } catch(e) {
             console.error(`[getSessionKeyForChat] Failed:`, e);
@@ -1231,7 +1283,7 @@
                     return;
                 }
                 
-                const { encryptedData, iv } = await encryptMessage(newText, sessionKey);
+                const { encryptedData, iv } = await encryptForUsers(newText, sessionKey);
                 
                 const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
                     method: 'PUT',
@@ -1281,26 +1333,79 @@
         }
     }
 
+    // ============ SEND MESSAGE ============
     async function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
         
         if (!text || !currentChat) return;
         
+        // ПРИНУДИТЕЛЬНО ЗАГРУЖАЕМ КЛЮЧ, ЕСЛИ ЕГО НЕТ
+        if (!serverPublicKey) {
+            console.log("🔄 Server key missing, loading now...");
+            await loadServerPublicKey();
+        }
+        
+        console.log("🔑 serverPublicKey:", serverPublicKey ? "✅ EXISTS" : "❌ NULL");
+        
+        // Получаем сессионный ключ чата
         let sessionKey = sessionKeys.get(currentChat.id);
-        if (!sessionKey) sessionKey = await getSessionKeyForChat(currentChat.id);
-        if (!sessionKey) { showToast("🔒 No encryption key for this chat", true); return; }
+        if (!sessionKey) {
+            sessionKey = await getSessionKeyForChat(currentChat.id);
+        }
+        if (!sessionKey) {
+            showToast("🔒 No encryption key for this chat", true);
+            return;
+        }
         
         try {
-            const { encryptedData, iv } = await encryptMessage(text, sessionKey);
+            // 1. Шифруем для пользователей
+            const { encryptedData: encryptedForUsers, iv: ivForUsers } = await encryptForUsers(text, sessionKey);
             
-            const res = await fetch(`${API_BASE}/Message/encrypted`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ encryptedData, iv, userId: currentUser.id, chatId: currentChat.id })
+            // 2. Шифруем для сервера (ТОЛЬКО ЕСЛИ ЕСТЬ КЛЮЧ)
+            let encryptedForServer = "";
+            let ivForServer = "";
+            
+            if (serverPublicKey) {
+                try {
+                    const serverEncrypted = await encryptForServer(text, serverPublicKey);
+                    encryptedForServer = serverEncrypted.encryptedData;
+                    ivForServer = serverEncrypted.iv;
+                    console.log("✅ Server encrypted, length:", encryptedForServer.length);
+                } catch(e) {
+                    console.error("❌ Server encrypt failed:", e);
+                }
+            } else {
+                console.warn("⚠️ No server public key");
+            }
+            
+            console.log("📦 Sending data:", {
+                hasUserEncrypted: !!encryptedForUsers,
+                hasServerEncrypted: !!encryptedForServer,
+                serverLength: encryptedForServer?.length
             });
             
-            if (!res.ok) throw new Error(await res.text());
+            // 3. Отправляем
+            const res = await fetch(`${API_BASE}/Message/dual-encrypted`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({
+                    encryptedForUsers: encryptedForUsers,
+                    ivForUsers: ivForUsers,
+                    encryptedForServer: encryptedForServer || "",
+                    ivForServer: ivForServer || "",
+                    userId: currentUser.id,
+                    chatId: currentChat.id
+                })
+            });
+            
+            if (!res.ok) {
+                const error = await res.text();
+                throw new Error(error);
+            }
             
             input.value = '';
             await loadMessages(currentChat.id);
@@ -1309,9 +1414,16 @@
             updateUnreadBadge(currentChat.id, 0);
             
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                await connection.invoke('SendEncryptedMessage', currentChat.id, currentUser.id, currentUser.name, encryptedData, iv);
+                try {
+                    await connection.invoke('SendEncryptedMessage', currentChat.id, currentUser.id, currentUser.name, encryptedForUsers, ivForUsers);
+                } catch(e) {
+                    console.warn("SignalR notify failed:", e);
+                }
             }
-        } catch(e) { showToast('Failed to send: ' + e.message, true); }
+        } catch(e) { 
+            console.error('Send error:', e);
+            showToast('Failed to send: ' + e.message, true); 
+        }
     }
 
     async function downloadFile(messageId, fileName) {
@@ -1498,6 +1610,7 @@
         await loadAllSessionKeysFromDB();
         await loadUnreadCounts();
         await loadChats();
+        await loadServerPublicKey(); // ← ЗАГРУЖАЕМ КЛЮЧ СЕРВЕРА
         await initSignalR();
         setTimeout(() => { if(typeof window.initEmojiPicker === 'function') window.initEmojiPicker(); }, 500);
     }

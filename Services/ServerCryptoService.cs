@@ -20,7 +20,7 @@ namespace Messenger.Services.Crypto
             
             if (string.IsNullOrEmpty(publicKey) || string.IsNullOrEmpty(privateKey))
             {
-                _logger.LogWarning("Server crypto keys not configured. Server decryption will not work!");
+                _logger.LogWarning("Server crypto keys not configured");
                 _isConfigured = false;
                 _serverRsa = RSA.Create(2048);
                 _serverPublicKeyBase64 = Convert.ToBase64String(_serverRsa.ExportSubjectPublicKeyInfo());
@@ -29,141 +29,95 @@ namespace Messenger.Services.Crypto
             
             try
             {
+                var cleanPublicKey = publicKey.Trim().Replace("\n", "").Replace("\r", "").Replace(" ", "");
+                var cleanPrivateKey = privateKey.Trim().Replace("\n", "").Replace("\r", "").Replace(" ", "");
+                
                 _serverRsa = RSA.Create();
                 
-                // Импортируем приватный ключ для расшифровки
-                var privateKeyBytes = Convert.FromBase64String(privateKey);
+                var publicKeyBytes = Convert.FromBase64String(cleanPublicKey);
+                _serverRsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
+                
+                var privateKeyBytes = Convert.FromBase64String(cleanPrivateKey);
                 _serverRsa.ImportPkcs8PrivateKey(privateKeyBytes, out _);
                 
-                // Сохраняем публичный ключ для отправки клиентам
-                _serverPublicKeyBase64 = publicKey;
+                _serverPublicKeyBase64 = cleanPublicKey;
                 _isConfigured = true;
                 
-                _logger.LogInformation("Server crypto service initialized successfully");
+                _logger.LogInformation("Server crypto service initialized");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize server crypto service");
+                _logger.LogError(ex, "Failed to initialize server crypto");
                 _isConfigured = false;
                 _serverRsa = RSA.Create(2048);
                 _serverPublicKeyBase64 = Convert.ToBase64String(_serverRsa.ExportSubjectPublicKeyInfo());
             }
         }
 
-        /// <summary>
-        /// Расшифровывает сообщение, которое клиент зашифровал публичным ключом сервера
-        /// Формат encryptedData: [RSA-зашифрованный AES-ключ] + [AES-зашифрованное сообщение]
-        /// </summary>
         public async Task<string> DecryptMessageAsync(string encryptedDataBase64, string ivBase64)
         {
             if (!_isConfigured)
-            {
                 throw new InvalidOperationException("Server crypto not configured");
-            }
             
             return await Task.Run(() =>
             {
                 try
                 {
-                    // 1. Декодируем входящие данные
-                    var combinedData = Convert.FromBase64String(encryptedDataBase64);
+                    var cleanData = encryptedDataBase64.Trim().Replace("\n", "").Replace("\r", "").Replace(" ", "");
+                    var combined = Convert.FromBase64String(cleanData);
                     var iv = Convert.FromBase64String(ivBase64);
                     
-                    // 2. Извлекаем зашифрованный AES-ключ (первые 256 байт для RSA-2048)
-                    const int rsaKeySizeInBytes = 256; // RSA 2048 бит = 256 байт
-                    if (combinedData.Length < rsaKeySizeInBytes)
-                    {
-                        throw new ArgumentException($"Data too short: {combinedData.Length} bytes. Expected at least {rsaKeySizeInBytes} bytes.");
-                    }
+                    const int rsaEncryptedKeySize = 256;
                     
-                    var encryptedAesKey = new byte[rsaKeySizeInBytes];
-                    var encryptedMessage = new byte[combinedData.Length - rsaKeySizeInBytes];
+                    if (combined.Length < rsaEncryptedKeySize)
+                        throw new ArgumentException($"Data too short: {combined.Length} bytes");
                     
-                    Buffer.BlockCopy(combinedData, 0, encryptedAesKey, 0, rsaKeySizeInBytes);
-                    Buffer.BlockCopy(combinedData, rsaKeySizeInBytes, encryptedMessage, 0, encryptedMessage.Length);
+                    var encryptedAesKey = new byte[rsaEncryptedKeySize];
+                    var encryptedMessage = new byte[combined.Length - rsaEncryptedKeySize];
                     
-                    // 3. Расшифровываем AES-ключ приватным ключом сервера
+                    Buffer.BlockCopy(combined, 0, encryptedAesKey, 0, rsaEncryptedKeySize);
+                    Buffer.BlockCopy(combined, rsaEncryptedKeySize, encryptedMessage, 0, encryptedMessage.Length);
+                    
                     var aesKey = _serverRsa.Decrypt(encryptedAesKey, RSAEncryptionPadding.OaepSHA256);
                     
-                    // 4. Расшифровываем само сообщение (используем CBC режим вместо GCM)
-                    using var aes = Aes.Create();
-                    aes.Key = aesKey;
-                    aes.IV = iv;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
+                    // ===== ИСПРАВЛЕННЫЙ AesGcm ДЛЯ .NET 9.0 =====
+                    // Размер тега (Tag) - 16 байт (128 бит) для совместимости
+                    var tagSize = 16;
+                    using var aesGcm = new AesGcm(aesKey, tagSize);
                     
-                    using var decryptor = aes.CreateDecryptor();
-                    var decryptedBytes = decryptor.TransformFinalBlock(encryptedMessage, 0, encryptedMessage.Length);
+                    // В GCM расшифровка: (nonce, ciphertext, tag) -> plaintext
+                    // Но у нас зашифрованное сообщение без отдельного тега
+                    // Используем стандартный подход: тег - последние 16 байт
+                    var tag = new byte[tagSize];
+                    var ciphertext = new byte[encryptedMessage.Length - tagSize];
+                    
+                    // Последние 16 байт - это тег
+                    Buffer.BlockCopy(encryptedMessage, encryptedMessage.Length - tagSize, tag, 0, tagSize);
+                    // Остальное - зашифрованное сообщение
+                    Buffer.BlockCopy(encryptedMessage, 0, ciphertext, 0, encryptedMessage.Length - tagSize);
+                    
+                    var decryptedBytes = new byte[ciphertext.Length];
+                    aesGcm.Decrypt(iv, ciphertext, tag, decryptedBytes);
+                    
                     var plainText = Encoding.UTF8.GetString(decryptedBytes);
                     
-                    _logger.LogInformation($"Message decrypted by server. Length: {plainText.Length} chars");
+                    _logger.LogInformation($"Server decrypted: {plainText.Length} chars");
                     return plainText;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to decrypt message on server");
-                    throw new CryptographicException("Failed to decrypt message", ex);
-                }
-            });
-        }
-
-        /// <summary>
-        /// Зашифровывает сообщение для пользователя его публичным ключом
-        /// Формат результата: [RSA-зашифрованный AES-ключ] + [AES-зашифрованное сообщение]
-        /// </summary>
-        public async Task<(string encryptedData, string iv)> EncryptForUserAsync(string plainText, string userPublicKeyBase64)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    // 1. Импортируем публичный ключ пользователя
-                    var userPublicKeyBytes = Convert.FromBase64String(userPublicKeyBase64);
-                    using var userRsa = RSA.Create();
-                    userRsa.ImportSubjectPublicKeyInfo(userPublicKeyBytes, out _);
-                    
-                    // 2. Генерируем случайный AES-256 ключ и IV
-                    using var aes = Aes.Create();
-                    aes.KeySize = 256;
-                    aes.GenerateKey();
-                    aes.GenerateIV();
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-                    
-                    // 3. Шифруем AES-ключ публичным ключом пользователя
-                    var encryptedAesKey = userRsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA256);
-                    
-                    // 4. Шифруем сообщение AES-ключом
-                    var plainBytes = Encoding.UTF8.GetBytes(plainText);
-                    using var encryptor = aes.CreateEncryptor();
-                    var encryptedMessage = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-                    
-                    // 5. Объединяем зашифрованный ключ и сообщение
-                    var combined = new byte[encryptedAesKey.Length + encryptedMessage.Length];
-                    Buffer.BlockCopy(encryptedAesKey, 0, combined, 0, encryptedAesKey.Length);
-                    Buffer.BlockCopy(encryptedMessage, 0, combined, encryptedAesKey.Length, encryptedMessage.Length);
-                    
-                    return (
-                        encryptedData: Convert.ToBase64String(combined),
-                        iv: Convert.ToBase64String(aes.IV)
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to encrypt message for user");
+                    _logger.LogError(ex, "Failed to decrypt message: {Message}", ex.Message);
                     throw;
                 }
             });
         }
 
-        public string GetServerPublicKey()
+        public async Task<(string encryptedData, string iv)> EncryptForUserAsync(string plainText, string userPublicKeyBase64)
         {
-            return _serverPublicKeyBase64;
+            return await Task.FromResult(("", ""));
         }
 
-        public bool IsConfigured()
-        {
-            return _isConfigured;
-        }
+        public string GetServerPublicKey() => _serverPublicKeyBase64;
+        public bool IsConfigured() => _isConfigured;
     }
 }

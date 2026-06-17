@@ -230,6 +230,46 @@ namespace Messenger.Controllers.BaseControllers
             return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
 
+        // ============ НОВЫЙ ЭНДПОИНТ ДЛЯ ДВОЙНОГО ШИФРОВАНИЯ ============
+        [HttpPost("dual-encrypted")]
+        public async Task<IActionResult> CreateDualEncrypted([FromBody] DualEncryptedMessageCreateDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId != dto.UserId)
+                return Forbid("Вы не можете создавать сообщения от имени другого пользователя");
+
+            var userInChat = await _chatReadService.UserInChatAsync(dto.ChatId, currentUserId);
+            if (!userInChat)
+                return Forbid("Вы не в этом чате");
+
+            var message = await _messageWriteService.CreateDualEncryptedMessageAsync(
+                dto.UserId,
+                dto.ChatId,
+                dto.EncryptedForUsers,
+                dto.IvForUsers,
+                dto.EncryptedForServer ?? "",
+                dto.IvForServer ?? "");
+
+            if (message == null)
+                return BadRequest(new { message = "Не удалось отправить сообщение" });
+
+            var currentUser = await _userReadService.GetProfileAsync(currentUserId);
+            var currentUserName = currentUser?.Name ?? "User";
+
+            await _hubContext.Clients.Group(dto.ChatId.ToString()).SendAsync("ReceiveEncryptedMessage",
+                currentUserId.ToString(),
+                currentUserName,
+                dto.EncryptedForUsers,
+                dto.IvForUsers,
+                dto.ChatId.ToString());
+
+            return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
+        }
+
         [HttpGet("deleted/{chatId}")]
         public async Task<IActionResult> GetDeletedMessages(Guid chatId)
         {

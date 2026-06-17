@@ -84,5 +84,10 @@ namespace Messenger.Hubs
                 return userId;
             return null;
         }
+
+        public async Task SendEncryptedMessage(string chatId, string userId, string userName, string encryptedData, string iv)
+        {
+            await Clients.Group(chatId).SendAsync("ReceiveEncryptedMessage", userId, userName, encryptedData, iv, chatId);
+        }
     }
 }
