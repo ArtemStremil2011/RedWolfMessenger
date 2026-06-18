@@ -3,1668 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Red Wolf Messenger</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0a0a0a; min-height: 100vh; color: #e0e0e0; }
-        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); }
-        .auth-card { background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); border-radius: 32px; padding: 40px; width: 100%; max-width: 440px; border: 1px solid rgba(220, 38, 38, 0.2); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .logo { text-align: center; margin-bottom: 36px; }
-        .logo h1 { font-size: 36px; background: linear-gradient(135deg, #ef4444, #dc2626); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .logo p { color: #6b7280; font-size: 14px; margin-top: 8px; }
-        .auth-tabs { display: flex; gap: 12px; margin-bottom: 32px; background: #1a1a1a; padding: 4px; border-radius: 16px; }
-        .auth-tab { flex: 1; background: none; border: none; padding: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #6b7280; border-radius: 12px; transition: all 0.2s ease; }
-        .auth-tab.active { color: #ef4444; background: #2a2a2a; }
-        .auth-form { display: flex; flex-direction: column; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-        .form-group label { font-size: 13px; font-weight: 500; color: #9ca3af; }
-        .form-group input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 14px 16px; color: #e0e0e0; font-size: 15px; }
-        .form-group input:focus { outline: none; border-color: #dc2626; background: #1f1f1f; }
-        .btn { padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s ease; }
-        .btn-primary { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
-        .btn-secondary { background: #2a2a2a; color: #e0e0e0; }
-        .btn-secondary:hover { background: #3a3a3a; }
-        .btn-danger { background: #7f1d1d; color: white; }
-        .btn-warning { background: #92400e; color: white; }
-        .app-container { display: none; height: 100vh; overflow: hidden; }
-        .app-container.active { display: flex; }
-        .menu-btn { display: none; position: fixed; top: 16px; left: 16px; z-index: 1001; background: #dc2626; border: none; border-radius: 12px; padding: 12px 16px; color: white; cursor: pointer; font-size: 20px; }
-        .sidebar { width: 340px; background: #0f0f0f; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; transition: left 0.3s ease; }
-        .sidebar-header { padding: 20px 24px; border-bottom: 1px solid #1f1f1f; display: flex; align-items: center; gap: 14px; }
-        .sidebar-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #dc2626; }
-        .sidebar-header h3 { flex: 1; font-size: 16px; font-weight: 600; cursor: pointer; color: #e0e0e0; }
-        .logout-btn { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 22px; padding: 8px; border-radius: 10px; }
-        .logout-btn:hover { background: #1f1f1f; color: #ef4444; }
-        .btn-new-chat, .btn-create-group, .btn-trash { margin: 8px 12px; padding: 10px; border-radius: 14px; font-weight: 600; cursor: pointer; }
-        .btn-new-chat { background: linear-gradient(135deg, #dc2626, #b91c1c); border: none; color: white; }
-        .btn-create-group { background: #1a1a1a; border: 1px solid #dc2626; color: #e0e0e0; }
-        .btn-trash { background: #1f1f1f; border: 1px solid #6b7280; color: #9ca3af; }
-        .btn-trash:hover { background: #7f1d1d; border-color: #dc2626; color: white; }
-        .chats-list { flex: 1; overflow-y: auto; padding: 12px; }
-        .chat-item { padding: 14px; border-radius: 16px; cursor: pointer; margin-bottom: 8px; background: #141414; border: 1px solid #1f1f1f; transition: all 0.2s ease; }
-        .chat-item:hover { background: #1a1a1a; border-color: #dc2626; }
-        .chat-avatar-container { position: relative; }
-        .online-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #141414; }
-        .online-dot.online { background: #22c55e; }
-        .online-dot.offline { background: #6b7280; }
-        .chat-info { flex: 1; min-width: 0; }
-        .chat-name { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .chat-badge { font-size: 10px; background: linear-gradient(135deg, #dc2626, #b91c1c); padding: 2px 8px; border-radius: 12px; color: white; }
-        .chat-preview { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
-        .unread-badge { background: #ef4444; color: white; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: bold; margin-left: 8px; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, #121212 0%, #0a0a0a 100%); }
-        .chat-header { padding: 16px 24px; border-bottom: 1px solid #1f1f1f; background: rgba(15, 15, 15, 0.95); }
-        .chat-header-top { display: flex; justify-content: space-between; align-items: center; }
-        .chat-header h2 { font-size: 20px; font-weight: 600; color: #ef4444; cursor: pointer; }
-        .chat-header h2:hover { text-decoration: underline; }
-        .chat-actions { display: flex; gap: 8px; }
-        .edit-chat-btn, .trash-chat-btn { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 10px; padding: 6px 14px; cursor: pointer; font-size: 12px; color: #e0e0e0; }
-        .trash-chat-btn:hover { background: #7f1d1d; border-color: #dc2626; }
-        .edit-chat-btn:hover { background: #dc2626; border-color: #dc2626; }
-        .messages-container { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-        .messages-container::-webkit-scrollbar { width: 6px; }
-        .messages-container::-webkit-scrollbar-track { background: #1a1a1a; }
-        .messages-container::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 3px; }
-        .message { display: flex; flex-direction: column; max-width: 70%; margin-bottom: 8px; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.own { align-self: flex-end; }
-        .message.system { align-self: center; max-width: 90%; }
-        .message.deleted-message { opacity: 0.7; background: #1a1a1a; border-left: 3px solid #6b7280; }
-        .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .message-header img { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; object-fit: cover; }
-        .message-sender { font-size: 12px; color: #9ca3af; cursor: pointer; }
-        .message-sender:hover { color: #dc2626; text-decoration: underline; }
-        .message-content { padding: 12px 16px; border-radius: 20px; background: #1f1f1f; word-wrap: break-word; line-height: 1.4; font-size: 14px; }
-        .message.own .message-content { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
-        .message-time { font-size: 10px; color: #6b7280; margin-top: 6px; margin-left: 6px; }
-        .message-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-        .message-actions button { background: #1f1f1f; border: none; border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 11px; color: #e0e0e0; }
-        .message-actions button:hover { background: #dc2626; color: white; }
-        .message-file { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: #1a1a1a; border-radius: 16px; border: 1px solid #2a2a2a; flex-wrap: wrap; }
-        .file-icon { font-size: 32px; }
-        .file-info { flex: 1; }
-        .file-name { font-weight: 600; font-size: 13px; word-break: break-all; }
-        .file-size { font-size: 11px; color: #6b7280; margin-top: 3px; }
-        .download-btn { background: #22c55e !important; border: none !important; border-radius: 10px !important; padding: 8px 16px !important; color: white !important; cursor: pointer !important; font-weight: bold !important; }
-        .download-btn:hover { background: #16a34a !important; }
-        .message-caption { margin-top: 8px; font-size: 12px; opacity: 0.8; padding: 6px 10px; background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .message-input-area { padding: 16px 24px; border-top: 1px solid #1f1f1f; background: rgba(15, 15, 15, 0.95); display: flex; gap: 12px; align-items: center; }
-        .message-input-area input { flex: 1; background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 28px; padding: 12px 20px; color: #e0e0e0; font-size: 14px; }
-        .message-input-area input:focus { outline: none; border-color: #dc2626; }
-        .attach-btn, .emoji-btn, .send-btn { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 50%; width: 46px; height: 46px; cursor: pointer; font-size: 18px; transition: all 0.2s ease; }
-        .send-btn { background: linear-gradient(135deg, #dc2626, #b91c1c); border: none; color: white; }
-        .attach-btn:hover, .emoji-btn:hover, .send-btn:hover { transform: scale(1.05); }
-        .emoji-picker-container { position: relative; }
-        emoji-picker { position: absolute; bottom: 60px; left: 0; z-index: 1000; --background: #1f1f1f; --border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .typing-indicator { font-size: 12px; color: #9ca3af; padding: 8px 24px; font-style: italic; background: rgba(15,15,15,0.8); }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 2000; }
-        .modal.active { display: flex; }
-        .modal-content { background: #141414; border-radius: 28px; padding: 32px; width: 90%; max-width: 500px; border: 1px solid #2a2a2a; max-height: 85vh; overflow-y: auto; }
-        .modal-content h3 { color: #ef4444; margin-bottom: 24px; font-size: 22px; }
-        .modal-buttons { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
-        .user-search-result { padding: 12px; border-radius: 14px; background: #1f1f1f; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s ease; }
-        .user-search-result:hover { background: #2a2a2a; border-left: 3px solid #dc2626; }
-        .user-search-result img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
-        .selected-members { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-        .member-tag { background: linear-gradient(135deg, #dc2626, #b91c1c); padding: 6px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; color: white; }
-        .member-tag button { background: none; border: none; color: white; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .profile-avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; cursor: pointer; }
-        .group-avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; cursor: pointer; margin-bottom: 20px; border: 2px solid #dc2626; }
-        .empty-state { text-align: center; color: #6b7280; padding: 48px 24px; }
-        .member-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #2a2a2a; }
-        .member-item img { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
-        .remove-member { background: #dc2626; border: none; border-radius: 8px; padding: 4px 12px; color: white; cursor: pointer; font-size: 12px; }
-        .deleted-message-item { padding: 12px; border-radius: 12px; background: #1a1a1a; margin-bottom: 8px; cursor: pointer; border: 1px solid #2a2a2a; }
-        .deleted-message-item:hover { border-color: #dc2626; background: #1f1f1f; }
-        .deleted-message-text { font-size: 13px; margin-bottom: 8px; word-break: break-all; }
-        .deleted-message-meta { font-size: 11px; color: #6b7280; display: flex; gap: 12px; flex-wrap: wrap; }
-        .restore-btn, .permanent-delete-btn { background: none; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 11px; }
-        .restore-btn { background: #22c55e; color: white; }
-        .permanent-delete-btn { background: #dc2626; color: white; }
-        .trash-modal-content { max-width: 600px; width: 90%; }
-        .trash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .trash-actions { display: flex; gap: 10px; }
-        .profile-view { text-align: center; }
-        .profile-view img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; border: 3px solid #dc2626; }
-        .profile-view h3 { color: #ef4444; margin-bottom: 8px; }
-        .profile-view p { color: #9ca3af; margin-bottom: 8px; }
-        @media (max-width: 768px) { .menu-btn { display: block; } .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; width: 300px; z-index: 1000; } .sidebar.open { left: 0; } .message { max-width: 85%; } .chat-header { padding-left: 70px; } }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #22c55e; color: white; padding: 12px 24px; border-radius: 40px; z-index: 9999; font-size: 14px; font-weight: 500; animation: slideUp 0.3s ease, fadeOut 2.5s ease 2s forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-    </style>
+    <title>🐺 Red Wolf</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="auth-container" id="authContainer">
-    <div class="auth-card">
-        <div class="logo"><h1>🐺 Red Wolf</h1><p>Secure & Encrypted Messenger</p></div>
-        <div class="auth-tabs"><button class="auth-tab active" data-tab="login">🔐 Login</button><button class="auth-tab" data-tab="register">📝 Register</button></div>
-        <div id="loginForm" class="auth-form">
-            <div class="form-group"><label>📱 Phone or Username</label><input type="text" id="loginLogin" placeholder="Enter your login"></div>
-            <div class="form-group"><label>🔒 Password</label><input type="password" id="loginPassword" placeholder="Enter password"></div>
-            <button class="btn btn-primary" id="doLoginBtn">→ Sign In</button>
-        </div>
-        <div id="registerForm" class="auth-form" style="display:none">
-            <div class="form-group"><label>📞 Phone Number</label><input type="tel" id="regPhone" placeholder="+7 (999) 123-45-67"></div>
-            <div class="form-group"><label>👤 Name</label><input type="text" id="regName" placeholder="Your username"></div>
-            <div class="form-group"><label>🔒 Password (min 6)</label><input type="password" id="regPassword" placeholder="Create password"></div>
-            <button class="btn btn-primary" id="sendCodeBtn">📨 Send Verification Code</button>
-        </div>
-        <div id="verifyForm" class="auth-form" style="display:none">
-            <div class="form-group"><label>🔢 Verification Code</label><input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="6"></div>
-            <button class="btn btn-primary" id="verifyBtn">✓ Verify & Register</button>
-            <button class="btn btn-secondary" id="backToRegisterBtn">← Back</button>
-        </div>
-    </div>
-</div>
-
-<div class="app-container" id="appContainer">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img id="sidebarAvatar" class="sidebar-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
-            <h3 id="currentUserName">Loading...</h3>
-            <button class="logout-btn" id="logoutBtn" title="Logout">🚪</button>
-        </div>
-        <button class="btn-new-chat" id="newChatBtn">+ New Private Chat</button>
-        <button class="btn-create-group" id="createGroupBtn">👥 Create Group</button>
-        <button class="btn-trash" id="trashBtn">🗑️ Trash Bin</button>
-        <div class="chats-list" id="chatsList"><div class="empty-state">💬 No chats yet<br>Start a new conversation</div></div>
-    </div>
-    <div class="chat-area">
-        <div class="chat-header" id="chatHeader"><h2>✨ Select a chat to start</h2></div>
-        <div class="messages-container" id="messagesContainer"><div class="empty-state">💭 No messages yet</div></div>
-        <div class="typing-indicator" id="typingIndicator" style="display:none"></div>
-        <div class="message-input-area">
-            <input type="file" id="fileInput" style="display:none">
-            <button class="attach-btn" id="attachBtn" title="Attach file">📎</button>
-            <div class="emoji-picker-container"><button class="emoji-btn" id="emojiBtn" title="Emoji">😊</button></div>
-            <input type="text" id="messageInput" placeholder="Type a message..." disabled>
-            <button class="send-btn" id="sendBtn" disabled title="Send">➤</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="trashModal">
-    <div class="modal-content trash-modal-content">
-        <div class="trash-header">
-            <h3>🗑️ Trash Bin - <span id="trashChatName"></span></h3>
-            <div class="trash-actions">
-                <button class="btn-secondary" id="refreshTrashBtn">🔄 Refresh</button>
-                <button class="btn-secondary close-modal">✖️ Close</button>
+    <!-- ===== AUTH ===== -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="logo">
+                <span class="wolf-icon">🐺</span>
+                <h1>Red Wolf</h1>
+                <p>Secure &amp; Encrypted Messenger</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">🔐 Вход</button>
+                <button class="auth-tab" data-tab="register">📝 Регистрация</button>
+            </div>
+            <div id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label>📱 Телефон или логин</label>
+                    <input type="text" id="loginLogin" placeholder="Введите логин">
+                </div>
+                <div class="form-group">
+                    <label>🔒 Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите пароль">
+                </div>
+                <button class="btn btn-primary" id="doLoginBtn">→ Войти</button>
+            </div>
+            <div id="registerForm" class="auth-form" style="display:none">
+                <div class="form-group">
+                    <label>📞 Номер телефона</label>
+                    <input type="tel" id="regPhone" placeholder="+7 (999) 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label>👤 Имя</label>
+                    <input type="text" id="regName" placeholder="Ваше имя">
+                </div>
+                <div class="form-group">
+                    <label>🔒 Пароль (мин. 6)</label>
+                    <input type="password" id="regPassword" placeholder="Создайте пароль">
+                </div>
+                <button class="btn btn-primary" id="sendCodeBtn">📨 Отправить код</button>
+            </div>
+            <div id="verifyForm" class="auth-form" style="display:none">
+                <div class="form-group">
+                    <label>🔢 Код подтверждения</label>
+                    <input type="text" id="verifyCode" placeholder="Введите 6-значный код" maxlength="6">
+                </div>
+                <button class="btn btn-primary" id="verifyBtn">✓ Подтвердить</button>
+                <button class="btn btn-secondary" id="backToRegisterBtn">← Назад</button>
             </div>
         </div>
-        <div id="deletedMessagesList" style="max-height: 60vh; overflow-y: auto;">
-            <div class="empty-state">📭 No deleted messages</div>
+    </div>
+
+    <!-- ===== APP ===== -->
+    <div class="app-container" id="appContainer">
+        <button class="menu-btn" id="menuBtn">☰</button>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img id="sidebarAvatar" class="sidebar-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+                <h3 id="currentUserName">Загрузка...</h3>
+                <button class="logout-btn" id="logoutBtn" title="Выйти">🚪</button>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-new-chat" id="newChatBtn">+ Новый чат</button>
+                <button class="btn btn-create-group" id="createGroupBtn">👥 Группа</button>
+                <button class="btn btn-trash" id="trashBtn">🗑️ Корзина</button>
+            </div>
+            <div class="chats-list" id="chatsList">
+                <div class="empty-state">💬 Нет чатов<br>Начните новый диалог</div>
+            </div>
         </div>
-        <div class="modal-buttons">
-            <button class="btn-warning" id="closeTrashBtn">Close</button>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header" id="chatHeader">
+                <h2>✨ Выберите чат</h2>
+            </div>
+            <div class="messages-container" id="messagesContainer">
+                <div class="empty-state">💭 Нет сообщений</div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator" style="display:none"></div>
+            <div class="message-input-area">
+                <input type="file" id="fileInput" style="display:none">
+                <button class="icon-btn" id="attachBtn" title="Файл">📎</button>
+                <div class="emoji-picker-container">
+                    <button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>
+                </div>
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                <button class="icon-btn send-btn" id="sendBtn" disabled>➤</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="modal" id="userProfileModal"><div class="modal-content"><div id="userProfileContent"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Close</button></div></div></div>
-<div class="modal" id="newChatModal"><div class="modal-content"><h3>🔍 New Private Chat</h3><div class="form-group"><input type="text" id="searchUserInput" placeholder="Search by username..."></div><div id="searchResults"></div><div class="modal-buttons"><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
-<div class="modal" id="createGroupModal"><div class="modal-content"><h3>👥 Create Group</h3><div class="form-group"><input type="text" id="groupName" placeholder="Group name"></div><div class="form-group"><input type="number" id="groupMaxUsers" value="100" placeholder="Max members"></div><div class="form-group"><input type="text" id="groupSearchInput" placeholder="Search members to add..."></div><div id="groupSearchResults"></div><div id="selectedMembers" class="selected-members"></div><div class="modal-buttons"><button class="btn btn-primary" id="createGroupSubmit">✨ Create Group</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
-<div class="modal" id="editChatModal"><div class="modal-content"><h3 id="editChatTitle">Edit Chat</h3><div class="form-group"><input type="text" id="editChatName" placeholder="Chat name"></div><div id="groupAvatarSection" style="display:none; text-align:center; margin-bottom:20px;"><img id="groupAvatarPreview" class="group-avatar-img" src=""><div style="margin-top:12px;"><button class="btn-secondary" id="uploadGroupAvatarBtn" style="padding:8px 16px;">📷 Upload Avatar</button><button class="btn-danger" id="deleteGroupAvatarBtn" style="padding:8px 16px; margin-left:8px;">🗑️ Remove</button></div><input type="file" id="groupAvatarFile" accept="image/*" style="display:none"></div><div id="groupMembersSection" style="display:none"><div class="form-group"><input type="text" id="addMemberSearch" placeholder="Add new member..."></div><div id="addMemberResults"></div><div id="membersList"></div></div><div class="modal-buttons"><button class="btn btn-primary" id="saveChatEdit">💾 Save</button><button class="btn btn-danger" id="leaveDeleteBtn">🚪 Leave/Delete</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
-<div class="modal" id="profileModal"><div class="modal-content"><h3>👤 My Profile</h3><div style="text-align:center"><img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><input type="file" id="avatarFile" accept="image/*" style="display:none"><button class="btn-secondary" id="removeAvatarBtn" style="margin-top:12px; padding:8px 16px;">🗑️ Remove Avatar</button></div><div class="form-group" style="margin-top:20px;"><label>Display Name</label><input type="text" id="profileName" placeholder="Your name"></div><div class="form-group"><label>New Password (leave empty to keep)</label><input type="password" id="profileNewPassword" placeholder="New password"></div><div class="modal-buttons"><button class="btn btn-primary" id="updateProfileBtn">💾 Save Changes</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
-<div class="modal" id="editMessageModal"><div class="modal-content"><h3>✏️ Edit Message</h3><textarea id="editMessageText" rows="3" style="width:100%; background:#1f1f1f; border:1px solid #2a2a2a; border-radius:14px; padding:14px; color:white; font-family:inherit; resize:none;"></textarea><div class="modal-buttons"><button class="btn btn-primary" id="saveEditMessage">💾 Save</button><button class="btn btn-secondary close-modal">Cancel</button></div></div></div>
+    <!-- ===== MODALS ===== -->
+    <div class="modal" id="trashModal">
+        <div class="modal-content">
+            <h3>🗑️ Корзина - <span id="trashChatName"></span></h3>
+            <div id="deletedMessagesList" style="max-height:60vh;overflow-y:auto;">
+                <div class="empty-state">📭 Нет удалённых сообщений</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="refreshTrashBtn">🔄 Обновить</button>
+                <button class="btn btn-secondary close-modal">✖️ Закрыть</button>
+            </div>
+        </div>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-<script type="module">
-    import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
-    
-    window.initEmojiPicker = () => {
-        const container = document.querySelector('.emoji-picker-container');
-        if (!container) return;
-        const picker = document.createElement('emoji-picker');
-        picker.style.display = 'none';
-        picker.addEventListener('emoji-click', (event) => {
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.value += event.detail.unicode;
-                picker.style.display = 'none';
-                input.focus();
-            }
-        });
-        container.appendChild(picker);
-        const emojiBtn = document.getElementById('emojiBtn');
-        if (emojiBtn) {
-            const newBtn = emojiBtn.cloneNode(true);
-            emojiBtn.parentNode.replaceChild(newBtn, emojiBtn);
-            newBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-            });
-        }
-        document.addEventListener('click', (e) => {
-            if (container && !container.contains(e.target) && picker.style.display === 'block') {
-                picker.style.display = 'none';
-            }
-        });
-    };
+    <div class="modal" id="userProfileModal">
+        <div class="modal-content">
+            <div id="userProfileContent"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary close-modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
 
-    // ============ STATE ============
-    let currentUser = null, currentChat = null, currentChatInfo = null, token = null, connection = null;
-    let typingTimeout = null, editingMessageId = null, editingMessageIsEncrypted = false;
-    let selectedGroupMembers = [], tempPhoneNumber = null;
-    let onlineUsers = new Map();
-    let unreadCounts = new Map();
-    let lastMessagesCache = new Map();
-    let privateKey = null;
-    let sessionKeys = new Map();
-    let groupAvatarCache = new Map();
-    let serverPublicKey = null; // ← ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ ВНУТРИ МОДУЛЯ
-    const API_BASE = '/api';
-    const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+    <div class="modal" id="newChatModal">
+        <div class="modal-content">
+            <h3>🔍 Новый чат</h3>
+            <div class="form-group">
+                <input type="text" id="searchUserInput" placeholder="Поиск по имени...">
+            </div>
+            <div id="searchResults"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-    // ============ UTILITIES ============
-    function showToast(msg, isErr = false) {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.textContent = msg;
-        toast.style.background = isErr ? '#ef4444' : '#22c55e';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
+    <div class="modal" id="createGroupModal">
+        <div class="modal-content">
+            <h3>👥 Создать группу</h3>
+            <div class="form-group">
+                <input type="text" id="groupName" placeholder="Название группы">
+            </div>
+            <div class="form-group">
+                <input type="number" id="groupMaxUsers" value="100" placeholder="Макс. участников">
+            </div>
+            <div class="form-group">
+                <input type="text" id="groupSearchInput" placeholder="Поиск участников...">
+            </div>
+            <div id="groupSearchResults"></div>
+            <div id="selectedMembers" class="selected-members"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="createGroupSubmit">✨ Создать</button>
+                <button class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-    function formatFileSize(bytes) { if(!bytes) return '0 B'; const k=1024, sizes=['B','KB','MB','GB']; const i=Math.floor(Math.log(bytes)/Math.log(k)); return parseFloat((bytes/Math.pow(k,i)).toFixed(1))+' '+sizes[i]; }
-    function getFileIcon(name) { const e=name?.split('.').pop()?.toLowerCase(); if(['jpg','jpeg','png','gif','webp'].includes(e)) return '🖼️'; if(['mp4','mov','avi','mkv'].includes(e)) return '🎥'; if(['pdf'].includes(e)) return '📕'; if(['doc','docx'].includes(e)) return '📘'; if(['xls','xlsx'].includes(e)) return '📊'; if(['txt','json','xml'].includes(e)) return '📄'; return '📎'; }
-    
-    function formatMessageDate(dateString) {
-        if(!dateString) return '';
-        const date = new Date(dateString);
-        if(isNaN(date.getTime())) return '';
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24));
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const timeStr = `${hours}:${minutes}`;
-        if(diffDays === 0) return timeStr;
-        if(diffDays === 1) return `Yesterday at ${timeStr}`;
-        if(diffDays < 7) {
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            return `${days[date.getDay()]} at ${timeStr}`;
-        }
-        return `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()} at ${timeStr}`;
-    }
-
-    function isMessageEdited(msg) {
-        if(!msg.messageLastUpdateDate || !msg.messageCreateDate) return false;
-        const createDate = new Date(msg.messageCreateDate);
-        const updateDate = new Date(msg.messageLastUpdateDate);
-        const diffMs = Math.abs(updateDate - createDate);
-        return diffMs > 1000;
-    }
-
-    function copyToClipboard(text) { navigator.clipboard.writeText(text); showToast('📋 Copied!'); }
-    function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); }
-    function showModal(id) { closeModals(); document.getElementById(id).classList.add('active'); }
-    
-    function getSafeToken() { if (!token) return ''; return encodeURIComponent(token); }
-
-    async function api(url, opts={}) {
-        const res = await fetch(API_BASE+url, {
-            headers: { 'Content-Type':'application/json', ...(token?{'Authorization':`Bearer ${token}`}:{}) },
-            ...opts
-        });
-        if(!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
-        return res;
-    }
-
-    // ============ PROFILE VIEW ============
-    async function showUserProfile(userId, userName) {
-        try {
-            const res = await api(`/User/${userId}`);
-            const user = await res.json();
-            const avatarUrl = `${API_BASE}/User/avatar/${userId}?access_token=${getSafeToken()}&t=${Date.now()}`;
-            document.getElementById('userProfileContent').innerHTML = `
-                <div class="profile-view">
-                    <img src="${avatarUrl}" onerror="this.src='${DEFAULT_AVATAR}'">
-                    <h3>${escapeHtml(user.name)}</h3>
-                    <p>📅 Joined: ${new Date(user.registerDate).toLocaleDateString()}</p>
-                    ${user.publicKey ? '<p>🔐 E2EE Enabled</p>' : '<p>⚠️ No encryption key</p>'}
+    <div class="modal" id="editChatModal">
+        <div class="modal-content">
+            <h3 id="editChatTitle">✏️ Редактировать</h3>
+            <div class="form-group">
+                <input type="text" id="editChatName" placeholder="Название">
+            </div>
+            <div id="groupAvatarSection" style="display:none;text-align:center;margin:16px 0;">
+                <img id="groupAvatarPreview" class="group-avatar-img" src="">
+                <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" id="uploadGroupAvatarBtn">📷 Загрузить</button>
+                    <button class="btn btn-danger" id="deleteGroupAvatarBtn">🗑️ Удалить</button>
                 </div>
-            `;
-            showModal('userProfileModal');
-        } catch(e) {
-            console.error(e);
-            showToast('Failed to load profile', true);
-        }
-    }
-
-    // ============ CRYPTO ============
-    async function generateRSAKeys() {
-        const keyPair = await crypto.subtle.generateKey(
-            { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
-            true, ["encrypt", "decrypt"]
-        );
-        return keyPair;
-    }
-    
-    async function exportPublicKey(publicKey) {
-        const exported = await crypto.subtle.exportKey("spki", publicKey);
-        return btoa(String.fromCharCode(...new Uint8Array(exported)));
-    }
-    
-    async function importPublicKey(base64Key) {
-        const cleanKey = base64Key?.trim()?.replace(/\s/g, '') || '';
-        const binary = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
-        return await crypto.subtle.importKey("spki", binary, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
-    }
-    
-    async function importPrivateKey(base64Key) {
-        const cleanKey = base64Key?.trim()?.replace(/\s/g, '') || '';
-        const binary = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
-        return await crypto.subtle.importKey("pkcs8", binary, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
-    }
-    
-    async function exportPrivateKey(privateKey) {
-        const exported = await crypto.subtle.exportKey("pkcs8", privateKey);
-        return btoa(String.fromCharCode(...new Uint8Array(exported)));
-    }
-    
-    async function encryptWithPublicKey(data, publicKey) {
-        const encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, data);
-        return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-    }
-    
-    async function generateSessionKey() {
-        return await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-    }
-    
-    async function exportSessionKey(sessionKey) {
-        const exported = await crypto.subtle.exportKey("raw", sessionKey);
-        return btoa(String.fromCharCode(...new Uint8Array(exported)));
-    }
-    
-    async function importSessionKey(base64Key) {
-        const binary = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
-        return await crypto.subtle.importKey("raw", binary, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
-    }
-    
-    // ШИФРОВАНИЕ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ (AES-GCM с сессионным ключом)
-    async function encryptForUsers(message, sessionKey) {
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encoded = new TextEncoder().encode(message);
-        const encrypted = await crypto.subtle.encrypt(
-            { name: "AES-GCM", iv: iv },
-            sessionKey,
-            encoded
-        );
-        return {
-            encryptedData: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-            iv: btoa(String.fromCharCode(...iv))
-        };
-    }
-    
-    // ШИФРОВАНИЕ ДЛЯ СЕРВЕРА (ГИБРИДНОЕ: RSA + AES-GCM)
-    async function encryptForServer(message, serverPublicKey) {
-        const aesKey = await crypto.subtle.generateKey(
-            { name: "AES-GCM", length: 256 },
-            true,
-            ["encrypt", "decrypt"]
-        );
-        
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encoded = new TextEncoder().encode(message);
-        const encryptedMessage = await crypto.subtle.encrypt(
-            { name: "AES-GCM", iv: iv },
-            aesKey,
-            encoded
-        );
-        
-        const aesKeyRaw = await crypto.subtle.exportKey("raw", aesKey);
-        const encryptedAesKey = await crypto.subtle.encrypt(
-            { name: "RSA-OAEP" },
-            serverPublicKey,
-            aesKeyRaw
-        );
-        
-        const combined = new Uint8Array(encryptedAesKey.byteLength + encryptedMessage.byteLength);
-        combined.set(new Uint8Array(encryptedAesKey), 0);
-        combined.set(new Uint8Array(encryptedMessage), encryptedAesKey.byteLength);
-        
-        return {
-            encryptedData: btoa(String.fromCharCode(...combined)),
-            iv: btoa(String.fromCharCode(...iv))
-        };
-    }
-    
-    async function decryptMessage(encryptedBase64, ivBase64, sessionKey) {
-        const encrypted = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
-        const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, sessionKey, encrypted);
-        return new TextDecoder().decode(decrypted);
-    }
-    
-    // ============ SERVER PUBLIC KEY ============
-    async function loadServerPublicKey() {
-        try {
-            console.log("🔄 Loading server public key...");
-            const res = await fetch(`${API_BASE}/User/server-public-key`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.publicKey) {
-                    const cleanKey = data.publicKey.trim().replace(/\s/g, '');
-                    serverPublicKey = await importPublicKey(cleanKey);
-                    console.log("✅ Server public key loaded successfully!");
-                    return true;
-                } else {
-                    console.warn("⚠️ No publicKey in response");
-                }
-            } else {
-                console.warn("⚠️ Server returned:", res.status);
-            }
-            return false;
-        } catch(e) {
-            console.error("❌ Failed to load server public key:", e);
-            return false;
-        }
-    }
-    
-    // ============ INDEXEDDB ============
-    const DB_NAME = "RedWolfKeys";
-    const DB_VERSION = 2;
-    
-    function openDatabase() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains("keys")) {
-                    db.createObjectStore("keys", { keyPath: "id" });
-                }
-            };
-        });
-    }
-    
-    async function savePrivateKeyToDB(privateKeyBase64) {
-        const db = await openDatabase();
-        const tx = db.transaction("keys", "readwrite");
-        tx.objectStore("keys").put({ id: "privateKey", value: privateKeyBase64 });
-        return new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
-    }
-    
-    async function loadPrivateKeyFromDB() {
-        const db = await openDatabase();
-        const tx = db.transaction("keys", "readonly");
-        const request = tx.objectStore("keys").get("privateKey");
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result?.value || null);
-            request.onerror = () => reject(request.error);
-        });
-    }
-    
-    async function saveSessionKeyToDB(chatId, sessionKeyBase64) {
-        const db = await openDatabase();
-        const tx = db.transaction("keys", "readwrite");
-        tx.objectStore("keys").put({ id: `sessionKey_${chatId}`, value: sessionKeyBase64 });
-        return new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
-    }
-    
-    async function loadAllSessionKeysFromDB() {
-        const db = await openDatabase();
-        const tx = db.transaction("keys", "readonly");
-        const allKeys = await new Promise((resolve, reject) => {
-            const request = tx.objectStore("keys").getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-        
-        for (const item of allKeys) {
-            if (item.id && item.id.startsWith('sessionKey_')) {
-                const chatId = item.id.replace('sessionKey_', '');
-                try {
-                    const sessionKey = await importSessionKey(item.value);
-                    sessionKeys.set(chatId, sessionKey);
-                    console.log(`Restored session key for chat ${chatId}`);
-                } catch(e) {
-                    console.error(`Failed to restore session key for ${chatId}:`, e);
-                }
-            }
-        }
-    }
-    
-    async function getSessionKeyFromDB(chatId) {
-        const db = await openDatabase();
-        const tx = db.transaction("keys", "readonly");
-        const request = tx.objectStore("keys").get(`sessionKey_${chatId}`);
-        return new Promise((resolve, reject) => {
-            request.onsuccess = async () => {
-                if (request.result?.value) {
-                    try {
-                        const key = await importSessionKey(request.result.value);
-                        resolve(key);
-                    } catch(e) { resolve(null); }
-                } else resolve(null);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    // ============ GROUP AVATAR HELPERS ============
-    async function getGroupAvatarUrl(chatId) {
-        if (!token || !chatId) return DEFAULT_AVATAR;
-        
-        if (groupAvatarCache.has(chatId)) {
-            const cached = groupAvatarCache.get(chatId);
-            if (cached.url && cached.expiry > Date.now()) {
-                return cached.url;
-            }
-        }
-        
-        try {
-            const response = await fetch(`${API_BASE}/Chat/${chatId}/avatar`, { 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                groupAvatarCache.set(chatId, { url: url, expiry: Date.now() + 5 * 60 * 1000 });
-                return url;
-            }
-            return DEFAULT_AVATAR;
-        } catch(e) {
-            console.error('Error loading group avatar:', e);
-            return DEFAULT_AVATAR;
-        }
-    }
-
-    // ============ TRASH BIN METHODS ============
-    async function showTrashBin() {
-        if (!currentChat) {
-            showToast("Please select a chat first", true);
-            return;
-        }
-        
-        const chatName = currentChatInfo?.chatName || currentChat.name || "Chat";
-        document.getElementById('trashChatName').innerText = chatName;
-        showModal('trashModal');
-        await loadDeletedMessages();
-    }
-    
-    async function loadDeletedMessages() {
-        if (!currentChat) return;
-        
-        const container = document.getElementById('deletedMessagesList');
-        container.innerHTML = '<div class="empty-state">⏳ Loading...</div>';
-        
-        try {
-            const res = await api(`/Message/deleted/${currentChat.id}`);
-            const messages = await res.json();
-            
-            if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 No deleted messages in this chat</div>';
-                return;
-            }
-            
-            let sessionKey = sessionKeys.get(currentChat.id);
-            if (!sessionKey) {
-                sessionKey = await getSessionKeyForChat(currentChat.id);
-            }
-            
-            const decryptedMessages = [];
-            for (const msg of messages) {
-                let displayText = msg.messageText || (msg.fileName ? `📎 ${msg.fileName}` : '');
-                
-                if (msg.encryptedData && msg.iv && sessionKey) {
-                    try {
-                        const decryptedText = await decryptMessage(msg.encryptedData, msg.iv, sessionKey);
-                        displayText = decryptedText;
-                    } catch(e) {
-                        console.error('Failed to decrypt deleted message:', e);
-                        displayText = '🔒 [Cannot decrypt]';
-                    }
-                } else if (msg.encryptedData && !sessionKey) {
-                    displayText = '🔒 [Encrypted - need key]';
-                }
-                
-                decryptedMessages.push({ ...msg, displayText });
-            }
-            
-            container.innerHTML = decryptedMessages.map(msg => {
-                const time = formatMessageDate(msg.messageCreateDate);
-                const sender = msg.messageCreator?.name || msg.user?.name || 'Unknown';
-                const content = msg.displayText || (msg.fileName ? `📎 ${msg.fileName}` : '');
-                
-                return `
-                    <div class="deleted-message-item" data-mid="${msg.messageId}">
-                        <div class="deleted-message-text">
-                            <strong>${escapeHtml(sender)}</strong>: ${escapeHtml(content)}
-                        </div>
-                        <div class="deleted-message-meta">
-                            <span>🕐 ${time}</span>
-                            <button class="restore-btn" data-id="${msg.messageId}">↩️ Restore</button>
-                            <button class="permanent-delete-btn" data-id="${msg.messageId}">💀 Permanent Delete</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            document.querySelectorAll('.restore-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    restoreMessage(btn.dataset.id);
-                });
-            });
-            
-            document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    permanentDeleteMessage(btn.dataset.id);
-                });
-            });
-            
-        } catch(e) {
-            console.error(e);
-            container.innerHTML = '<div class="empty-state">❌ Error loading deleted messages</div>';
-        }
-    }
-    
-    async function restoreMessage(messageId) {
-        try {
-            const res = await api(`/Message/restore/${messageId}`, { method: 'PATCH' });
-            if (res.ok) {
-                showToast('✅ Message restored!');
-                await loadMessages(currentChat.id);
-                await loadChats();
-                await loadDeletedMessages();
-            }
-        } catch(e) {
-            showToast('Failed to restore: ' + e.message, true);
-        }
-    }
-    
-    async function permanentDeleteMessage(messageId) {
-        if (!confirm('⚠️ This will permanently delete the message. Are you sure?')) return;
-        
-        try {
-            const res = await api(`/Message/permanent/${messageId}`, { method: 'DELETE' });
-            if (res.ok) {
-                showToast('💀 Message permanently deleted');
-                await loadDeletedMessages();
-                await loadChats();
-            }
-        } catch(e) {
-            showToast('Failed to delete: ' + e.message, true);
-        }
-    }
-
-    // ============ AUTH ============
-    async function handleLogin() {
-        const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
-        if(!login||!pwd) return showToast('Fill all fields', true);
-        try {
-            const res = await fetch(API_BASE+'/User/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login,password:pwd})});
-            if(!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            token = data.token; currentUser = { id: data.userId };
-            localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
-            
-            const profileRes = await api('/User/profile');
-            const profile = await profileRes.json();
-            currentUser.publicKey = profile.publicKey;
-            currentUser.name = profile.name;
-            
-            const privateKeyBase64 = await loadPrivateKeyFromDB();
-            if (privateKeyBase64) {
-                privateKey = await importPrivateKey(privateKeyBase64);
-                console.log("Private key loaded from IndexedDB");
-            }
-            
-            await loadAllSessionKeysFromDB();
-            await initApp();
-        } catch(e) { showToast('Login failed: '+e.message, true); }
-    }
-    
-    async function verifyReg() {
-        const code = document.getElementById('verifyCode').value.trim();
-        if(!code||code.length!==6) return showToast('Enter 6-digit code',true);
-        try {
-            const res = await fetch(API_BASE+'/User/verify-and-register', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phoneNumber:tempPhoneNumber,code})});
-            if(!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            token = data.token; currentUser = { id: data.userId };
-            localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
-            
-            const keyPair = await generateRSAKeys();
-            const publicKeyBase64 = await exportPublicKey(keyPair.publicKey);
-            const privateKeyBase64 = await exportPrivateKey(keyPair.privateKey);
-            
-            await fetch(API_BASE+'/User/public-key', {
-                method: 'POST',
-                headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-                body: JSON.stringify({ publicKey: publicKeyBase64 })
-            });
-            
-            await savePrivateKeyToDB(privateKeyBase64);
-            privateKey = keyPair.privateKey;
-            currentUser.publicKey = publicKeyBase64;
-            
-            await initApp();
-        } catch(e) { showToast(e.message,true); }
-    }
-    
-    async function requestCode() {
-        const phone=document.getElementById('regPhone').value.trim(), name=document.getElementById('regName').value.trim(), pwd=document.getElementById('regPassword').value;
-        if(!phone||!name||!pwd) return showToast('Fill all fields',true);
-        if(pwd.length<6) return showToast('Password min 6 chars',true);
-        try {
-            const res = await fetch(API_BASE+'/User/request-verification', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phoneNumber:phone,name,password:pwd})});
-            if(!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            tempPhoneNumber = data.phoneNumber;
-            document.getElementById('registerForm').style.display='none';
-            document.getElementById('verifyForm').style.display='flex';
-            document.getElementById('verifyCode').value = data.code || '';
-            showToast('✅ Code sent to '+phone);
-        } catch(e) { showToast(e.message,true); }
-    }
-
-    function switchTab(tab) {
-        document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
-        if(tab==='login') {
-            document.querySelector('.auth-tab[data-tab="login"]').classList.add('active');
-            document.getElementById('loginForm').style.display='flex';
-            document.getElementById('registerForm').style.display='none';
-            document.getElementById('verifyForm').style.display='none';
-        } else {
-            document.querySelector('.auth-tab[data-tab="register"]').classList.add('active');
-            document.getElementById('loginForm').style.display='none';
-            document.getElementById('registerForm').style.display='flex';
-            document.getElementById('verifyForm').style.display='none';
-        }
-    }
-
-    // ============ PROFILE ============
-    async function showProfileModal() {
-        try {
-            const res = await api('/User/profile');
-            const user = await res.json();
-            document.getElementById('profileName').value = user.name;
-            document.getElementById('profileNewPassword').value = '';
-            const avatarUrl = `${API_BASE}/User/avatar/${user.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
-            document.getElementById('profileAvatar').src = avatarUrl;
-            showModal('profileModal');
-        } catch(e) { showToast('Error loading profile', true); }
-    }
-
-    async function updateProfile() {
-        const newName = document.getElementById('profileName').value.trim();
-        const newPassword = document.getElementById('profileNewPassword').value;
-        const updateData = {};
-        if (newName) updateData.name = newName;
-        if (newPassword) updateData.newPassword = newPassword;
-        if (Object.keys(updateData).length === 0) { closeModals(); return; }
-        try {
-            const res = await api('/User/update-profile', { method:'PUT', body:JSON.stringify(updateData) });
-            if (res.ok) {
-                const updatedUser = await res.json();
-                if (currentUser) currentUser.name = updatedUser.name;
-                document.getElementById('currentUserName').innerText = updatedUser.name;
-                showToast('✅ Profile updated!');
-                closeModals();
-                await loadChats();
-            } else showToast('Update failed', true);
-        } catch(e) { showToast('Error', true); }
-    }
-
-    async function uploadAvatar(file) {
-        if(!file) return;
-        if(file.size > 5*1024*1024) return showToast('Max 5MB', true);
-        const fd = new FormData();
-        fd.append('file', file);
-        try {
-            const res = await fetch(`${API_BASE}/User/upload-avatar`, { method:'POST', headers:{ 'Authorization':`Bearer ${token}` }, body:fd });
-            if(res.ok) {
-                const avatarUrl = `${API_BASE}/User/avatar/${currentUser.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
-                document.getElementById('sidebarAvatar').src = avatarUrl;
-                document.getElementById('profileAvatar').src = avatarUrl;
-                await loadChats();
-                showToast('✅ Avatar updated!');
-            } else showToast('Upload failed', true);
-        } catch(e) { showToast('Error', true); }
-    }
-
-    async function deleteAvatar() {
-        if(!confirm('Remove avatar?')) return;
-        try {
-            const res = await fetch(`${API_BASE}/User/avatar`, { method:'DELETE', headers:{ 'Authorization':`Bearer ${token}` } });
-            if(res.ok) {
-                document.getElementById('sidebarAvatar').src = DEFAULT_AVATAR;
-                document.getElementById('profileAvatar').src = DEFAULT_AVATAR;
-                await loadChats();
-                showToast('✅ Avatar removed');
-            } else showToast('Delete failed', true);
-        } catch(e) { showToast('Error', true); }
-    }
-
-    // ============ GROUP AVATAR ============
-    async function uploadGroupAvatar(file) {
-        if(!file || !currentChat) return;
-        if(file.size > 5*1024*1024) return showToast('Max 5MB', true);
-        const fd = new FormData();
-        fd.append('file', file);
-        try {
-            const res = await fetch(`${API_BASE}/Chat/${currentChat.id}/avatar`, { method:'POST', headers:{ 'Authorization':`Bearer ${token}` }, body:fd });
-            if(res.ok) {
-                const data = await res.json();
-                showToast('✅ Group avatar updated!');
-                if (currentChatInfo) currentChatInfo.avatarPath = data.avatarPath;
-                groupAvatarCache.delete(currentChat.id);
-                await loadChats();
-                const newAvatarUrl = await getGroupAvatarUrl(currentChat.id);
-                document.getElementById('groupAvatarPreview').src = newAvatarUrl;
-            } else showToast('Upload failed', true);
-        } catch(e) { showToast('Error', true); }
-    }
-
-    async function deleteGroupAvatar() {
-        if(!confirm('Remove group avatar?')) return;
-        try {
-            const res = await fetch(`${API_BASE}/Chat/${currentChat.id}/avatar`, { method:'DELETE', headers:{ 'Authorization':`Bearer ${token}` } });
-            if(res.ok) {
-                showToast('✅ Group avatar removed');
-                if (currentChatInfo) currentChatInfo.avatarPath = null;
-                groupAvatarCache.delete(currentChat.id);
-                document.getElementById('groupAvatarPreview').src = DEFAULT_AVATAR;
-                await loadChats();
-            } else showToast('Delete failed', true);
-        } catch(e) { showToast('Error', true); }
-    }
-
-    // ============ UNREAD ============
-    async function loadUnreadCounts() {
-        try {
-            const res = await api('/Message/unread');
-            const counts = await res.json();
-            unreadCounts.clear();
-            for (const [chatId, count] of Object.entries(counts)) unreadCounts.set(chatId, count);
-            updateAllUnreadBadges();
-        } catch(e) { console.error(e); }
-    }
-
-    function updateAllUnreadBadges() {
-        document.querySelectorAll('.chat-item').forEach(item => {
-            const chatId = item.dataset.id;
-            const count = unreadCounts.get(chatId) || 0;
-            const nameDiv = item.querySelector('.chat-name');
-            const existingBadge = nameDiv?.querySelector('.unread-badge');
-            if (count > 0) {
-                if (existingBadge) existingBadge.textContent = count > 99 ? '99+' : count;
-                else if (nameDiv) {
-                    const badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.textContent = count > 99 ? '99+' : count;
-                    nameDiv.appendChild(badge);
-                }
-            } else if (existingBadge) existingBadge.remove();
-        });
-    }
-
-    function updateUnreadBadge(chatId, count) {
-        if (count > 0) unreadCounts.set(chatId, count);
-        else unreadCounts.delete(chatId);
-        const chatItem = document.querySelector(`.chat-item[data-id="${chatId}"]`);
-        if (chatItem) {
-            const nameDiv = chatItem.querySelector('.chat-name');
-            const existingBadge = nameDiv?.querySelector('.unread-badge');
-            if (count > 0) {
-                if (existingBadge) existingBadge.textContent = count > 99 ? '99+' : count;
-                else if (nameDiv) {
-                    const badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.textContent = count > 99 ? '99+' : count;
-                    nameDiv.appendChild(badge);
-                }
-            } else if (existingBadge) existingBadge.remove();
-        }
-    }
-
-    async function markChatAsRead(chatId) {
-        try {
-            await api(`/Message/${chatId}/mark-read`, { method: 'POST' });
-            unreadCounts.delete(chatId);
-            updateUnreadBadge(chatId, 0);
-        } catch(e) { console.error(e); }
-    }
-
-    // ============ CHAT UI ============
-    async function addChatToSidebar(chat) {
-        const container = document.getElementById('chatsList');
-        const isGroup = chat.maxUsers > 2 || (chat.users?.length > 2);
-        const name = isGroup ? chat.chatName : (chat.otherUser?.name || chat.chatName);
-        const online = (!isGroup && chat.otherUser?.id) ? onlineUsers.get(chat.otherUser.id) === true : false;
-        const unreadCount = unreadCounts.get(chat.id) || 0;
-        const lastMessage = lastMessagesCache.get(chat.id);
-        
-        let avatarUrl = DEFAULT_AVATAR;
-        if (isGroup) {
-            avatarUrl = await getGroupAvatarUrl(chat.id);
-        } else if (chat.otherUser?.id) {
-            avatarUrl = `${API_BASE}/User/avatar/${chat.otherUser.id}?access_token=${getSafeToken()}&t=${Date.now()}`;
-        }
-        
-        let previewHtml = '';
-        if (lastMessage) {
-            const isOwn = lastMessage.userId === currentUser?.id;
-            const senderName = isOwn ? 'You' : (lastMessage.user?.name || lastMessage.messageCreator?.name || 'Unknown');
-            let previewText = lastMessage.messageText || (lastMessage.fileName ? '📎 File' : '');
-            if (!previewText && lastMessage.encryptedData) previewText = '🔒 Encrypted';
-            previewText = previewText?.length > 50 ? previewText.substring(0, 47) + '...' : previewText;
-            previewHtml = `<div class="chat-preview"><strong>${escapeHtml(senderName)}:</strong> ${escapeHtml(previewText || '')}</div>`;
-        }
-        
-        const html = `<div class="chat-item" data-id="${chat.id}" data-name="${escapeHtml(name)}">
-            <div style="display:flex;align-items:center;gap:12px">
-                <div class="chat-avatar-container">
-                    <img src="${avatarUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover" onerror="this.src='${DEFAULT_AVATAR}'">
-                    ${!isGroup ? `<div class="online-dot ${online ? 'online' : 'offline'}"></div>` : ''}
+                <input type="file" id="groupAvatarFile" accept="image/*" style="display:none">
+            </div>
+            <div id="groupMembersSection" style="display:none">
+                <div class="form-group">
+                    <input type="text" id="addMemberSearch" placeholder="Добавить участника...">
                 </div>
-                <div class="chat-info">
-                    <div class="chat-name">${escapeHtml(name)}${isGroup ? '<span class="chat-badge">GROUP</span>' : ''}</div>
-                    ${previewHtml}
+                <div id="addMemberResults"></div>
+                <div id="membersList"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="saveChatEdit">💾 Сохранить</button>
+                <button class="btn btn-danger" id="leaveDeleteBtn">🚪 Покинуть</button>
+                <button class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <h3>👤 Мой профиль</h3>
+            <div style="text-align:center">
+                <img id="profileAvatar" class="profile-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+                <input type="file" id="avatarFile" accept="image/*" style="display:none">
+                <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" id="uploadAvatarBtn">📷 Загрузить</button>
+                    <button class="btn btn-danger" id="removeAvatarBtn">🗑️ Удалить</button>
                 </div>
             </div>
-        </div>`;
-        
-        const existingItem = container.querySelector(`.chat-item[data-id="${chat.id}"]`);
-        if (existingItem) existingItem.outerHTML = html;
-        else container.insertAdjacentHTML('beforeend', html);
-        updateUnreadBadge(chat.id, unreadCount);
-        const newItem = container.querySelector(`.chat-item[data-id="${chat.id}"]`);
-        if (newItem) newItem.addEventListener('click', () => selectChat(chat.id, name));
-    }
-
-    // ============ CORE ============
-    async function loadUser() {
-        try {
-            const res = await api('/User/profile');
-            const user = await res.json();
-            currentUser = { ...currentUser, ...user };
-            document.getElementById('currentUserName').innerText = user.name;
-            const avUrl = API_BASE+'/User/avatar/'+currentUser.id+'?access_token='+getSafeToken()+'&t='+Date.now();
-            document.getElementById('sidebarAvatar').src = avUrl;
-        } catch(e) { console.error(e); }
-    }
-
-    async function loadLastMessageForChat(chat) {
-        try {
-            const messagesRes = await api(`/Chat/${chat.id}/messages?page=1&pageSize=1`);
-            const messagesData = await messagesRes.json();
-            if (messagesData.messages && messagesData.messages.length > 0) {
-                const lastMsg = messagesData.messages[0];
-                if (lastMsg.encryptedData && lastMsg.iv) {
-                    const sessionKey = sessionKeys.get(chat.id) || await getSessionKeyFromDB(chat.id);
-                    if (sessionKey) {
-                        try {
-                            const decryptedText = await decryptMessage(lastMsg.encryptedData, lastMsg.iv, sessionKey);
-                            lastMsg.messageText = decryptedText;
-                        } catch(e) { /* keep encrypted */ }
-                    }
-                }
-                lastMessagesCache.set(chat.id, lastMsg);
-            } else {
-                lastMessagesCache.delete(chat.id);
-            }
-        } catch(e) { lastMessagesCache.delete(chat.id); }
-    }
-
-    async function loadChats() {
-        try {
-            if (!token) return;
-            const [chatsRes, unreadRes] = await Promise.all([api(`/Chat/user-chats/${currentUser.id}`), api('/Message/unread')]);
-            const chats = await chatsRes.json();
-            const unreadData = await unreadRes.json();
-            unreadCounts.clear();
-            for (const [chatId, count] of Object.entries(unreadData)) unreadCounts.set(chatId, count);
-            
-            await Promise.all(chats.map(chat => loadLastMessageForChat(chat)));
-            
-            const container = document.getElementById('chatsList');
-            if(!chats?.length) { container.innerHTML='<div class="empty-state">💬 No chats yet<br>✨ Start a new conversation</div>'; return; }
-            
-            container.innerHTML = '';
-            for (const chat of chats) {
-                await addChatToSidebar(chat);
-            }
-            
-        } catch(e) { console.error(e); }
-    }
-
-    async function getChatInfo(chatId) { try { const res = await api('/Chat/'+chatId); return await res.json(); } catch(e){ return null; } }
-
-    async function getSessionKeyForChat(chatId) {
-        if (sessionKeys.has(chatId)) {
-            return sessionKeys.get(chatId);
-        }
-        
-        try {
-            const dbKey = await getSessionKeyFromDB(chatId);
-            if (dbKey) {
-                sessionKeys.set(chatId, dbKey);
-                return dbKey;
-            }
-        } catch(e) { console.error(`DB error:`, e); }
-        
-        if (!privateKey) {
-            showToast("❌ Private key not loaded. Please re-login.", true);
-            return null;
-        }
-        
-        try {
-            const res = await fetch(`${API_BASE}/Chat/${chatId}/session-key`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (!res.ok) return null;
-            
-            const data = await res.json();
-            if (!data.encryptedKey) return null;
-            
-            const encryptedBytes = Uint8Array.from(atob(data.encryptedKey), c => c.charCodeAt(0));
-            const decryptedKeyBuffer = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedBytes);
-            
-            const sessionKey = await crypto.subtle.importKey("raw", decryptedKeyBuffer, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
-            
-            sessionKeys.set(chatId, sessionKey);
-            const exportedKey = btoa(String.fromCharCode(...new Uint8Array(decryptedKeyBuffer)));
-            await saveSessionKeyToDB(chatId, exportedKey);
-            
-            return sessionKey;
-        } catch(e) {
-            console.error(`[getSessionKeyForChat] Failed:`, e);
-            return null;
-        }
-    }
-
-    async function createPrivateChat(uid, uname) {
-        try {
-            const pubKeyRes = await api(`/User/public-key/${uid}`);
-            const pubKeyData = await pubKeyRes.json();
-            if (!pubKeyData.publicKey) {
-                showToast(`User ${uname} has no public key. Ask them to re-register.`, true);
-                return;
-            }
-            const otherPublicKey = await importPublicKey(pubKeyData.publicKey);
-            const sessionKey = await generateSessionKey();
-            const sessionKeyRaw = await exportSessionKey(sessionKey);
-            const myPublicKey = await importPublicKey(currentUser.publicKey);
-            const encryptedForMe = await encryptWithPublicKey(Uint8Array.from(atob(sessionKeyRaw), c => c.charCodeAt(0)), myPublicKey);
-            const encryptedForOther = await encryptWithPublicKey(Uint8Array.from(atob(sessionKeyRaw), c => c.charCodeAt(0)), otherPublicKey);
-            const chatRes = await api('/Chat', { method: 'POST', body: JSON.stringify({ memberIds: [currentUser.id, uid], maxUsers: 2 }) });
-            const chat = await chatRes.json();
-            const encryptedKeys = { [currentUser.id]: encryptedForMe, [uid]: encryptedForOther };
-            await api(`/Chat/${chat.id}/session-keys`, { method: 'POST', body: JSON.stringify({ encryptedKeys }) });
-            
-            sessionKeys.set(chat.id, sessionKey);
-            await saveSessionKeyToDB(chat.id, sessionKeyRaw);
-            
-            closeModals();
-            await loadChats();
-            await selectChat(chat.id, chat.chatName);
-            showToast(`✨ Chat with ${uname} created`);
-        } catch(e) { showToast('Error creating chat: ' + e.message, true); }
-    }
-
-    async function selectChat(chatId, chatName) {
-        currentChat = { id: chatId, name: chatName };
-        currentChatInfo = await getChatInfo(chatId);
-        const isGroup = currentChatInfo && (currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2));
-        const title = isGroup ? currentChatInfo.chatName : (currentChatInfo?.otherUser?.name || chatName);
-        const otherUserId = !isGroup && currentChatInfo?.otherUser?.id;
-        
-        const titleHtml = otherUserId 
-            ? `<h2 style="cursor:pointer" id="chatTitleBtn">${escapeHtml(title)}</h2>`
-            : `<h2>${escapeHtml(title)}</h2>`;
-        
-        document.getElementById('chatHeader').innerHTML = `<div class="chat-header-top">
-            ${titleHtml}
-            <div class="chat-actions">
-                <button class="trash-chat-btn" id="trashChatBtn">🗑️ Trash</button>
-                <button class="edit-chat-btn" id="editChatBtn">✏️ Edit</button>
+            <div class="form-group" style="margin-top:20px;">
+                <label>Имя</label>
+                <input type="text" id="profileName" placeholder="Ваше имя">
             </div>
-        </div>`;
-        
-        if (otherUserId) {
-            document.getElementById('chatTitleBtn')?.addEventListener('click', () => showUserProfile(otherUserId, title));
-        }
-        
-        document.getElementById('editChatBtn')?.addEventListener('click', showEditChatModal);
-        document.getElementById('trashChatBtn')?.addEventListener('click', showTrashBin);
-        document.getElementById('messageInput').disabled = false;
-        document.getElementById('sendBtn').disabled = false;
-        
-        const key = await getSessionKeyForChat(chatId);
-        if (!key) showToast("⚠️ Could not load encryption key for this chat", true);
-        
-        await markChatAsRead(chatId);
-        await loadMessages(chatId);
-        await loadChats();
-        
-        if(connection && connection.state === signalR.HubConnectionState.Connected) {
-            await connection.invoke('JoinChat', chatId, currentUser.id, currentUser.name);
-        }
-        if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
-    }
+            <div class="form-group">
+                <label>Новый пароль (оставьте пустым)</label>
+                <input type="password" id="profileNewPassword" placeholder="Новый пароль">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="updateProfileBtn">💾 Сохранить</button>
+                <button class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-    async function loadMessages(chatId) {
-        try {
-            const res = await api(`/Chat/${chatId}/messages?page=1&pageSize=100`);
-            const data = await res.json();
-            const sessionKey = sessionKeys.get(chatId);
-            const decryptedMessages = [];
-            for (const msg of (data.messages || [])) {
-                if (msg.encryptedData && msg.iv && sessionKey) {
-                    try {
-                        const decryptedText = await decryptMessage(msg.encryptedData, msg.iv, sessionKey);
-                        decryptedMessages.push({ ...msg, messageText: decryptedText, isDecrypted: true });
-                    } catch(e) { 
-                        decryptedMessages.push({ ...msg, messageText: "🔒 [Encrypted]", isDecrypted: false });
-                    }
-                } else { 
-                    decryptedMessages.push(msg); 
-                }
-            }
-            renderMessages(decryptedMessages);
-            if (data.messages && data.messages.length > 0) {
-                const lastMsg = data.messages[0];
-                if (lastMsg.encryptedData && lastMsg.iv && sessionKey) {
-                    try {
-                        lastMsg.messageText = await decryptMessage(lastMsg.encryptedData, lastMsg.iv, sessionKey);
-                    } catch(e) {}
-                }
-                lastMessagesCache.set(chatId, lastMsg);
-            } else {
-                lastMessagesCache.delete(chatId);
-            }
-        } catch(e) { console.error(e); }
-    }
+    <div class="modal" id="editMessageModal">
+        <div class="modal-content">
+            <h3>✏️ Редактировать</h3>
+            <textarea id="editMessageText" rows="3" style="width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;color:var(--text);font-family:inherit;resize:none;font-size:14px;"></textarea>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="saveEditMessage">💾 Сохранить</button>
+                <button class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </div>
+    </div>
 
-    function renderMessages(messages) {
-        const container = document.getElementById('messagesContainer');
-        if(!messages?.length) { container.innerHTML='<div class="empty-state">💭 No messages yet<br>Send the first message!</div>'; return; }
-        const sorted = [...messages].sort((a,b)=>new Date(a.messageCreateDate)-new Date(b.messageCreateDate));
-        const safeToken = getSafeToken();
-        container.innerHTML = sorted.map(msg => {
-            const isOwn = msg.userId === currentUser.id;
-            const edited = isMessageEdited(msg);
-            const avatar = API_BASE+'/User/avatar/'+msg.userId+'?access_token='+safeToken;
-            const sender = msg.user?.name || msg.messageCreator?.name || 'Unknown';
-            const isDeleted = msg.isDeleted === true;
-            const deletedClass = isDeleted ? 'deleted-message' : '';
-            const isEncrypted = !!msg.encryptedData;
-            
-            if(msg.fileName) {
-                return `<div class="message ${isOwn?'own':''} ${deletedClass}" data-mid="${msg.messageId}">
-                    <div class="message-header">
-                        <img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'>
-                        <span class="message-sender" data-userid="${msg.userId}" data-username="${escapeHtml(sender)}">${escapeHtml(sender)}</span>
-                    </div>
-                    <div class="message-file">
-                        <div class="file-icon">${getFileIcon(msg.fileName)}</div>
-                        <div class="file-info"><div class="file-name">📁 ${escapeHtml(msg.fileName)}</div><div class="file-size">${formatFileSize(msg.fileSize)}</div></div>
-                        ${!isDeleted ? `<button class="download-btn" data-id="${msg.messageId}" data-name="${escapeHtml(msg.fileName)}">⬇️ DOWNLOAD</button>` : '<span style="color:#6b7280; font-size:12px;">🗑️ Deleted</span>'}
-                    </div>
-                    ${msg.messageText && !msg.messageText.startsWith('📎') ? `<div class="message-caption">${escapeHtml(msg.messageText)}${edited ? ' ✏️' : ''}</div>` : ''}
-                    <div class="message-time">🕐 ${formatMessageDate(msg.messageCreateDate)}</div>
-                    ${!isDeleted ? `<div class="message-actions">${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}</div>` : ''}
-                </div>`;
-            }
-            if(msg.isSystemMessage) return `<div class="message system ${deletedClass}"><div class="message-content">📢 ${escapeHtml(msg.messageText)}</div><div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div></div>`;
-            const textEsc = escapeHtml(msg.messageText).replace(/'/g, "\\'");
-            const editBtn = `<button class="edit-msg-btn" data-id="${msg.messageId}" data-text="${textEsc}" data-encrypted="${isEncrypted}">✏️ Edit</button>`;
-            return `<div class="message ${isOwn?'own':''} ${deletedClass}">
-                <div class="message-header">
-                    <img src="${avatar}" onerror="this.src='${DEFAULT_AVATAR}'>
-                    <span class="message-sender" data-userid="${msg.userId}" data-username="${escapeHtml(sender)}">${escapeHtml(sender)}</span>
-                </div>
-                <div class="message-content">${escapeHtml(msg.messageText)}${edited ? ' <span style="font-size:10px; opacity:0.6;">✏️ edited</span>' : ''}</div>
-                <div class="message-time">${formatMessageDate(msg.messageCreateDate)}</div>
-                ${!isDeleted ? `<div class="message-actions">
-                    <button class="copy-btn" data-text="${textEsc}">📋 Copy</button>
-                    ${isOwn ? editBtn : ''}
-                    ${isOwn ? `<button class="del-msg-btn" data-id="${msg.messageId}">🗑️ Delete</button>` : ''}
-                </div>` : ''}
-            </div>`;
-        }).join('');
-        
-        document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
-        document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
-        document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
-        document.querySelectorAll('.edit-msg-btn').forEach(btn => btn.addEventListener('click', () => {
-            editMessage(btn.dataset.id, btn.dataset.text, btn.dataset.encrypted === 'true');
-        }));
-        document.querySelectorAll('.message-sender').forEach(el => {
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const userId = el.dataset.userid;
-                const userName = el.dataset.username;
-                if (userId && userId !== currentUser.id) {
-                    showUserProfile(userId, userName);
-                }
-            });
-        });
-        
-        container.scrollTop = container.scrollHeight;
-    }
-
-    // ============ EDIT MESSAGE ============
-    async function editMessage(messageId, currentText, isEncrypted) {
-        editingMessageId = messageId;
-        editingMessageIsEncrypted = isEncrypted;
-        document.getElementById('editMessageText').value = currentText;
-        showModal('editMessageModal');
-    }
-
-    async function saveEditedMsg() {
-        const newText = document.getElementById('editMessageText').value.trim();
-        if (!newText || !editingMessageId) {
-            closeModals();
-            return;
-        }
-        
-        try {
-            if (editingMessageIsEncrypted) {
-                let sessionKey = sessionKeys.get(currentChat.id);
-                if (!sessionKey) {
-                    sessionKey = await getSessionKeyForChat(currentChat.id);
-                }
-                if (!sessionKey) {
-                    showToast("🔒 No encryption key for this chat", true);
-                    return;
-                }
-                
-                const { encryptedData, iv } = await encryptForUsers(newText, sessionKey);
-                
-                const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        messageId: editingMessageId,
-                        encryptedData: encryptedData,
-                        iv: iv
-                    })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error || 'Edit failed');
-                }
-            } else {
-                const response = await fetch(`${API_BASE}/Message/${editingMessageId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        messageId: editingMessageId,
-                        messageText: newText
-                    })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.text();
-                    throw new Error(error || 'Edit failed');
-                }
-            }
-            
-            closeModals();
-            editingMessageId = null;
-            await loadMessages(currentChat.id);
-            await loadChats();
-            showToast('✅ Message edited');
-            
-        } catch (error) {
-            console.error('Edit error:', error);
-            showToast('Failed to edit: ' + error.message, true);
-        }
-    }
-
-    // ============ SEND MESSAGE ============
-    async function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const text = input.value.trim();
-        
-        if (!text || !currentChat) return;
-        
-        // ПРИНУДИТЕЛЬНО ЗАГРУЖАЕМ КЛЮЧ, ЕСЛИ ЕГО НЕТ
-        if (!serverPublicKey) {
-            console.log("🔄 Server key missing, loading now...");
-            await loadServerPublicKey();
-        }
-        
-        console.log("🔑 serverPublicKey:", serverPublicKey ? "✅ EXISTS" : "❌ NULL");
-        
-        // Получаем сессионный ключ чата
-        let sessionKey = sessionKeys.get(currentChat.id);
-        if (!sessionKey) {
-            sessionKey = await getSessionKeyForChat(currentChat.id);
-        }
-        if (!sessionKey) {
-            showToast("🔒 No encryption key for this chat", true);
-            return;
-        }
-        
-        try {
-            // 1. Шифруем для пользователей
-            const { encryptedData: encryptedForUsers, iv: ivForUsers } = await encryptForUsers(text, sessionKey);
-            
-            // 2. Шифруем для сервера (ТОЛЬКО ЕСЛИ ЕСТЬ КЛЮЧ)
-            let encryptedForServer = "";
-            let ivForServer = "";
-            
-            if (serverPublicKey) {
-                try {
-                    const serverEncrypted = await encryptForServer(text, serverPublicKey);
-                    encryptedForServer = serverEncrypted.encryptedData;
-                    ivForServer = serverEncrypted.iv;
-                    console.log("✅ Server encrypted, length:", encryptedForServer.length);
-                } catch(e) {
-                    console.error("❌ Server encrypt failed:", e);
-                }
-            } else {
-                console.warn("⚠️ No server public key");
-            }
-            
-            console.log("📦 Sending data:", {
-                hasUserEncrypted: !!encryptedForUsers,
-                hasServerEncrypted: !!encryptedForServer,
-                serverLength: encryptedForServer?.length
-            });
-            
-            // 3. Отправляем
-            const res = await fetch(`${API_BASE}/Message/dual-encrypted`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify({
-                    encryptedForUsers: encryptedForUsers,
-                    ivForUsers: ivForUsers,
-                    encryptedForServer: encryptedForServer || "",
-                    ivForServer: ivForServer || "",
-                    userId: currentUser.id,
-                    chatId: currentChat.id
-                })
-            });
-            
-            if (!res.ok) {
-                const error = await res.text();
-                throw new Error(error);
-            }
-            
-            input.value = '';
-            await loadMessages(currentChat.id);
-            await loadChats();
-            unreadCounts.delete(currentChat.id);
-            updateUnreadBadge(currentChat.id, 0);
-            
-            if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                try {
-                    await connection.invoke('SendEncryptedMessage', currentChat.id, currentUser.id, currentUser.name, encryptedForUsers, ivForUsers);
-                } catch(e) {
-                    console.warn("SignalR notify failed:", e);
-                }
-            }
-        } catch(e) { 
-            console.error('Send error:', e);
-            showToast('Failed to send: ' + e.message, true); 
-        }
-    }
-
-    async function downloadFile(messageId, fileName) {
-        if(!messageId) return showToast('No file ID', true);
-        showToast('⏳ Downloading...');
-        try {
-            const res = await fetch(`${API_BASE}/File/download/${messageId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if(res.ok) {
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName || 'file';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
-                showToast('✅ Downloaded!');
-            } else showToast('File not found', true);
-        } catch(e) { showToast('Download failed', true); }
-    }
-
-    async function uploadFile() {
-        const input = document.getElementById('fileInput');
-        const file = input.files[0];
-        if(!file || !currentChat) return;
-        if(file.size > 50*1024*1024) return showToast('Max 50MB', true);
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('chatId', currentChat.id);
-        showToast('⏳ Uploading...');
-        try {
-            const res = await fetch(`${API_BASE}/File/upload`, { method:'POST', headers:{ 'Authorization':`Bearer ${token}` }, body:fd });
-            if(res.ok) {
-                input.value='';
-                showToast('✅ File uploaded!');
-                await loadMessages(currentChat.id);
-                await loadChats();
-                if(connection && connection.state === signalR.HubConnectionState.Connected) {
-                    await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, `📎 ${file.name}`);
-                }
-            } else showToast('Upload failed', true);
-        } catch(e) { showToast('Upload error', true); }
-    }
-
-    async function deleteMessage(messageId) {
-        if (!confirm('Delete this message? It will go to trash bin and can be restored.')) return;
-        try {
-            const res = await api('/Message/' + messageId, { method: 'DELETE' });
-            if (res.ok) {
-                await loadMessages(currentChat.id);
-                await loadChats();
-                showToast('✅ Message moved to trash');
-            } else {
-                showToast('Failed to delete', true);
-            }
-        } catch(e) {
-            console.error('Delete error:', e);
-            showToast('Failed to delete: ' + e.message, true);
-        }
-    }
-
-    async function searchUsers() { const q=document.getElementById('searchUserInput').value.trim(); const div=document.getElementById('searchResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id); if(!filtered.length){ div.innerHTML='<div class="empty-state">👤 No users found</div>'; return; } div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div><strong>${escapeHtml(u.name)}</strong></div></div>`).join(''); document.querySelectorAll('#searchResults .user-search-result').forEach(el=>el.addEventListener('click',()=>createPrivateChat(el.dataset.id,el.dataset.name))); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
-
-    function showCreateGroup() { selectedGroupMembers=[]; updateSelected(); document.getElementById('groupName').value=''; document.getElementById('groupMaxUsers').value='100'; document.getElementById('groupSearchInput').value=''; document.getElementById('groupSearchResults').innerHTML=''; showModal('createGroupModal'); }
-    async function searchGroupUsers() { const q=document.getElementById('groupSearchInput').value.trim(); const div=document.getElementById('groupSearchResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id&&!selectedGroupMembers.some(m=>m.id===u.id)); div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#groupSearchResults .user-search-result').forEach(el=>el.addEventListener('click',()=>{ selectedGroupMembers.push({id:el.dataset.id,name:el.dataset.name}); updateSelected(); document.getElementById('groupSearchInput').value=''; div.innerHTML=''; })); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
-    function updateSelected() { const div=document.getElementById('selectedMembers'); if(!selectedGroupMembers.length){ div.innerHTML='<div class="empty-state">👥 No members selected</div>'; return; } div.innerHTML=selectedGroupMembers.map(m=>`<div class="member-tag">${escapeHtml(m.name)}<button data-id="${m.id}">×</button></div>`).join(''); document.querySelectorAll('#selectedMembers .member-tag button').forEach(btn=>btn.addEventListener('click',()=>{ selectedGroupMembers=selectedGroupMembers.filter(m=>m.id!==btn.dataset.id); updateSelected(); })); }
-    async function createGroup() { const name=document.getElementById('groupName').value.trim(); const max=parseInt(document.getElementById('groupMaxUsers').value); if(!name) return showToast('Enter group name',true); if(!selectedGroupMembers.length) return showToast('Select at least one member',true); const ids=[currentUser.id,...selectedGroupMembers.map(m=>m.id)]; try{ const res=await api('/Chat',{method:'POST',body:JSON.stringify({memberIds:ids,maxUsers:max,chatName:name})}); if(res.ok){ const chat=await res.json(); closeModals(); await loadChats(); await selectChat(chat.id, chat.chatName); showToast(`✨ Group "${name}" created`); } }catch(e){ showToast('Error creating group',true); } }
-
-    async function showEditChatModal() {
-        if(!currentChatInfo) return;
-        const isGroup = currentChatInfo.maxUsers > 2 || (currentChatInfo.users?.length > 2);
-        document.getElementById('editChatTitle').innerText = isGroup ? '✏️ Edit Group' : '✏️ Edit Chat';
-        document.getElementById('editChatName').value = currentChatInfo.chatName;
-        document.getElementById('leaveDeleteBtn').innerText = isGroup ? '🚪 Leave Group' : '🗑️ Delete Chat';
-        if (isGroup) {
-            document.getElementById('groupAvatarSection').style.display = 'block';
-            document.getElementById('groupMembersSection').style.display = 'block';
-            const avatarUrl = await getGroupAvatarUrl(currentChat.id);
-            document.getElementById('groupAvatarPreview').src = avatarUrl;
-            await renderMembers();
-        } else {
-            document.getElementById('groupAvatarSection').style.display = 'none';
-            document.getElementById('groupMembersSection').style.display = 'none';
-        }
-        showModal('editChatModal');
-    }
-    
-    async function renderMembers() { const members=currentChatInfo.users||[]; const container=document.getElementById('membersList'); container.innerHTML=members.map(m=>`<div class="member-item"><div><img src="${API_BASE}/User/avatar/${m.id}?access_token=${getSafeToken()}" style="width:32px;height:32px;border-radius:50%;object-fit:cover"> <strong>${escapeHtml(m.name)}</strong>${m.id===currentChatInfo.createdById?' 👑':''}</div>${m.id!==currentUser.id&&currentChatInfo.createdById===currentUser.id?`<button class="remove-member" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Remove</button>`:''}</div>`).join(''); document.querySelectorAll('.remove-member').forEach(btn=>btn.addEventListener('click',()=>removeMember(btn.dataset.id,btn.dataset.name))); }
-    async function searchAddMember() { const q=document.getElementById('addMemberSearch').value.trim(); const div=document.getElementById('addMemberResults'); if(q.length<2){ div.innerHTML=''; return; } try{ const res=await api('/User/all'); const users=await res.json(); const existing=currentChatInfo.users.map(u=>u.id); const filtered=users.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())&&u.id!==currentUser.id&&!existing.includes(u.id)); div.innerHTML=filtered.map(u=>`<div class="user-search-result" data-id="${u.id}" data-name="${escapeHtml(u.name)}"><img src="${API_BASE}/User/avatar/${u.id}?access_token=${getSafeToken()}" onerror="this.src='${DEFAULT_AVATAR}'"><div>${escapeHtml(u.name)}</div></div>`).join(''); document.querySelectorAll('#addMemberResults .user-search-result').forEach(el=>el.addEventListener('click',()=>addMemberToGroup(el.dataset.id,el.dataset.name))); }catch(e){ div.innerHTML='<div class="empty-state">Error</div>'; } }
-    async function addMemberToGroup(uid,uname) { try{ await api('/Chat/add-user',{method:'POST',body:JSON.stringify({chatId:currentChat.id,userId:uid})}); currentChatInfo=await getChatInfo(currentChat.id); await renderMembers(); document.getElementById('addMemberSearch').value=''; document.getElementById('addMemberResults').innerHTML=''; showToast(`✅ ${uname} added`); }catch(e){ showToast('Error',true); } }
-    async function removeMember(uid,uname) { if(!confirm(`Remove ${uname}?`)) return; try{ await api('/Chat/remove-user',{method:'POST',body:JSON.stringify({chatId:currentChat.id,userId:uid})}); currentChatInfo=await getChatInfo(currentChat.id); if(currentChatInfo) { await renderMembers(); showToast(`✅ ${uname} removed`); } else { closeModals(); currentChat=null; currentChatInfo=null; document.getElementById('messageInput').disabled=true; document.getElementById('sendBtn').disabled=true; await loadChats(); } }catch(e){ showToast('Error',true); } }
-    async function saveChatEdit() { const newName=document.getElementById('editChatName').value.trim(); if(newName&&newName!==currentChatInfo.chatName){ try{ await api('/Chat/'+currentChat.id,{method:'PUT',body:JSON.stringify({chatName:newName})}); currentChatInfo.chatName=newName; await loadChats(); showToast('✅ Renamed'); }catch(e){ showToast('Error',true); } } closeModals(); }
-    function leaveOrDelete() { const isGroup=currentChatInfo.maxUsers>2||currentChatInfo.users?.length>2; if(isGroup) leaveGroup(); else deleteChat(); }
-    async function leaveGroup() { if(!confirm('Leave group?')) return; try{ await api('/Chat/remove-user',{method:'POST',body:JSON.stringify({chatId:currentChat.id,userId:currentUser.id})}); closeModals(); currentChat=null; currentChatInfo=null; document.getElementById('messageInput').disabled=true; document.getElementById('sendBtn').disabled=true; await loadChats(); showToast('✅ Left group'); }catch(e){ showToast('Error',true); } }
-    async function deleteChat() { if(!confirm('Delete chat?')) return; try{ await api('/Chat/'+currentChat.id,{method:'DELETE'}); closeModals(); currentChat=null; currentChatInfo=null; document.getElementById('messageInput').disabled=true; document.getElementById('sendBtn').disabled=true; await loadChats(); showToast('✅ Chat deleted'); }catch(e){ showToast('Error',true); } }
-
-    // ============ SIGNALR ============
-    async function initSignalR() {
-        connection = new signalR.HubConnectionBuilder()
-            .withUrl("/messengerHub", { accessTokenFactory: () => token })
-            .withAutomaticReconnect()
-            .build();
-            
-        connection.on("ReceiveEncryptedMessage", async (userId, userName, encryptedData, iv, chatId) => {
-            console.log(`[SignalR] ReceiveEncryptedMessage from ${userName} in chat ${chatId}`);
-            if (currentChat && currentChat.id === chatId) {
-                await loadMessages(currentChat.id);
-                await markChatAsRead(chatId);
-            } else {
-                const currentCount = unreadCounts.get(chatId) || 0;
-                updateUnreadBadge(chatId, currentCount + 1);
-                await loadChats();
-                showToast(`🔒 New encrypted message from ${userName}`);
-            }
-        });
-        
-        connection.on("ReceiveMessage", async (userId, userName, messageText, chatId) => {
-            if (currentChat && currentChat.id === chatId) {
-                await loadMessages(currentChat.id);
-                await markChatAsRead(chatId);
-            } else {
-                const currentCount = unreadCounts.get(chatId) || 0;
-                updateUnreadBadge(chatId, currentCount + 1);
-                await loadChats();
-                showToast(`💬 ${userName}: ${messageText?.substring(0, 40)}`);
-            }
-        });
-        
-        connection.on("UserOnline", (userId, isOnline) => { onlineUsers.set(userId, isOnline); loadChats(); });
-        connection.on("UserTyping", (userId, name) => { if (currentChat && userId !== currentUser?.id) { const div = document.getElementById('typingIndicator'); div.innerText = `${name} is typing...`; div.style.display = 'block'; clearTimeout(typingTimeout); typingTimeout = setTimeout(() => div.style.display = 'none', 2000); } });
-        connection.on("UserStoppedTyping", () => { document.getElementById('typingIndicator').style.display = 'none'; });
-        connection.on("NewChatCreated", async (chat) => { console.log("NewChatCreated:", chat); await loadChats(); });
-        connection.on("UserProfileUpdated", (userId, newName) => { if (currentUser && currentUser.id === userId) { currentUser.name = newName; document.getElementById('currentUserName').innerText = newName; } loadChats(); });
-        connection.on("UserAvatarUpdated", (userId) => { const avatarUrl = `${API_BASE}/User/avatar/${userId}?t=${Date.now()}`; if (currentUser && currentUser.id === userId) { document.getElementById('sidebarAvatar').src = avatarUrl; document.getElementById('profileAvatar').src = avatarUrl; } loadChats(); });
-        
-        try { 
-            await connection.start(); 
-            console.log("SignalR connected");
-            const chatsRes = await api(`/Chat/user-chats/${currentUser.id}`);
-            const chats = await chatsRes.json();
-            for (const chat of chats) {
-                await connection.invoke('JoinChat', chat.id, currentUser.id, currentUser.name);
-            }
-            if(currentChat) {
-                await connection.invoke('JoinChat', currentChat.id, currentUser.id, currentUser.name);
-            }
-        } catch(e) { console.error("SignalR error:", e); }
-    }
-
-    function startTyping() { 
-        if(connection && connection.state === signalR.HubConnectionState.Connected && currentChat && document.getElementById('messageInput').value.length > 0) { 
-            connection.invoke('UserIsTyping', currentChat.id, currentUser.id, currentUser.name); 
-            clearTimeout(typingTimeout); 
-            typingTimeout = setTimeout(() => {
-                if(connection && connection.state === signalR.HubConnectionState.Connected) {
-                    connection.invoke('UserStoppedTyping', currentChat.id, currentUser.id);
-                }
-            }, 1000); 
-        } 
-    }
-
-    async function initApp() {
-        if(!token) { 
-            const t = localStorage.getItem('token'); 
-            const uid = localStorage.getItem('userId'); 
-            if(t && uid) { 
-                token = t; 
-                currentUser = { id: uid }; 
-                const privateKeyBase64 = await loadPrivateKeyFromDB(); 
-                if (privateKeyBase64) {
-                    privateKey = await importPrivateKey(privateKeyBase64);
-                }
-            } else return; 
-        }
-        document.getElementById('authContainer').style.display = 'none';
-        document.getElementById('appContainer').classList.add('active');
-        await loadUser();
-        if (currentUser && !currentUser.publicKey) {
-            const profileRes = await api('/User/profile');
-            const profile = await profileRes.json();
-            currentUser.publicKey = profile.publicKey;
-            currentUser.name = profile.name;
-        }
-        await loadAllSessionKeysFromDB();
-        await loadUnreadCounts();
-        await loadChats();
-        await loadServerPublicKey(); // ← ЗАГРУЖАЕМ КЛЮЧ СЕРВЕРА
-        await initSignalR();
-        setTimeout(() => { if(typeof window.initEmojiPicker === 'function') window.initEmojiPicker(); }, 500);
-    }
-
-    function logout() { 
-        localStorage.clear(); 
-        token = null; 
-        currentUser = null; 
-        currentChat = null; 
-        privateKey = null; 
-        sessionKeys.clear(); 
-        groupAvatarCache.clear();
-        if(connection) connection.stop(); 
-        document.getElementById('authContainer').style.display = 'flex'; 
-        document.getElementById('appContainer').classList.remove('active'); 
-    }
-
-    // EVENT BINDINGS
-    document.getElementById('doLoginBtn')?.addEventListener('click', handleLogin);
-    document.getElementById('sendCodeBtn')?.addEventListener('click', requestCode);
-    document.getElementById('verifyBtn')?.addEventListener('click', verifyReg);
-    document.getElementById('backToRegisterBtn')?.addEventListener('click', () => { document.getElementById('verifyForm').style.display='none'; document.getElementById('registerForm').style.display='flex'; });
-    document.querySelectorAll('.auth-tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-    document.getElementById('menuBtn')?.addEventListener('click', ()=>document.getElementById('sidebar').classList.toggle('open'));
-    document.getElementById('newChatBtn')?.addEventListener('click', ()=>{ document.getElementById('searchUserInput').value=''; document.getElementById('searchResults').innerHTML=''; showModal('newChatModal'); });
-    document.getElementById('createGroupBtn')?.addEventListener('click', showCreateGroup);
-    document.getElementById('trashBtn')?.addEventListener('click', showTrashBin);
-    document.getElementById('refreshTrashBtn')?.addEventListener('click', loadDeletedMessages);
-    document.getElementById('closeTrashBtn')?.addEventListener('click', closeModals);
-    document.getElementById('attachBtn')?.addEventListener('click', ()=>document.getElementById('fileInput').click());
-    document.getElementById('fileInput')?.addEventListener('change', uploadFile);
-    document.getElementById('sendBtn')?.addEventListener('click', sendMessage);
-    document.getElementById('messageInput')?.addEventListener('input', startTyping);
-    document.getElementById('messageInput')?.addEventListener('keypress', (e)=> { if(e.key==='Enter') sendMessage(); });
-    document.getElementById('searchUserInput')?.addEventListener('input', searchUsers);
-    document.getElementById('groupSearchInput')?.addEventListener('input', searchGroupUsers);
-    document.getElementById('createGroupSubmit')?.addEventListener('click', createGroup);
-    document.getElementById('addMemberSearch')?.addEventListener('input', searchAddMember);
-    document.getElementById('saveChatEdit')?.addEventListener('click', saveChatEdit);
-    document.getElementById('leaveDeleteBtn')?.addEventListener('click', leaveOrDelete);
-    document.getElementById('sidebarAvatar')?.addEventListener('click', showProfileModal);
-    document.getElementById('currentUserName')?.addEventListener('click', showProfileModal);
-    document.getElementById('updateProfileBtn')?.addEventListener('click', updateProfile);
-    document.getElementById('removeAvatarBtn')?.addEventListener('click', deleteAvatar);
-    document.getElementById('profileAvatar')?.addEventListener('click', ()=>document.getElementById('avatarFile').click());
-    document.getElementById('avatarFile')?.addEventListener('change', (e)=>uploadAvatar(e.target.files[0]));
-    document.getElementById('saveEditMessage')?.addEventListener('click', saveEditedMsg);
-    document.getElementById('uploadGroupAvatarBtn')?.addEventListener('click', () => document.getElementById('groupAvatarFile').click());
-    document.getElementById('groupAvatarFile')?.addEventListener('change', (e) => uploadGroupAvatar(e.target.files[0]));
-    document.getElementById('deleteGroupAvatarBtn')?.addEventListener('click', deleteGroupAvatar);
-    document.querySelectorAll('.close-modal').forEach(btn=>btn.addEventListener('click', closeModals));
-
-    if(localStorage.getItem('token')) initApp();
-</script>
+    <!-- ===== SCRIPTS ===== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="scripts.js"></script>
 </body>
 </html>
