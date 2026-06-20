@@ -17,7 +17,8 @@ namespace Messenger.DTOs
         string? Iv = null,
         string? FileName = null,
         long? FileSize = null,
-        string? ContentType = null
+        string? ContentType = null,
+        int? Duration = null
     );
 
     public record MessageCreateDTO(

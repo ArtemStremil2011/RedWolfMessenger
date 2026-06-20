@@ -7,20 +7,20 @@ namespace Messenger.Services.Interfaces
         // Обычные сообщения
         Task<MessageResponseDTO?> CreateMessageAsync(Guid userId, Guid chatId, string text);
         Task<MessageResponseDTO?> UpdateMessageAsync(Guid messageId, string newText, Guid currentUserId);
-        
+
         // Зашифрованные сообщения
         Task<MessageResponseDTO?> CreateEncryptedMessageAsync(Guid userId, Guid chatId, string encryptedData, string iv);
         Task<MessageResponseDTO?> UpdateEncryptedMessageAsync(Guid messageId, string encryptedData, string iv, Guid currentUserId);
-        
+
         // Двойное шифрование (для сервера)
         Task<MessageResponseDTO?> CreateDualEncryptedMessageAsync(
-            Guid userId, 
-            Guid chatId, 
-            string encryptedForUsers, 
+            Guid userId,
+            Guid chatId,
+            string encryptedForUsers,
             string ivForUsers,
             string encryptedForServer,
             string ivForServer);
-        
+
         // Управление сообщениями
         Task<bool> DeleteMessageAsync(Guid messageId, Guid currentUserId);
         Task<bool> PermanentDeleteMessageAsync(Guid messageId, Guid currentUserId);

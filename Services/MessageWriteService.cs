@@ -1,6 +1,7 @@
 ﻿using Messenger.Data;
 using Messenger.DTOs;
 using Messenger.Models.BaseModels;
+using Messenger.Models.ChatModels;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,7 @@ namespace Messenger.Services
         private readonly IServerCryptoService _serverCryptoService;
 
         public MessageWriteService(
-            AppDBContext context, 
+            AppDBContext context,
             ILogger<MessageWriteService> logger,
             IServerCryptoService serverCryptoService)
         {
@@ -22,8 +23,8 @@ namespace Messenger.Services
             _serverCryptoService = serverCryptoService;
         }
 
-        // ============ ОБЫЧНЫЕ СООБЩЕНИЯ (БЕЗ ШИФРОВАНИЯ) ============
-        
+        // ============ ОБЫЧНЫЕ СООБЩЕНИЯ ============
+
         public async Task<MessageResponseDTO?> CreateMessageAsync(Guid userId, Guid chatId, string text)
         {
             try
@@ -36,7 +37,7 @@ namespace Messenger.Services
                     return null;
 
                 var now = DateTime.UtcNow;
-                
+
                 var message = new Message
                 {
                     MessageText = text,
@@ -78,8 +79,8 @@ namespace Messenger.Services
             }
         }
 
-        // ============ ЗАШИФРОВАННЫЕ СООБЩЕНИЯ (E2EE ДЛЯ ПОЛЬЗОВАТЕЛЕЙ) ============
-        
+        // ============ ЗАШИФРОВАННЫЕ СООБЩЕНИЯ ============
+
         public async Task<MessageResponseDTO?> CreateEncryptedMessageAsync(Guid userId, Guid chatId, string encryptedData, string iv)
         {
             try
@@ -92,7 +93,7 @@ namespace Messenger.Services
                     return null;
 
                 var now = DateTime.UtcNow;
-                
+
                 var message = new Message
                 {
                     MessageText = null,
@@ -134,12 +135,12 @@ namespace Messenger.Services
             }
         }
 
-        // ============ ДВОЙНОЕ ШИФРОВАНИЕ (ДЛЯ СЕРВЕРА) ============
-        
+        // ============ ДВОЙНОЕ ШИФРОВАНИЕ ============
+
         public async Task<MessageResponseDTO?> CreateDualEncryptedMessageAsync(
-            Guid userId, 
-            Guid chatId, 
-            string encryptedForUsers, 
+            Guid userId,
+            Guid chatId,
+            string encryptedForUsers,
             string ivForUsers,
             string encryptedForServer,
             string ivForServer)
@@ -157,8 +158,8 @@ namespace Messenger.Services
                 }
 
                 var now = DateTime.UtcNow;
-                
-                // 1. Сохраняем сообщение для пользователей (зашифрованное)
+
+                // 1. Сохраняем сообщение для пользователей
                 var message = new Message
                 {
                     MessageText = null,
@@ -176,22 +177,21 @@ namespace Messenger.Services
                 await _context.Messages.AddAsync(message);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Dual encrypted message saved - Chat: {ChatId}, User: {UserId}, MessageId: {MessageId}", 
+                _logger.LogInformation("Dual encrypted message saved - Chat: {ChatId}, User: {UserId}, MessageId: {MessageId}",
                     chatId, userId, message.MessageId);
 
-                // 2. Расшифровываем серверную копию для модерации
-                try
+                // 2. Расшифровываем серверную копию
+                if (_serverCryptoService.IsConfigured() && !string.IsNullOrEmpty(encryptedForServer))
                 {
-                    if (_serverCryptoService.IsConfigured())
+                    try
                     {
                         var plainText = await _serverCryptoService.DecryptMessageAsync(encryptedForServer, ivForServer);
-                        
+
                         if (!string.IsNullOrEmpty(plainText))
                         {
-                            _logger.LogInformation("Server decrypted message in chat {ChatId}: {Preview}", 
+                            _logger.LogInformation("Server decrypted message in chat {ChatId}: {Preview}",
                                 chatId, plainText.Length > 50 ? plainText[..50] + "..." : plainText);
-                            
-                            // Сохраняем расшифрованную копию для модерации
+
                             var moderatedMessage = new ModeratedMessage
                             {
                                 MessageId = message.MessageId,
@@ -200,22 +200,17 @@ namespace Messenger.Services
                                 UserId = userId,
                                 CreatedAt = DateTime.UtcNow
                             };
-                            
+
                             await _context.ModeratedMessages.AddAsync(moderatedMessage);
                             await _context.SaveChangesAsync();
-                            
+
                             _logger.LogInformation("Moderated copy saved for message {MessageId}", message.MessageId);
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        _logger.LogWarning("Server crypto not configured, skipping decryption for message {MessageId}", message.MessageId);
+                        _logger.LogError(ex, "Failed to decrypt or save server copy of message {MessageId}", message.MessageId);
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to decrypt or save server copy of message {MessageId}", message.MessageId);
-                    // Не удаляем сообщение, просто логируем ошибку
                 }
 
                 await _context.Entry(message).Reference(m => m.MessageCreator).LoadAsync();
@@ -242,8 +237,8 @@ namespace Messenger.Services
             }
         }
 
-        // ============ РЕДАКТИРОВАНИЕ СООБЩЕНИЙ ============
-        
+        // ============ РЕДАКТИРОВАНИЕ ============
+
         public async Task<MessageResponseDTO?> UpdateMessageAsync(Guid messageId, string newText, Guid currentUserId)
         {
             try
@@ -357,7 +352,7 @@ namespace Messenger.Services
         }
 
         // ============ УПРАВЛЕНИЕ СООБЩЕНИЯМИ ============
-        
+
         public async Task<bool> DeleteMessageAsync(Guid messageId, Guid currentUserId)
         {
             try
@@ -410,7 +405,7 @@ namespace Messenger.Services
                     return false;
                 }
 
-                // Также удаляем запись из модерации, если есть
+                // Удаляем запись из модерации
                 var moderated = await _context.ModeratedMessages
                     .FirstOrDefaultAsync(m => m.MessageId == messageId);
                 if (moderated != null)
@@ -474,7 +469,7 @@ namespace Messenger.Services
                 var messages = await _context.Messages
                     .Where(m => m.ChatId == chatId && m.UserId != userId && !m.IsRead)
                     .ToListAsync();
-                
+
                 foreach (var msg in messages)
                 {
                     msg.IsRead = true;

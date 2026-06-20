@@ -1,8 +1,8 @@
 using Messenger.Data;
 using Messenger.DTOs;
+using Messenger.Models.ChatModels;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Messenger.Models.ChatModels;
 
 namespace Messenger.Services
 {
@@ -25,10 +25,12 @@ namespace Messenger.Services
                     .Include(f => f.MessageCreator)
                     .FirstOrDefaultAsync(f => f.MessageId == messageId);
 
-                if (fileMessage == null) return null;
+                if (fileMessage == null)
+                    return null;
 
                 var hasAccess = await UserHasAccessToFileAsync(messageId, currentUserId);
-                if (!hasAccess) return null;
+                if (!hasAccess)
+                    return null;
 
                 var creator = fileMessage.MessageCreator != null
                     ? new UserResponseDTO(
@@ -51,7 +53,9 @@ namespace Messenger.Services
                     fileMessage.FileName ?? "",
                     fileMessage.FilePath ?? "",
                     fileMessage.FileSize,
-                    fileMessage.ContentType ?? ""
+                    fileMessage.ContentType ?? "",
+                    fileMessage.MessageType ?? "file",
+                    fileMessage.Duration
                 );
             }
             catch (Exception ex)
@@ -105,7 +109,9 @@ namespace Messenger.Services
                         fileMsg.FileName ?? "",
                         fileMsg.FilePath ?? "",
                         fileMsg.FileSize,
-                        fileMsg.ContentType ?? ""
+                        fileMsg.ContentType ?? "",
+                        fileMsg.MessageType ?? "file",
+                        fileMsg.Duration
                     ));
                 }
 
@@ -125,7 +131,8 @@ namespace Messenger.Services
                 var fileMessage = await _context.Set<FileMessage>()
                     .FirstOrDefaultAsync(f => f.MessageId == messageId);
 
-                if (fileMessage == null) return false;
+                if (fileMessage == null)
+                    return false;
 
                 var chat = await _context.Chats
                     .Include(c => c.Users)

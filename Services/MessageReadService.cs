@@ -1,9 +1,9 @@
 ﻿using Messenger.Data;
 using Messenger.DTOs;
-using Messenger.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Messenger.Models.BaseModels;
 using Messenger.Models.ChatModels;
+using Messenger.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Messenger.Services
 {
@@ -22,6 +22,7 @@ namespace Messenger.Services
         {
             try
             {
+                // Проверяем текстовые сообщения
                 var textMessage = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .FirstOrDefaultAsync(m => m.MessageId == messageId);
@@ -36,7 +37,13 @@ namespace Messenger.Services
                         return null;
 
                     var creator = textMessage.MessageCreator != null
-                        ? new UserResponseDTO(textMessage.MessageCreator.Id, textMessage.MessageCreator.Name ?? "", textMessage.MessageCreator.AvatarPath ?? "", textMessage.MessageCreator.RegisterDate, textMessage.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            textMessage.MessageCreator.Id,
+                            textMessage.MessageCreator.Name ?? "",
+                            textMessage.MessageCreator.AvatarPath ?? "",
+                            textMessage.MessageCreator.RegisterDate,
+                            textMessage.MessageCreator.PublicKey
+                        )
                         : null;
 
                     return new MessageResponseDTO(
@@ -55,6 +62,7 @@ namespace Messenger.Services
                     );
                 }
 
+                // Проверяем файловые сообщения
                 var fileMessage = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .FirstOrDefaultAsync(f => f.MessageId == messageId);
@@ -69,7 +77,13 @@ namespace Messenger.Services
                         return null;
 
                     var creator = fileMessage.MessageCreator != null
-                        ? new UserResponseDTO(fileMessage.MessageCreator.Id, fileMessage.MessageCreator.Name ?? "", fileMessage.MessageCreator.AvatarPath ?? "", fileMessage.MessageCreator.RegisterDate, fileMessage.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            fileMessage.MessageCreator.Id,
+                            fileMessage.MessageCreator.Name ?? "",
+                            fileMessage.MessageCreator.AvatarPath ?? "",
+                            fileMessage.MessageCreator.RegisterDate,
+                            fileMessage.MessageCreator.PublicKey
+                        )
                         : null;
 
                     return new MessageResponseDTO(
@@ -87,7 +101,8 @@ namespace Messenger.Services
                         fileMessage.Iv,
                         fileMessage.FileName,
                         fileMessage.FileSize,
-                        fileMessage.ContentType
+                        fileMessage.ContentType,
+                        fileMessage.Duration
                     );
                 }
 
@@ -112,6 +127,7 @@ namespace Messenger.Services
 
                 var result = new List<MessageResponseDTO>();
 
+                // Текстовые сообщения
                 var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .OrderByDescending(m => m.MessageCreateDate)
@@ -120,7 +136,13 @@ namespace Messenger.Services
                 foreach (var msg in textMessages)
                 {
                     var creator = msg.MessageCreator != null
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            msg.MessageCreator.Id,
+                            msg.MessageCreator.Name ?? "",
+                            msg.MessageCreator.AvatarPath ?? "",
+                            msg.MessageCreator.RegisterDate,
+                            msg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -139,6 +161,7 @@ namespace Messenger.Services
                     ));
                 }
 
+                // Файловые сообщения
                 var fileMessages = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .OrderByDescending(f => f.MessageCreateDate)
@@ -147,7 +170,13 @@ namespace Messenger.Services
                 foreach (var fileMsg in fileMessages)
                 {
                     var creator = fileMsg.MessageCreator != null
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name ?? "",
+                            fileMsg.MessageCreator.AvatarPath ?? "",
+                            fileMsg.MessageCreator.RegisterDate,
+                            fileMsg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -165,7 +194,8 @@ namespace Messenger.Services
                         fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
-                        fileMsg.ContentType
+                        fileMsg.ContentType,
+                        fileMsg.Duration
                     ));
                 }
 
@@ -193,6 +223,7 @@ namespace Messenger.Services
 
                 var result = new List<MessageResponseDTO>();
 
+                // Текстовые сообщения
                 var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .Where(m => m.ChatId == chatId && !m.IsDeleted)
@@ -204,7 +235,13 @@ namespace Messenger.Services
                 foreach (var msg in textMessages)
                 {
                     var creator = msg.MessageCreator != null
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            msg.MessageCreator.Id,
+                            msg.MessageCreator.Name ?? "",
+                            msg.MessageCreator.AvatarPath ?? "",
+                            msg.MessageCreator.RegisterDate,
+                            msg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -223,6 +260,7 @@ namespace Messenger.Services
                     ));
                 }
 
+                // Файловые сообщения (включая голосовые)
                 var fileMessages = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .Where(f => f.ChatId == chatId && !f.IsDeleted)
@@ -234,7 +272,13 @@ namespace Messenger.Services
                 foreach (var fileMsg in fileMessages)
                 {
                     var creator = fileMsg.MessageCreator != null
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name ?? "",
+                            fileMsg.MessageCreator.AvatarPath ?? "",
+                            fileMsg.MessageCreator.RegisterDate,
+                            fileMsg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -252,7 +296,8 @@ namespace Messenger.Services
                         fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
-                        fileMsg.ContentType
+                        fileMsg.ContentType,
+                        fileMsg.Duration
                     ));
                 }
 
@@ -290,12 +335,10 @@ namespace Messenger.Services
             }
         }
 
-        // НОВЫЙ МЕТОД ДЛЯ КОРЗИНЫ
         public async Task<List<MessageResponseDTO>> GetDeletedMessagesAsync(Guid chatId, Guid userId)
         {
             try
             {
-                // Проверяем, что пользователь в чате
                 var chat = await _context.Chats
                     .Include(c => c.Users)
                     .FirstOrDefaultAsync(c => c.Id == chatId);
@@ -308,7 +351,7 @@ namespace Messenger.Services
 
                 var result = new List<MessageResponseDTO>();
 
-                // Текстовые сообщения, удалённые пользователем (не админом)
+                // Текстовые сообщения в корзине
                 var textMessages = await _context.Messages
                     .Include(m => m.MessageCreator)
                     .Where(m => m.ChatId == chatId && m.UserId == userId && m.IsDeleted)
@@ -318,7 +361,13 @@ namespace Messenger.Services
                 foreach (var msg in textMessages)
                 {
                     var creator = msg.MessageCreator != null
-                        ? new UserResponseDTO(msg.MessageCreator.Id, msg.MessageCreator.Name ?? "", msg.MessageCreator.AvatarPath ?? "", msg.MessageCreator.RegisterDate, msg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            msg.MessageCreator.Id,
+                            msg.MessageCreator.Name ?? "",
+                            msg.MessageCreator.AvatarPath ?? "",
+                            msg.MessageCreator.RegisterDate,
+                            msg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -337,7 +386,7 @@ namespace Messenger.Services
                     ));
                 }
 
-                // Файловые сообщения, удалённые пользователем
+                // Файловые сообщения в корзине (включая голосовые)
                 var fileMessages = await _context.Set<FileMessage>()
                     .Include(f => f.MessageCreator)
                     .Where(f => f.ChatId == chatId && f.UserId == userId && f.IsDeleted)
@@ -347,7 +396,13 @@ namespace Messenger.Services
                 foreach (var fileMsg in fileMessages)
                 {
                     var creator = fileMsg.MessageCreator != null
-                        ? new UserResponseDTO(fileMsg.MessageCreator.Id, fileMsg.MessageCreator.Name ?? "", fileMsg.MessageCreator.AvatarPath ?? "", fileMsg.MessageCreator.RegisterDate, fileMsg.MessageCreator.PublicKey)
+                        ? new UserResponseDTO(
+                            fileMsg.MessageCreator.Id,
+                            fileMsg.MessageCreator.Name ?? "",
+                            fileMsg.MessageCreator.AvatarPath ?? "",
+                            fileMsg.MessageCreator.RegisterDate,
+                            fileMsg.MessageCreator.PublicKey
+                        )
                         : null;
 
                     result.Add(new MessageResponseDTO(
@@ -365,7 +420,8 @@ namespace Messenger.Services
                         fileMsg.Iv,
                         fileMsg.FileName,
                         fileMsg.FileSize,
-                        fileMsg.ContentType
+                        fileMsg.ContentType,
+                        fileMsg.Duration
                     ));
                 }
 

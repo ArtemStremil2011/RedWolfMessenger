@@ -112,22 +112,22 @@ namespace Messenger.Controllers.BaseControllers
 
             var currentUserId = GetCurrentUserId();
             MessageResponseDTO? updatedMessage = null;
-            
+
             // Если есть зашифрованные данные - обновляем как зашифрованное
             if (!string.IsNullOrEmpty(messageUpdateDto.EncryptedData) && !string.IsNullOrEmpty(messageUpdateDto.Iv))
             {
                 updatedMessage = await _messageWriteService.UpdateEncryptedMessageAsync(
-                    id, 
-                    messageUpdateDto.EncryptedData, 
-                    messageUpdateDto.Iv, 
+                    id,
+                    messageUpdateDto.EncryptedData,
+                    messageUpdateDto.Iv,
                     currentUserId);
             }
             // Иначе обновляем как обычное сообщение
             else if (!string.IsNullOrEmpty(messageUpdateDto.MessageText))
             {
                 updatedMessage = await _messageWriteService.UpdateMessageAsync(
-                    id, 
-                    messageUpdateDto.MessageText, 
+                    id,
+                    messageUpdateDto.MessageText,
                     currentUserId);
             }
             else
@@ -230,7 +230,6 @@ namespace Messenger.Controllers.BaseControllers
             return CreatedAtAction(nameof(GetById), new { id = message.MessageId }, message);
         }
 
-        // ============ НОВЫЙ ЭНДПОИНТ ДЛЯ ДВОЙНОГО ШИФРОВАНИЯ ============
         [HttpPost("dual-encrypted")]
         public async Task<IActionResult> CreateDualEncrypted([FromBody] DualEncryptedMessageCreateDTO dto)
         {

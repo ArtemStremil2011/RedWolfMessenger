@@ -8,8 +8,6 @@ namespace Messenger.Services.Interfaces
         Task<List<MessageResponseDTO>> GetAllMessagesAsync(Guid currentUserId);
         Task<List<MessageResponseDTO>> GetChatMessagesAsync(Guid chatId, Guid currentUserId, int page = 1, int pageSize = 50);
         Task<Dictionary<Guid, int>> GetUnreadCountsAsync(Guid userId);
-        
-        // НОВЫЙ МЕТОД ДЛЯ КОРЗИНЫ
         Task<List<MessageResponseDTO>> GetDeletedMessagesAsync(Guid chatId, Guid userId);
     }
 }

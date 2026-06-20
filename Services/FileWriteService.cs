@@ -1,8 +1,8 @@
 using Messenger.Data;
 using Messenger.DTOs;
+using Messenger.Models.ChatModels;
 using Messenger.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Messenger.Models.ChatModels;
 
 namespace Messenger.Services
 {
@@ -22,71 +22,131 @@ namespace Messenger.Services
             _logger = logger;
         }
 
-        public async Task<FileMessageResponseDTO?> UploadFileAsync(Guid chatId, IFormFile file, string? caption, Guid currentUserId)
+        public async Task<FileMessageResponseDTO?> UploadFileAsync(
+            Guid chatId,
+            IFormFile file,
+            string? caption,
+            Guid currentUserId,
+            bool isVoice = false,
+            int? duration = null)
         {
             try
             {
-                if (file.Length > 50 * 1024 * 1024)
+                // ===== ПРОВЕРКА РАЗМЕРА =====
+                var maxSize = isVoice ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB для голосовых, 50MB для файлов
+                if (file.Length > maxSize)
                 {
-                    _logger.LogWarning("File too large: {Size} bytes", file.Length);
+                    _logger.LogWarning($"File too large: {file.Length} bytes (max: {maxSize})");
                     return null;
                 }
 
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".txt", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar", ".7z", ".json", ".xml", ".csv" };
+                // ===== ПРОВЕРКА РАСШИРЕНИЯ =====
                 var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-                if (!allowedExtensions.Contains(extension))
+                // Для голосовых сообщений разрешены только аудио форматы
+                if (isVoice)
                 {
-                    _logger.LogWarning("Invalid file extension: {Extension}", extension);
-                    return null;
+                    var voiceExtensions = new[] { ".webm", ".mp3", ".ogg", ".wav" };
+                    if (!voiceExtensions.Contains(extension))
+                    {
+                        _logger.LogWarning($"Invalid voice format: {extension}");
+                        return null;
+                    }
+                }
+                else
+                {
+                    var allowedExtensions = new[] {
+                        ".jpg", ".jpeg", ".png", ".gif", ".webp",
+                        ".txt", ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+                        ".ppt", ".pptx", ".zip", ".rar", ".7z", ".json", ".xml", ".csv"
+                    };
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        _logger.LogWarning($"Invalid file extension: {extension}");
+                        return null;
+                    }
                 }
 
+                // ===== ПРОВЕРКА ЧАТА =====
                 var chat = await _context.Chats
                     .Include(c => c.Users)
                     .FirstOrDefaultAsync(c => c.Id == chatId);
 
                 if (chat == null || !chat.Users.Any(u => u.Id == currentUserId))
                 {
-                    _logger.LogWarning("User {UserId} not in chat {ChatId}", currentUserId, chatId);
+                    _logger.LogWarning($"User {currentUserId} not in chat {chatId}");
                     return null;
                 }
 
-                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
+                // ===== СОХРАНЕНИЕ ФАЙЛА =====
+                var uploadPath = isVoice
+                    ? Path.Combine(_environment.WebRootPath, "voice-messages")
+                    : Path.Combine(_environment.WebRootPath, "uploads");
+
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
                 var fileName = $"{DateTime.Now.Ticks}_{Guid.NewGuid()}{extension}";
                 var filePath = Path.Combine(uploadPath, fileName);
-                var relativePath = $"/uploads/{fileName}";
+                var relativePath = $"{(isVoice ? "/voice-messages/" : "/uploads/")}{fileName}";
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                var fileMessage = new FileMessage
+                // ===== СОЗДАНИЕ СООБЩЕНИЯ =====
+                FileMessage fileMessage;
+
+                if (isVoice)
                 {
-                    MessageId = Guid.NewGuid(),
-                    MessageText = caption ?? $"📎 {file.FileName}",
-                    FileName = file.FileName,
-                    FilePath = relativePath,
-                    FileSize = file.Length,
-                    ContentType = file.ContentType,
-                    UserId = currentUserId,
-                    ChatId = chatId,
-                    MessageCreateDate = DateTime.UtcNow,
-                    MessageLastUpdateDate = DateTime.UtcNow,
-                    IsDeleted = false,
-                    IsSystemMessage = false,
-                    IsRead = false
-                };
+                    fileMessage = new VoiceMessage
+                    {
+                        Duration = duration ?? 0,
+                        FileName = file.FileName,
+                        FilePath = relativePath,
+                        FileSize = file.Length,
+                        ContentType = file.ContentType ?? "audio/webm",
+                        UserId = currentUserId,
+                        ChatId = chatId,
+                        MessageText = caption ?? "🎤 Voice message",
+                        MessageCreateDate = DateTime.UtcNow,
+                        MessageLastUpdateDate = DateTime.UtcNow
+                    };
+                }
+                else
+                {
+                    fileMessage = new FileMessage
+                    {
+                        FileName = file.FileName,
+                        FilePath = relativePath,
+                        FileSize = file.Length,
+                        ContentType = file.ContentType,
+                        UserId = currentUserId,
+                        ChatId = chatId,
+                        MessageText = caption ?? $"📎 {file.FileName}",
+                        MessageCreateDate = DateTime.UtcNow,
+                        MessageLastUpdateDate = DateTime.UtcNow,
+                        MessageType = "file"
+                    };
+                }
 
                 await _context.Set<FileMessage>().AddAsync(fileMessage);
                 await _context.SaveChangesAsync();
 
                 await _context.Entry(fileMessage).Reference(f => f.MessageCreator).LoadAsync();
 
-                _logger.LogInformation("File uploaded: {FileName} to chat {ChatId}", file.FileName, chatId);
+                _logger.LogInformation($"{(isVoice ? "Voice" : "File")} uploaded: {file.FileName} to chat {chatId}");
+
+                // ===== ВОЗВРАТ DTO =====
+                var creator = fileMessage.MessageCreator != null
+                    ? new UserResponseDTO(
+                        fileMessage.MessageCreator.Id,
+                        fileMessage.MessageCreator.Name ?? "",
+                        fileMessage.MessageCreator.AvatarPath ?? "",
+                        fileMessage.MessageCreator.RegisterDate
+                    )
+                    : null;
 
                 return new FileMessageResponseDTO(
                     fileMessage.MessageId,
@@ -95,16 +155,13 @@ namespace Messenger.Services
                     fileMessage.MessageLastUpdateDate,
                     fileMessage.UserId,
                     fileMessage.ChatId,
-                    fileMessage.MessageCreator != null ? new UserResponseDTO(
-                        fileMessage.MessageCreator.Id,
-                        fileMessage.MessageCreator.Name,
-                        fileMessage.MessageCreator.AvatarPath,
-                        fileMessage.MessageCreator.RegisterDate
-                    ) : null,
-                    fileMessage.FileName,
-                    fileMessage.FilePath,
+                    creator,
+                    fileMessage.FileName ?? "",
+                    fileMessage.FilePath ?? "",
                     fileMessage.FileSize,
-                    fileMessage.ContentType
+                    fileMessage.ContentType ?? "",
+                    fileMessage.MessageType,
+                    fileMessage.Duration
                 );
             }
             catch (Exception ex)
@@ -125,7 +182,7 @@ namespace Messenger.Services
 
                 if (fileMessage.UserId != currentUserId)
                 {
-                    _logger.LogWarning("User {UserId} tried to delete file {MessageId} without permission", currentUserId, messageId);
+                    _logger.LogWarning($"User {currentUserId} tried to delete file {messageId} without permission");
                     return false;
                 }
 
@@ -134,12 +191,12 @@ namespace Messenger.Services
                 _context.Set<FileMessage>().Remove(fileMessage);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("File {MessageId} deleted", messageId);
+                _logger.LogInformation($"File {messageId} deleted");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting file {MessageId}", messageId);
+                _logger.LogError(ex, $"Error deleting file {messageId}");
                 return false;
             }
         }
@@ -158,7 +215,7 @@ namespace Messenger.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting physical file {FilePath}", filePath);
+                _logger.LogError(ex, $"Error deleting physical file {filePath}");
                 return false;
             }
         }
