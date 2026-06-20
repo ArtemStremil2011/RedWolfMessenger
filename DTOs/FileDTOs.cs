@@ -11,6 +11,10 @@ namespace Messenger.DTOs
         public Guid ChatId { get; set; }
 
         public string? Caption { get; set; }
+
+        // ===== НОВЫЕ ПОЛЯ ДЛЯ ГОЛОСОВЫХ =====
+        public bool? IsVoice { get; set; }
+        public int? Duration { get; set; }
     }
 
     public record FileMessageResponseDTO(
@@ -24,6 +28,8 @@ namespace Messenger.DTOs
         string FileName,
         string FilePath,
         long FileSize,
-        string ContentType
+        string ContentType,
+        string MessageType = "file",
+        int? Duration = null
     );
 }

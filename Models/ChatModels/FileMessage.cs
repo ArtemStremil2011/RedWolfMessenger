@@ -13,13 +13,14 @@ namespace Messenger.Models.ChatModels
         [StringLength(5000)]
         public string? MessageText { get; set; }
 
-        // ============ НОВЫЕ ПОЛЯ ДЛЯ ШИФРОВАНИЯ ============
+        // ============ ШИФРОВАНИЕ ============
         [StringLength(5000)]
         public string? EncryptedData { get; set; }
 
         [StringLength(50)]
         public string? Iv { get; set; }
 
+        // ============ ОСНОВНЫЕ ПОЛЯ ============
         [Required]
         public DateTime MessageCreateDate { get; set; }
 
@@ -43,7 +44,7 @@ namespace Messenger.Models.ChatModels
 
         public bool IsRead { get; set; } = false;
 
-        // Поля для файла
+        // ============ ПОЛЯ ДЛЯ ФАЙЛОВ ============
         [Required]
         [StringLength(255)]
         public string FileName { get; set; } = string.Empty;
@@ -58,12 +59,17 @@ namespace Messenger.Models.ChatModels
         [StringLength(100)]
         public string ContentType { get; set; } = string.Empty;
 
+        // ============ НОВЫЕ ПОЛЯ ДЛЯ ГОЛОСОВЫХ ============
+        public int? Duration { get; set; } // Длительность в секундах (только для голосовых)
+
+        [StringLength(20)]
+        public string MessageType { get; set; } = "file"; // "file" | "voice"
+
         public FileMessage()
         {
             MessageId = Guid.NewGuid();
-            var now = DateTime.UtcNow;
-            MessageCreateDate = now;
-            MessageLastUpdateDate = now;
+            MessageCreateDate = DateTime.UtcNow;
+            MessageLastUpdateDate = DateTime.UtcNow;
         }
     }
 }
