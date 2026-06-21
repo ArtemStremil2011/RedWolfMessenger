@@ -1,6 +1,4 @@
-﻿import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.17.0/index.js';
-
-// ============ STATE ============
+﻿// ============ STATE ============
 let currentUser = null, currentChat = null, currentChatInfo = null, token = null, connection = null;
 let typingTimeout = null, editingMessageId = null, editingMessageIsEncrypted = false;
 let selectedGroupMembers = [], tempPhoneNumber = null;
@@ -82,128 +80,6 @@ async function api(url, opts = {}) {
     });
     if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
     return res;
-}
-
-// ============ ГОЛОСОВАЯ ЗАПИСЬ ============
-async function startVoiceRecording() {
-    if (!currentChat) {
-        showToast("Select a chat first", true);
-        return;
-    }
-
-    try {
-        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        let mimeType = 'audio/webm;codecs=opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = 'audio/webm';
-        }
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = 'audio/mp4';
-        }
-
-        mediaRecorder = new MediaRecorder(audioStream, {
-            mimeType: mimeType,
-            audioBitsPerSecond: 128000
-        });
-
-        audioChunks = [];
-        recordingSeconds = 0;
-        isRecording = true;
-
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
-            }
-        };
-
-        mediaRecorder.onstop = async () => {
-            isRecording = false;
-            clearInterval(recordingTimer);
-            document.getElementById('voiceRecordingIndicator').classList.remove('active');
-            document.getElementById('voiceBtn').classList.remove('recording');
-
-            if (audioChunks.length > 0 && recordingSeconds > 0) {
-                const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-                await sendVoiceMessage(audioBlob);
-            } else {
-                showToast('Recording too short', true);
-            }
-
-            if (audioStream) {
-                audioStream.getTracks().forEach(track => track.stop());
-                audioStream = null;
-            }
-        };
-
-        mediaRecorder.start(100);
-        recordingTimer = setInterval(() => {
-            recordingSeconds++;
-            document.getElementById('voiceTimer').textContent = formatTime(recordingSeconds);
-        }, 1000);
-
-        document.getElementById('voiceRecordingIndicator').classList.add('active');
-        document.getElementById('voiceBtn').classList.add('recording');
-        document.getElementById('voiceTimer').textContent = '00:00';
-
-    } catch (e) {
-        console.error('Recording error:', e);
-        showToast('Cannot access microphone', true);
-    }
-}
-
-function stopVoiceRecording() {
-    if (mediaRecorder && isRecording) {
-        mediaRecorder.stop();
-    }
-}
-
-function cancelVoiceRecording() {
-    if (mediaRecorder && isRecording) {
-        mediaRecorder.stop();
-        audioChunks = [];
-        recordingSeconds = 0;
-        isRecording = false;
-        clearInterval(recordingTimer);
-        document.getElementById('voiceRecordingIndicator').classList.remove('active');
-        document.getElementById('voiceBtn').classList.remove('recording');
-        document.getElementById('voiceTimer').textContent = '00:00';
-        if (audioStream) {
-            audioStream.getTracks().forEach(track => track.stop());
-            audioStream = null;
-        }
-        showToast('Recording cancelled');
-    }
-}
-
-async function sendVoiceMessage(blob) {
-    const fd = new FormData();
-    fd.append('file', blob, 'voice.webm');
-    fd.append('chatId', currentChat.id);
-    fd.append('isVoice', 'true');
-    fd.append('duration', String(recordingSeconds));
-
-    showToast('⏳ Sending voice message...');
-
-    try {
-        const res = await fetch(`${API_BASE}/File/upload`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: fd
-        });
-
-        if (res.ok) {
-            showToast('✅ Voice message sent!');
-            await loadMessages(currentChat.id);
-            await loadChats();
-        } else {
-            const error = await res.text();
-            showToast('Failed to send voice: ' + error, true);
-        }
-    } catch (e) {
-        console.error('Voice send error:', e);
-        showToast('Failed to send voice message', true);
-    }
 }
 
 // ============ PROFILE VIEW ============
@@ -571,14 +447,21 @@ async function permanentDeleteMessage(messageId) {
 
 // ============ AUTH ============
 async function handleLogin() {
-    const login = document.getElementById('loginLogin').value, pwd = document.getElementById('loginPassword').value;
+    const login = document.getElementById('loginLogin').value;
+    const pwd = document.getElementById('loginPassword').value;
     if (!login || !pwd) return showToast('Fill all fields', true);
     try {
-        const res = await fetch(API_BASE + '/User/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login, password: pwd }) });
+        const res = await fetch(API_BASE + '/User/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password: pwd })
+        });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        token = data.token; currentUser = { id: data.userId };
-        localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
+        token = data.token;
+        currentUser = { id: data.userId };
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', data.userId);
 
         const profileRes = await api('/User/profile');
         const profile = await profileRes.json();
@@ -593,18 +476,85 @@ async function handleLogin() {
 
         await loadAllSessionKeysFromDB();
         await initApp();
-    } catch (e) { showToast('Login failed: ' + e.message, true); }
+    } catch (e) {
+        console.error('Login error:', e);
+        showToast('Login failed: ' + e.message, true);
+    }
+}
+
+async function requestCode() {
+    const phone = document.getElementById('regPhone').value.trim();
+    const name = document.getElementById('regName').value.trim();
+    const pwd = document.getElementById('regPassword').value;
+
+    if (!phone || !name || !pwd) return showToast('Fill all fields', true);
+    if (pwd.length < 6) return showToast('Password min 6 chars', true);
+
+    console.log("📱 Requesting code for:", phone);
+
+    try {
+        const res = await fetch(API_BASE + '/User/request-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: phone, name, password: pwd })
+        });
+
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(error);
+        }
+
+        const data = await res.json();
+        console.log("📦 Response:", data);
+
+        tempPhoneNumber = data.phoneNumber || phone;
+        console.log("📱 tempPhoneNumber set to:", tempPhoneNumber);
+
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('verifyForm').style.display = 'flex';
+        document.getElementById('verifyCode').value = data.code || '';
+
+        if (data.code) {
+            showToast('✅ Code: ' + data.code);
+        } else {
+            showToast('✅ Code sent to ' + phone);
+        }
+    } catch (e) {
+        console.error('Request code error:', e);
+        showToast('Failed to send code: ' + e.message, true);
+    }
 }
 
 async function verifyReg() {
     const code = document.getElementById('verifyCode').value.trim();
+    console.log("🔍 Verifying with phone:", tempPhoneNumber);
+    console.log("🔍 Code:", code);
+
     if (!code || code.length !== 6) return showToast('Enter 6-digit code', true);
+    if (!tempPhoneNumber) return showToast('❌ Request code first!', true);
+
     try {
-        const res = await fetch(API_BASE + '/User/verify-and-register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: tempPhoneNumber, code }) });
-        if (!res.ok) throw new Error(await res.text());
+        const res = await fetch(API_BASE + '/User/verify-and-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumber: tempPhoneNumber,
+                code: code
+            })
+        });
+
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(error);
+        }
+
         const data = await res.json();
-        token = data.token; currentUser = { id: data.userId };
-        localStorage.setItem('token', token); localStorage.setItem('userId', data.userId);
+        console.log("✅ Verification success:", data);
+
+        token = data.token;
+        currentUser = { id: data.userId };
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', data.userId);
 
         const keyPair = await generateRSAKeys();
         const publicKeyBase64 = await exportPublicKey(keyPair.publicKey);
@@ -621,23 +571,10 @@ async function verifyReg() {
         currentUser.publicKey = publicKeyBase64;
 
         await initApp();
-    } catch (e) { showToast(e.message, true); }
-}
-
-async function requestCode() {
-    const phone = document.getElementById('regPhone').value.trim(), name = document.getElementById('regName').value.trim(), pwd = document.getElementById('regPassword').value;
-    if (!phone || !name || !pwd) return showToast('Fill all fields', true);
-    if (pwd.length < 6) return showToast('Password min 6 chars', true);
-    try {
-        const res = await fetch(API_BASE + '/User/request-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: phone, name, password: pwd }) });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        tempPhoneNumber = data.phoneNumber;
-        document.getElementById('registerForm').style.display = 'none';
-        document.getElementById('verifyForm').style.display = 'flex';
-        document.getElementById('verifyCode').value = data.code || '';
-        showToast('✅ Code sent to ' + phone);
-    } catch (e) { showToast(e.message, true); }
+    } catch (e) {
+        console.error('Verification error:', e);
+        showToast('Verification failed: ' + e.message, true);
+    }
 }
 
 function switchTab(tab) {
@@ -1140,7 +1077,6 @@ function renderMessages(messages) {
         </div>`;
     }).join('');
 
-    // ===== ОБРАБОТЧИКИ =====
     document.querySelectorAll('.download-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); downloadFile(btn.dataset.id, btn.dataset.name); }); });
     document.querySelectorAll('.del-msg-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMessage(btn.dataset.id); }));
     document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyToClipboard(btn.dataset.text)));
@@ -1169,12 +1105,14 @@ function renderMessages(messages) {
         let audio = null;
         let isPlaying = false;
         let progressInterval = null;
+        let currentAudioUrl = null;
+
+        durationSpan.textContent = formatTime(totalDuration);
 
         playBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
 
             if (audio && isPlaying) {
-                // Пауза
                 audio.pause();
                 isPlaying = false;
                 playBtn.textContent = '▶️';
@@ -1183,41 +1121,65 @@ function renderMessages(messages) {
             }
 
             if (audio && !isPlaying) {
-                // Продолжить
-                await audio.play();
-                isPlaying = true;
-                playBtn.textContent = '⏸️';
-                progressInterval = setInterval(() => {
-                    const progress = (audio.currentTime / totalDuration) * 100;
-                    progressFill.style.width = `${Math.min(progress, 100)}%`;
-                }, 100);
-                return;
-            }
-
-            // Создать новый аудио-объект
-            try {
-                const res = await fetch(`${API_BASE}/File/download/${messageId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    audio = new Audio(url);
-                    audio.onended = () => {
-                        isPlaying = false;
-                        playBtn.textContent = '▶️';
-                        progressFill.style.width = '0%';
-                        clearInterval(progressInterval);
-                        URL.revokeObjectURL(url);
-                    };
+                try {
                     await audio.play();
                     isPlaying = true;
                     playBtn.textContent = '⏸️';
                     progressInterval = setInterval(() => {
-                        const progress = (audio.currentTime / totalDuration) * 100;
-                        progressFill.style.width = `${Math.min(progress, 100)}%`;
+                        if (audio && audio.duration > 0) {
+                            const progress = (audio.currentTime / audio.duration) * 100;
+                            progressFill.style.width = `${Math.min(progress, 100)}%`;
+                        }
                     }, 100);
+                } catch (e) {
+                    console.warn('Play error:', e);
                 }
+                return;
+            }
+
+            try {
+                showToast('⏳ Loading voice...');
+                const res = await fetch(`${API_BASE}/File/download/${messageId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Download failed');
+
+                const blob = await res.blob();
+                currentAudioUrl = URL.createObjectURL(blob);
+                audio = new Audio(currentAudioUrl);
+
+                audio.ontimeupdate = () => {
+                    if (audio && audio.duration > 0) {
+                        const progress = (audio.currentTime / audio.duration) * 100;
+                        progressFill.style.width = `${Math.min(progress, 100)}%`;
+                    }
+                };
+
+                audio.onended = () => {
+                    isPlaying = false;
+                    playBtn.textContent = '▶️';
+                    progressFill.style.width = '0%';
+                    clearInterval(progressInterval);
+                    if (currentAudioUrl) {
+                        URL.revokeObjectURL(currentAudioUrl);
+                        currentAudioUrl = null;
+                    }
+                };
+
+                audio.onerror = (e) => {
+                    console.error('Audio error:', e);
+                    showToast('Failed to play voice message', true);
+                    isPlaying = false;
+                    playBtn.textContent = '▶️';
+                    clearInterval(progressInterval);
+                };
+
+                await audio.play();
+                isPlaying = true;
+                playBtn.textContent = '⏸️';
+                showToast('▶️ Playing...');
+
             } catch (e) {
                 console.error('Audio play error:', e);
                 showToast('Failed to play voice message', true);
@@ -1301,6 +1263,208 @@ async function saveEditedMsg() {
     } catch (error) {
         console.error('Edit error:', error);
         showToast('Failed to edit: ' + error.message, true);
+    }
+}
+
+// ============ ГОЛОСОВАЯ ЗАПИСЬ (TOGGLE РЕЖИМ) ============
+async function toggleVoiceRecording() {
+    if (!currentChat) {
+        showToast("Select a chat first", true);
+        return;
+    }
+
+    // Если уже записываем — останавливаем
+    if (isRecording) {
+        stopVoiceRecording();
+        return;
+    }
+
+    // Иначе начинаем запись
+    await startVoiceRecording();
+}
+
+async function startVoiceRecording() {
+    try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
+
+        let mimeType = 'audio/webm;codecs=opus';
+        const codecs = [
+            'audio/webm;codecs=opus',
+            'audio/webm;codecs=pcm',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus',
+            'audio/ogg;codecs=vorbis'
+        ];
+
+        let supported = false;
+        for (const codec of codecs) {
+            if (MediaRecorder.isTypeSupported(codec)) {
+                mimeType = codec;
+                supported = true;
+                break;
+            }
+        }
+
+        if (!supported) {
+            showToast('Voice recording not supported in this browser', true);
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+            return;
+        }
+
+        mediaRecorder = new MediaRecorder(audioStream, {
+            mimeType: mimeType,
+            audioBitsPerSecond: 128000
+        });
+
+        audioChunks = [];
+        recordingSeconds = 0;
+        isRecording = true;
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            isRecording = false;
+            clearInterval(recordingTimer);
+
+            document.getElementById('voiceRecordingIndicator')?.classList.remove('active');
+            document.getElementById('voiceBtn')?.classList.remove('recording');
+            document.getElementById('voiceBtn').textContent = '🎤';
+
+            if (audioChunks.length > 0 && recordingSeconds >= 1) {
+                const mime = mimeType || 'audio/webm';
+                const audioBlob = new Blob(audioChunks, { type: mime });
+                await sendVoiceMessage(audioBlob);
+            } else {
+                if (recordingSeconds > 0) {
+                    showToast('Recording too short (minimum 1 second)', true);
+                }
+            }
+
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+            mediaRecorder = null;
+        };
+
+        mediaRecorder.start(100);
+
+        recordingTimer = setInterval(() => {
+            if (isRecording) {
+                recordingSeconds++;
+                document.getElementById('voiceTimer').textContent = formatTime(recordingSeconds);
+            }
+        }, 1000);
+
+        document.getElementById('voiceRecordingIndicator').classList.add('active');
+        document.getElementById('voiceBtn').classList.add('recording');
+        document.getElementById('voiceBtn').textContent = '⏹️';
+        document.getElementById('voiceTimer').textContent = '00:00';
+
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        showToast('🎤 Recording... Press again to stop');
+
+    } catch (e) {
+        console.error('Recording error:', e);
+        showToast('Cannot access microphone. Please allow microphone access.', true);
+        isRecording = false;
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+    }
+}
+
+function stopVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+        try {
+            mediaRecorder.stop();
+            showToast('⏹️ Stopping...');
+        } catch (e) {
+            console.warn('Stop recording error:', e);
+        }
+    }
+}
+
+function cancelVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+        try {
+            mediaRecorder.stop();
+        } catch (e) {
+            console.warn('Cancel recording error:', e);
+        }
+        audioChunks = [];
+        recordingSeconds = 0;
+        isRecording = false;
+        clearInterval(recordingTimer);
+        document.getElementById('voiceRecordingIndicator').classList.remove('active');
+        document.getElementById('voiceBtn').classList.remove('recording');
+        document.getElementById('voiceBtn').textContent = '🎤';
+        document.getElementById('voiceTimer').textContent = '00:00';
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        mediaRecorder = null;
+        showToast('Recording cancelled');
+    }
+}
+
+async function sendVoiceMessage(blob) {
+    const fd = new FormData();
+    const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    fd.append('file', blob, `voice.${fileExtension}`);
+    fd.append('chatId', currentChat.id);
+    fd.append('isVoice', 'true');
+    fd.append('duration', String(recordingSeconds));
+
+    showToast('⏳ Sending voice message...');
+
+    try {
+        const res = await fetch(`${API_BASE}/File/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: fd
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            console.log('✅ Voice uploaded:', data);
+
+            await loadMessages(currentChat.id);
+            await loadChats();
+
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                try {
+                    await connection.invoke('SendMessage', currentChat.id, currentUser.id, currentUser.name, `🎤 Voice message (${recordingSeconds}s)`);
+                } catch (e) {
+                    console.warn("SignalR notify failed:", e);
+                }
+            }
+
+            showToast('✅ Voice message sent!');
+        } else {
+            const error = await res.text();
+            showToast('Failed to send voice: ' + error, true);
+        }
+    } catch (e) {
+        console.error('Voice send error:', e);
+        showToast('Failed to send voice message', true);
     }
 }
 
@@ -1405,8 +1569,10 @@ async function uploadFile() {
         });
 
         if (res.ok) {
+            const data = await res.json();
+            console.log('📁 File uploaded:', data);
+
             input.value = '';
-            showToast('✅ File uploaded!');
             await loadMessages(currentChat.id);
             await loadChats();
 
@@ -1417,6 +1583,8 @@ async function uploadFile() {
                     console.warn("SignalR notify failed:", e);
                 }
             }
+
+            showToast('✅ File uploaded!');
         } else {
             const error = await res.text();
             showToast('Upload failed: ' + error, true);
@@ -1528,6 +1696,22 @@ async function initSignalR() {
             updateUnreadBadge(chatId, currentCount + 1);
             await loadChats();
             showToast(`💬 ${userName}: ${messageText?.substring(0, 40)}`);
+        }
+    });
+
+    connection.on("NewFileUploaded", async (fileData) => {
+        console.log("📁 New file uploaded via SignalR:", fileData);
+        if (currentChat && currentChat.id === fileData.chatId) {
+            await loadMessages(currentChat.id);
+            await loadChats();
+        }
+    });
+
+    connection.on("NewVoiceMessage", async (userId, userName, duration, chatId) => {
+        console.log("🎤 New voice message from:", userName);
+        if (currentChat && currentChat.id === chatId) {
+            await loadMessages(currentChat.id);
+            await loadChats();
         }
     });
 
@@ -1643,10 +1827,8 @@ document.getElementById('groupAvatarFile')?.addEventListener('change', (e) => up
 document.getElementById('deleteGroupAvatarBtn')?.addEventListener('click', deleteGroupAvatar);
 document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
 
-// ===== ГОЛОСОВЫЕ КНОПКИ =====
-document.getElementById('voiceBtn')?.addEventListener('mousedown', startVoiceRecording);
-document.getElementById('voiceBtn')?.addEventListener('mouseup', stopVoiceRecording);
-document.getElementById('voiceBtn')?.addEventListener('mouseleave', stopVoiceRecording);
+// ===== ГОЛОСОВАЯ КНОПКА (TOGGLE) =====
+document.getElementById('voiceBtn')?.addEventListener('click', toggleVoiceRecording);
 document.getElementById('cancelVoiceBtn')?.addEventListener('click', cancelVoiceRecording);
 
 if (localStorage.getItem('token')) initApp();

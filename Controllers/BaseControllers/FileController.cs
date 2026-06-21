@@ -49,10 +49,26 @@ namespace Messenger.Controllers.BaseControllers
                     return BadRequest(new { message = "Файл не выбран" });
 
                 var currentUserId = GetCurrentUserId();
-                var result = await _fileWriteService.UploadFileAsync(dto.ChatId, dto.File, dto.Caption, currentUserId);
+
+                // ===== ДОБАВЛЯЕМ ПОДДЕРЖКУ ГОЛОСОВЫХ =====
+                var isVoice = dto.IsVoice ?? false;
+                var duration = dto.Duration ?? 0;
+
+                _logger.LogInformation($"📤 Upload request: File={dto.File.FileName}, IsVoice={isVoice}, Duration={duration}");
+
+                var result = await _fileWriteService.UploadFileAsync(
+                    dto.ChatId,
+                    dto.File,
+                    dto.Caption,
+                    currentUserId,
+                    isVoice,
+                    duration);
 
                 if (result == null)
                     return BadRequest(new { message = "Не удалось загрузить файл" });
+
+                // ===== ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ЧЕРЕЗ SIGNALR =====
+                await _hubContext.Clients.Group(dto.ChatId.ToString()).SendAsync("NewFileUploaded", result);
 
                 return Ok(result);
             }

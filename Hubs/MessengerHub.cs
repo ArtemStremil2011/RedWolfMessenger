@@ -39,11 +39,29 @@ namespace Messenger.Hubs
             await Clients.Group(chatId).SendAsync("UserJoined", userId, userName);
         }
 
+        // ===== СООБЩЕНИЯ =====
         public async Task SendMessage(string chatId, string userId, string userName, string messageText)
         {
-            await Clients.Group(chatId).SendAsync("ReceiveMessage", userId, userName, messageText);
+            await Clients.Group(chatId).SendAsync("ReceiveMessage", userId, userName, messageText, chatId);
         }
 
+        public async Task SendEncryptedMessage(string chatId, string userId, string userName, string encryptedData, string iv)
+        {
+            await Clients.Group(chatId).SendAsync("ReceiveEncryptedMessage", userId, userName, encryptedData, iv, chatId);
+        }
+
+        // ===== ФАЙЛЫ И ГОЛОСОВЫЕ =====
+        public async Task NotifyFileUploaded(string chatId, object fileData)
+        {
+            await Clients.Group(chatId).SendAsync("NewFileUploaded", fileData);
+        }
+
+        public async Task NotifyVoiceMessage(string chatId, string userId, string userName, int duration)
+        {
+            await Clients.Group(chatId).SendAsync("NewVoiceMessage", userId, userName, duration, chatId);
+        }
+
+        // ===== ТАЙПИНГ =====
         public async Task UserIsTyping(string chatId, string userId, string userName)
         {
             await Clients.Group(chatId).SendAsync("UserTyping", userId, userName);
@@ -58,22 +76,23 @@ namespace Messenger.Hubs
             await Clients.Group(chatId).SendAsync("UserStoppedTyping", userId);
         }
 
-        // НОВЫЙ МЕТОД - УВЕДОМЛЕНИЕ О НОВОМ ЧАТЕ
+        // ===== НОВЫЙ ЧАТ =====
         public async Task NotifyNewChat(string userId, object chatInfo)
         {
             await Clients.User(userId).SendAsync("NewChatCreated", chatInfo);
         }
 
-        public async Task<UserStatusDTO?> GetUserStatus(Guid userId)
+        // ===== СТАТУС =====
+        public Task<UserStatusDTO?> GetUserStatus(Guid userId)
         {
             var isOnline = _onlineUsers.ContainsKey(userId);
             var lastSeen = _lastSeen.GetValueOrDefault(userId);
-            return new UserStatusDTO
+            return Task.FromResult(new UserStatusDTO
             {
                 UserId = userId,
                 IsOnline = isOnline,
                 LastSeen = isOnline ? null : lastSeen
-            };
+            });
         }
 
         private Guid? GetUserId()
@@ -83,11 +102,6 @@ namespace Messenger.Hubs
             if (Guid.TryParse(userIdClaim, out var userId))
                 return userId;
             return null;
-        }
-
-        public async Task SendEncryptedMessage(string chatId, string userId, string userName, string encryptedData, string iv)
-        {
-            await Clients.Group(chatId).SendAsync("ReceiveEncryptedMessage", userId, userName, encryptedData, iv, chatId);
         }
     }
 }
